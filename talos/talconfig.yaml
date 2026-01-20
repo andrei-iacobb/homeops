@@ -4,14 +4,14 @@ clusterName: kubernetes
 talosVersion: "${talosVersion}"
 kubernetesVersion: "${kubernetesVersion}"
 
-endpoint: https://192.168.1.5:6443
+endpoint: https://192.168.1.185:6443
 additionalApiServerCertSans: &sans
   - "127.0.0.1"
-  - "192.168.1.5"
+  - "192.168.1.185"
 additionalMachineCertSans: *sans
 
-clusterPodNets: ["10.42.0.0/16"]
-clusterSvcNets: ["10.43.0.0/16"]
+clusterPodNets: ["10.67.0.0/16"]
+clusterSvcNets: ["10.41.0.0/16"]
 
 # Disable built-in CNI to use Cilium
 cniConfig:
@@ -19,34 +19,22 @@ cniConfig:
 
 nodes:
   - hostname: "home-cluster"
-    ipAddress: "192.168.1.5"
-    installDisk: "/dev/sda"
+    ipAddress: "192.168.1.185"
+    installDisk: "/dev/vda"
     machineSpec:
       secureboot: false
-    talosImageURL: factory.talos.dev/installer/990731763242a6b3cf735e49d0f550ce4068b4d0e7f4dfbb49a31799b698877e
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
     controlPlane: true
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:34:c3:21"
         dhcp: false
         addresses:
-          - "192.168.1.5/24"
+          - "192.168.1.185/24"
         routes:
-          - gateway: "192.168.1.1"
+          - gateway: "192.168.1.254"
             network: 0.0.0.0/0
         mtu: 1500
-        vip:
-          ip: "192.168.1.5"
-    patches:
-      - # Load kernel modules
-        |-
-        machine:
-          kernel:
-            modules:
-              - name: nvidia
-              - name: nvidia_udm
-              - name: nvidia_drm
-              - name: nvidia_modeset
 
 # Global patches
 patches:
