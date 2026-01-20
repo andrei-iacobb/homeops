@@ -1,0 +1,63 @@
+---
+clusterName: kubernetes
+
+talosVersion: "${talosVersion}"
+kubernetesVersion: "${kubernetesVersion}"
+
+endpoint: https://192.168.1.5:6443
+additionalApiServerCertSans: &sans
+  - "127.0.0.1"
+  - "192.168.1.5"
+additionalMachineCertSans: *sans
+
+clusterPodNets: ["10.42.0.0/16"]
+clusterSvcNets: ["10.43.0.0/16"]
+
+# Disable built-in CNI to use Cilium
+cniConfig:
+  name: none
+
+nodes:
+  - hostname: "home-cluster"
+    ipAddress: "192.168.1.5"
+    installDisk: "/dev/sda"
+    machineSpec:
+      secureboot: false
+    talosImageURL: factory.talos.dev/installer/990731763242a6b3cf735e49d0f550ce4068b4d0e7f4dfbb49a31799b698877e
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "bc:24:11:34:c3:21"
+        dhcp: false
+        addresses:
+          - "192.168.1.5/24"
+        routes:
+          - gateway: "192.168.1.1"
+            network: 0.0.0.0/0
+        mtu: 1500
+        vip:
+          ip: "192.168.1.5"
+    patches:
+      - # Load kernel modules
+        |-
+        machine:
+          kernel:
+            modules:
+              - name: nvidia
+              - name: nvidia_udm
+              - name: nvidia_drm
+              - name: nvidia_modeset
+
+# Global patches
+patches:
+  - "@./patches/global/machine-files.yaml"
+  - "@./patches/global/machine-kubelet.yaml"
+  - "@./patches/global/machine-network.yaml"
+  - "@./patches/global/machine-sysctls.yaml"
+  - "@./patches/global/machine-time.yaml"
+
+# Controller patches
+controlPlane:
+  patches:
+    - "@./patches/controller/cluster.yaml"
+
