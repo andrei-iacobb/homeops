@@ -25,7 +25,7 @@ spec:
         zfs:
           enabled: false
     observability:
-      enabled: false
+      enabled: true
     openebs-crds:
       csi:
         volumeSnapshots:
