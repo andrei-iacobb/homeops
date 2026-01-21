@@ -19,10 +19,13 @@ spec:
       local:
         hostpath:
           enabled: true
+          basePath: /var/openebs/local
         lvm:
           enabled: false
         zfs:
           enabled: false
+    observability:
+      enabled: false
     openebs-crds:
       csi:
         volumeSnapshots:
