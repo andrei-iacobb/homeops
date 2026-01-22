@@ -60,9 +60,9 @@ spec:
           - port: http
     route:
       app:
-        hostnames: ["{{ .Release.Name }}.${SECRET_DOMAIN}"]
+        hostnames: ["{{ .Release.Name }}.iacob"]
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:
