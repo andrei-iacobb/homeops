@@ -1,0 +1,101 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: readarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: readarr
+  interval: 1h
+  values:
+    controllers:
+      readarr:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/hotio/readarr
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: readarr-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: readarr-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: readarr-secret
+                    key: TZ
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/system/status
+                    port: 8787
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+        additionalVolumes:
+          - name: downloads
+            persistentVolumeClaim:
+              claimName: readarr-downloads
+          - name: books
+            persistentVolumeClaim:
+              claimName: readarr-books
+        additionalVolumeMounts:
+          - name: downloads
+            mountPath: /downloads
+          - name: books
+            mountPath: /books
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8787
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["readarr.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8787
