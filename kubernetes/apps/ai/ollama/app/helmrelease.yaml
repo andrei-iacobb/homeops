@@ -1,0 +1,63 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ollama
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: ollama
+  interval: 1h
+  values:
+    controllers:
+      ollama:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ollama/ollama
+              tag: latest
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/tags
+                    port: 11434
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 2000m
+                memory: 8Gi
+              limits:
+                cpu: 8000m
+                memory: 32Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 11434
+    persistence:
+      data:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 100Gi
+        accessModes:
+          - ReadWriteOnce
+        mountPath: /root/.ollama
