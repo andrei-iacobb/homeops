@@ -1,0 +1,89 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: recommendarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: recommendarr
+  interval: 1h
+  values:
+    controllers:
+      recommendarr:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: tannermiddleton/recommendarr
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: recommendarr-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: recommendarr-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: recommendarr-secret
+                    key: TZ
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8080
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 1Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["recommendarr.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080
