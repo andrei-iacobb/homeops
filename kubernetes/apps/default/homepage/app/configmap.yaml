@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+data:
+  # Config will be mounted from persistent volume
+  # This is a placeholder - actual config comes from the volume
