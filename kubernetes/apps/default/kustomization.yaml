@@ -9,3 +9,9 @@ components:
 resources:
   - ./namespace.yaml
   - ./echo/ks.yaml
+  - ./gitea/ks.yaml
+  - ./vaultwarden/ks.yaml
+  - ./homepage/ks.yaml
+  - ./n8n/ks.yaml
+  - ./immich/ks.yaml
+  - ./outline/ks.yaml
