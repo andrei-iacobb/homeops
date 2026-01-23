@@ -1,0 +1,109 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitea
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gitea
+  interval: 1h
+  values:
+    controllers:
+      gitea:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: gitea/gitea
+              tag: latest
+            env:
+              USER_UID:
+                valueFrom:
+                  secretKeyRef:
+                    name: gitea-secret
+                    key: PUID
+              USER_GID:
+                valueFrom:
+                  secretKeyRef:
+                    name: gitea-secret
+                    key: PGID
+              GITEA__database__DB_TYPE: postgres
+              GITEA__database__HOST: postgres.databases.svc.cluster.local:5432
+              GITEA__database__NAME: gitea
+              GITEA__database__USER: gitea
+              GITEA__database__PASSWD:
+                valueFrom:
+                  secretKeyRef:
+                    name: gitea-secret
+                    key: GITEA_DB_PASSWORD
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthz
+                    port: 3000
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+        additionalVolumes:
+          - name: timezone
+            configMap:
+              name: timezone
+          - name: localtime
+            configMap:
+              name: localtime
+        additionalVolumeMounts:
+          - name: timezone
+            mountPath: /etc/timezone
+            readOnly: true
+          - name: localtime
+            mountPath: /etc/localtime
+            readOnly: true
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 3000
+          ssh:
+            port: 22
+    persistence:
+      data:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["git.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000
