@@ -1,0 +1,122 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tdarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tdarr
+  interval: 1h
+  values:
+    controllers:
+      tdarr:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/haveagitgat/tdarr
+              tag: latest
+            env:
+              TZ: Europe/London
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: tdarr-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: tdarr-secret
+                    key: PGID
+              UMASK_SET: "002"
+              serverIP: 0.0.0.0
+              serverPort: "8266"
+              webUIPort: "8265"
+              internalNode: "true"
+              inContainer: "true"
+              ffmpegVersion: "7"
+              nodeName: MyInternalNode
+              auth: "false"
+              openBrowser: "true"
+              maxLogSizeMB: "10"
+              NVIDIA_DRIVER_CAPABILITIES: all
+              NVIDIA_VISIBLE_DEVICES: all
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/status
+                    port: 8265
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                cpu: 8000m
+                memory: 16Gi
+        additionalVolumes:
+          - name: media
+            persistentVolumeClaim:
+              claimName: tdarr-media
+        additionalVolumeMounts:
+          - name: media
+            mountPath: /media
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8265
+          server:
+            port: 8266
+    persistence:
+      server:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
+        mountPath: /app/server
+      configs:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+        mountPath: /app/configs
+      logs:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+        mountPath: /app/logs
+    route:
+      app:
+        hostnames: ["tdarr.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8265
