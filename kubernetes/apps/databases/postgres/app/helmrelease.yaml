@@ -1,0 +1,72 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgres
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: postgres
+  interval: 1h
+  values:
+    controllers:
+      postgres:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: postgres
+              tag: "16-alpine"
+            env:
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: POSTGRES_PASSWORD
+              POSTGRES_USER: postgres
+              PGDATA: /var/lib/postgresql/data/pgdata
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - pg_isready -U postgres
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+    service:
+      app:
+        ports:
+          postgres:
+            port: 5432
+    persistence:
+      data:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 50Gi
+        accessModes:
+          - ReadWriteOnce
