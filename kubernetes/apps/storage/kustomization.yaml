@@ -9,3 +9,6 @@ components:
 resources:
   - ./namespace.yaml
   - ./openebs/ks.yaml
+  - ./nfs-csi/ks.yaml
+  - ./nfs-csi-immich/ks.yaml
+  - ./nfs-csi/storageclasses/ks.yaml
