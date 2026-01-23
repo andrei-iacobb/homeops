@@ -1,0 +1,71 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lidify-frontend
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: lidify
+  interval: 1h
+  values:
+    controllers:
+      lidify-frontend:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lidify
+              tag: custom
+            env:
+              NODE_ENV: production
+              BACKEND_URL: http://lidify-backend:3006
+              NEXT_PUBLIC_API_URL: ""
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - node
+                      - healthcheck.js
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 1000m
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 3030
+    route:
+      app:
+        hostnames: ["lidify.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3030
