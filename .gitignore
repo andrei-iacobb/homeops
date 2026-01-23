@@ -19,3 +19,29 @@ talosconfig
 .venv/
 .DS_Store
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Build artifacts
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Cursor IDE
+.cursor/
+*.plan.md
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
