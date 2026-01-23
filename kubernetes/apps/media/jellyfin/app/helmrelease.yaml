@@ -1,0 +1,118 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: jellyfin
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: jellyfin
+  interval: 1h
+  values:
+    controllers:
+      jellyfin:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/jellyfin
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: jellyfin-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: jellyfin-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: jellyfin-secret
+                    key: TZ
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 8096
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 4000m
+                memory: 8Gi
+        additionalVolumes:
+          - name: movies
+            persistentVolumeClaim:
+              claimName: jellyfin-movies
+          - name: tv
+            persistentVolumeClaim:
+              claimName: jellyfin-tv
+          - name: music
+            persistentVolumeClaim:
+              claimName: jellyfin-music
+          - name: books
+            persistentVolumeClaim:
+              claimName: jellyfin-books
+        additionalVolumeMounts:
+          - name: movies
+            mountPath: /data/movies
+          - name: tv
+            mountPath: /data/tv
+          - name: music
+            mountPath: /data/music
+          - name: books
+            mountPath: /data/books
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8096
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
+      cache:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessModes:
+          - ReadWriteOnce
+        mountPath: /cache
+    route:
+      app:
+        hostnames: ["jellyfin.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8096
