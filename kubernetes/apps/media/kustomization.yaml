@@ -1,0 +1,28 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: media
+
+components:
+  - ../../components/sops
+
+resources:
+  - ./namespace.yaml
+  - ./plex/ks.yaml
+  - ./jellyfin/ks.yaml
+  - ./sonarr/ks.yaml
+  - ./radarr/ks.yaml
+  - ./lidarr/ks.yaml
+  - ./readarr/ks.yaml
+  - ./bazarr/ks.yaml
+  - ./prowlarr/ks.yaml
+  - ./qbittorrent/ks.yaml
+  - ./sabnzbd/ks.yaml
+  - ./overseerr/ks.yaml
+  - ./calibre-web/ks.yaml
+  - ./lazylibrarian/ks.yaml
+  - ./tdarr/ks.yaml
+  - ./recyclarr/ks.yaml
+  - ./recommendarr/ks.yaml
+  - ./huntarr/ks.yaml
+  - ./lidify/ks.yaml
