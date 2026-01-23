@@ -1,0 +1,102 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sabnzbd
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: sabnzbd
+  interval: 1h
+  values:
+    controllers:
+      sabnzbd:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/sabnzbd
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: sabnzbd-secret
+                    key: TZ
+              HOST_WHITELIST: sabnzbd.iacob.uk
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /sabnzbd/api
+                    port: 8080
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 4Gi
+        additionalVolumes:
+          - name: downloads
+            persistentVolumeClaim:
+              claimName: sabnzbd-downloads
+          - name: incomplete
+            persistentVolumeClaim:
+              claimName: sabnzbd-incomplete
+        additionalVolumeMounts:
+          - name: downloads
+            mountPath: /downloads
+          - name: incomplete
+            mountPath: /incomplete
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["sabnzbd.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080
