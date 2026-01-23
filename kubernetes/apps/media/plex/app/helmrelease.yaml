@@ -1,0 +1,112 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plex
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: plex
+  interval: 1h
+  values:
+    controllers:
+      plex:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/plex
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: plex-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: plex-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: plex-secret
+                    key: TZ
+              VERSION: docker
+              PLEX_CLAIM:
+                valueFrom:
+                  secretKeyRef:
+                    name: plex-secret
+                    key: PLEX_CLAIM
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /identity
+                    port: 32400
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 4000m
+                memory: 8Gi
+        additionalVolumes:
+          - name: movies
+            persistentVolumeClaim:
+              claimName: plex-movies
+          - name: tv
+            persistentVolumeClaim:
+              claimName: plex-tv
+          - name: music
+            persistentVolumeClaim:
+              claimName: plex-music
+        additionalVolumeMounts:
+          - name: movies
+            mountPath: /data/movies
+          - name: tv
+            mountPath: /data/tv
+          - name: music
+            mountPath: /data/music
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 32400
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["plex.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 32400

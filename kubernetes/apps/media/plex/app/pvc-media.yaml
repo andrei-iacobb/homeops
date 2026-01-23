@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-movies
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-media
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-tv
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-media
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-music
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-media
+  resources:
+    requests:
+      storage: 500Gi
