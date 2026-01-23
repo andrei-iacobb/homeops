@@ -1,0 +1,116 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sonarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: sonarr
+  interval: 1h
+  values:
+    controllers:
+      sonarr:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/sonarr
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: sonarr-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: sonarr-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: sonarr-secret
+                    key: TZ
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v3/system/status
+                    port: 8989
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+        additionalVolumes:
+          - name: downloads
+            persistentVolumeClaim:
+              claimName: sonarr-downloads
+          - name: movies
+            persistentVolumeClaim:
+              claimName: sonarr-movies
+          - name: tv
+            persistentVolumeClaim:
+              claimName: sonarr-tv
+          - name: music
+            persistentVolumeClaim:
+              claimName: sonarr-music
+          - name: books
+            persistentVolumeClaim:
+              claimName: sonarr-books
+        additionalVolumeMounts:
+          - name: downloads
+            mountPath: /downloads
+          - name: movies
+            mountPath: /movies
+          - name: tv
+            mountPath: /tv
+          - name: music
+            mountPath: /music
+          - name: books
+            mountPath: /books
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8989
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["sonarr.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8989
