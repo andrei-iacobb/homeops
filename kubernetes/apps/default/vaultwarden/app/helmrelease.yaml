@@ -1,0 +1,86 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vaultwarden
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: vaultwarden
+  interval: 1h
+  values:
+    controllers:
+      vaultwarden:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: vaultwarden/server
+              tag: latest
+            env:
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: vaultwarden-secret
+                    key: DATABASE_URL
+              DOMAIN: https://vault.iacob.co.uk
+              SIGNUPS_ALLOWED: "false"
+              ADMIN_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: vaultwarden-secret
+                    key: ADMIN_TOKEN
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /alive
+                    port: 80
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 1000m
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 80
+    persistence:
+      data:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["vault.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
