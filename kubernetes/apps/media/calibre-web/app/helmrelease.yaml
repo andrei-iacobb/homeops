@@ -1,0 +1,96 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: calibre-web
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: calibre-web
+  interval: 1h
+  values:
+    controllers:
+      calibre-web:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/calibre-web
+              tag: latest
+            env:
+              PUID:
+                valueFrom:
+                  secretKeyRef:
+                    name: calibre-web-secret
+                    key: PUID
+              PGID:
+                valueFrom:
+                  secretKeyRef:
+                    name: calibre-web-secret
+                    key: PGID
+              TZ:
+                valueFrom:
+                  secretKeyRef:
+                    name: calibre-web-secret
+                    key: TZ
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 8083
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+        additionalVolumes:
+          - name: books
+            persistentVolumeClaim:
+              claimName: calibre-web-books
+        additionalVolumeMounts:
+          - name: books
+            mountPath: /books
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      app:
+        ports:
+          http:
+            port: 8083
+    persistence:
+      config:
+        enabled: true
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessModes:
+          - ReadWriteOnce
+    route:
+      app:
+        hostnames: ["calibre-web.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8083
