@@ -1,0 +1,12 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-media
+provisioner: cluster.local/nfs-subdir-external-provisioner
+parameters:
+  pathPattern: "${.PVC.namespace}-${.PVC.name}"
+  onDelete: retain
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
