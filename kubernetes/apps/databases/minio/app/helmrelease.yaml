@@ -58,37 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 4Gi
-        initContainers:
-          minio-init:
-            image:
-              repository: minio/mc
-              tag: latest
-            command:
-              - /bin/sh
-              - -c
-              - |
-                until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do
-                  echo "Waiting for MinIO to be ready..."
-                  sleep 5
-                done
-                mc mb -p local/${MINIO_BUCKET} || true
-                mc anonymous set download local/${MINIO_BUCKET} || true
-            env:
-              MINIO_ROOT_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: minio-secret
-                    key: MINIO_ROOT_USER
-              MINIO_ROOT_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: minio-secret
-                    key: MINIO_ROOT_PASSWORD
-              MINIO_BUCKET:
-                valueFrom:
-                  secretKeyRef:
-                    name: minio-secret
-                    key: MINIO_BUCKET
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false

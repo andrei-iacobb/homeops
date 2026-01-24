@@ -15,7 +15,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/hotio/readarr
+              repository: lscr.io/linuxserver/readarr
               tag: latest
             env:
               PUID:

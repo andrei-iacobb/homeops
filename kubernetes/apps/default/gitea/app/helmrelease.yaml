@@ -83,18 +83,6 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /data
-      timezone:
-        type: configMap
-        name: timezone
-        globalMounts:
-          - path: /etc/timezone
-            readOnly: true
-      localtime:
-        type: configMap
-        name: localtime
-        globalMounts:
-          - path: /etc/localtime
-            readOnly: true
     route:
       app:
         hostnames: ["git.iacob.co.uk"]
