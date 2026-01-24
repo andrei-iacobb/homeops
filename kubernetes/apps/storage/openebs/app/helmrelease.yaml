@@ -11,6 +11,13 @@ spec:
         kind: HelmRepository
         name: openebs
   interval: 1h
+  timeout: 15m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     engines:
       replicated:
