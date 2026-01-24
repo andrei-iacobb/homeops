@@ -60,13 +60,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 4Gi
-        additionalVolumes:
-          - name: local-files
-            persistentVolumeClaim:
-              claimName: n8n-files
-        additionalVolumeMounts:
-          - name: local-files
-            mountPath: /files
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -80,11 +73,17 @@ spec:
             port: 5678
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /home/node/.n8n
+      local-files:
+        type: persistentVolumeClaim
+        existingClaim: n8n-files
+        globalMounts:
+          - path: /files
     route:
       app:
         hostnames: ["n8n.iacob.uk"]

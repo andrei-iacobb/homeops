@@ -67,13 +67,6 @@ spec:
               limits:
                 cpu: 8000m
                 memory: 16Gi
-        additionalVolumes:
-          - name: media
-            persistentVolumeClaim:
-              claimName: tdarr-media
-        additionalVolumeMounts:
-          - name: media
-            mountPath: /media
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -89,26 +82,31 @@ spec:
             port: 8266
     persistence:
       server:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /app/server
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/server
       configs:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /app/configs
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/configs
       logs:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /app/logs
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/logs
+      media:
+        type: persistentVolumeClaim
+        existingClaim: tdarr-media
+        globalMounts:
+          - path: /media
     route:
       app:
         hostnames: ["tdarr.iacob.uk"]

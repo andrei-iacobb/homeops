@@ -58,18 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: lazylibrarian-downloads
-          - name: books
-            persistentVolumeClaim:
-              claimName: lazylibrarian-books
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -83,11 +71,22 @@ spec:
             port: 5299
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: lazylibrarian-downloads
+        globalMounts:
+          - path: /downloads
+      books:
+        type: persistentVolumeClaim
+        existingClaim: lazylibrarian-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["lazylibrarian.iacob.uk"]

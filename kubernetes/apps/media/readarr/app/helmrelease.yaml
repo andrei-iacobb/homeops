@@ -58,18 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: readarr-downloads
-          - name: books
-            persistentVolumeClaim:
-              claimName: readarr-books
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -83,11 +71,22 @@ spec:
             port: 8787
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: readarr-downloads
+        globalMounts:
+          - path: /downloads
+      books:
+        type: persistentVolumeClaim
+        existingClaim: readarr-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["readarr.iacob.uk"]

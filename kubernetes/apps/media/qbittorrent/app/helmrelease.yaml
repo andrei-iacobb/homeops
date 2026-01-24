@@ -59,13 +59,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 4Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: qbittorrent-downloads
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -85,11 +78,17 @@ spec:
             protocol: UDP
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: qbittorrent-downloads
+        globalMounts:
+          - path: /downloads
     route:
       app:
         hostnames: ["qbittorrent.iacob.uk"]

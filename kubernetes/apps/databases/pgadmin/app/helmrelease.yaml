@@ -67,11 +67,12 @@ spec:
             port: 80
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /var/lib/pgadmin
     route:
       app:
         hostnames: ["pgadmin.iacob.uk"]

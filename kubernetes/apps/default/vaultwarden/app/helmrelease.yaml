@@ -68,11 +68,12 @@ spec:
             port: 80
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
     route:
       app:
         hostnames: ["vault.iacob.co.uk"]

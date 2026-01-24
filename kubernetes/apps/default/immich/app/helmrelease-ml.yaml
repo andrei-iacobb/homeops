@@ -55,9 +55,9 @@ spec:
             port: 3003
     persistence:
       cache:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: nfs-immich
         size: 50Gi
-        accessModes:
-          - ReadWriteMany
-        mountPath: /cache
+        accessMode: ReadWriteMany
+        globalMounts:
+          - path: /cache

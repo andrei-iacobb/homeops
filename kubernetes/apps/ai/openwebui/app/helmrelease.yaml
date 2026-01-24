@@ -57,12 +57,12 @@ spec:
             port: 8080
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /app/backend/data
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/backend/data
     route:
       app:
         hostnames: ["openwebui.iacob.co.uk"]

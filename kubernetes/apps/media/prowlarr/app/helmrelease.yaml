@@ -71,11 +71,12 @@ spec:
             port: 9696
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
     route:
       app:
         hostnames: ["prowlarr.iacob.uk"]

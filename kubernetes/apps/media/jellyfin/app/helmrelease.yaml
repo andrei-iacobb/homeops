@@ -58,28 +58,6 @@ spec:
               limits:
                 cpu: 4000m
                 memory: 8Gi
-        additionalVolumes:
-          - name: movies
-            persistentVolumeClaim:
-              claimName: jellyfin-movies
-          - name: tv
-            persistentVolumeClaim:
-              claimName: jellyfin-tv
-          - name: music
-            persistentVolumeClaim:
-              claimName: jellyfin-music
-          - name: books
-            persistentVolumeClaim:
-              claimName: jellyfin-books
-        additionalVolumeMounts:
-          - name: movies
-            mountPath: /data/movies
-          - name: tv
-            mountPath: /data/tv
-          - name: music
-            mountPath: /data/music
-          - name: books
-            mountPath: /data/books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -93,18 +71,39 @@ spec:
             port: 8096
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
       cache:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 20Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /cache
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /cache
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: jellyfin-movies
+        globalMounts:
+          - path: /data/movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: jellyfin-tv
+        globalMounts:
+          - path: /data/tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: jellyfin-music
+        globalMounts:
+          - path: /data/music
+      books:
+        type: persistentVolumeClaim
+        existingClaim: jellyfin-books
+        globalMounts:
+          - path: /data/books
     route:
       app:
         hostnames: ["jellyfin.iacob.uk"]

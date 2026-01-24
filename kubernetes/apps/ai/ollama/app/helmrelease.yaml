@@ -55,9 +55,9 @@ spec:
             port: 11434
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 100Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /root/.ollama
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /root/.ollama

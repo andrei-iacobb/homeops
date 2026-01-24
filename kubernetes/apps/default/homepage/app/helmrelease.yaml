@@ -54,15 +54,6 @@ spec:
               limits:
                 cpu: 500m
                 memory: 512Mi
-        additionalVolumes:
-          - name: docker-socket
-            hostPath:
-              path: /var/run/docker.sock
-              type: Socket
-        additionalVolumeMounts:
-          - name: docker-socket
-            mountPath: /var/run/docker.sock
-            readOnly: true
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -76,12 +67,19 @@ spec:
             port: 3000
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 1Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /app/config
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/config
+      docker-socket:
+        type: hostPath
+        hostPath: /var/run/docker.sock
+        hostPathType: Socket
+        globalMounts:
+          - path: /var/run/docker.sock
+            readOnly: true
     route:
       app:
         hostnames: ["home.iacob.uk"]

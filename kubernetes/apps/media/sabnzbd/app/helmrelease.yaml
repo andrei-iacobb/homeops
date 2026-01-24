@@ -59,18 +59,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 4Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: sabnzbd-downloads
-          - name: incomplete
-            persistentVolumeClaim:
-              claimName: sabnzbd-incomplete
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: incomplete
-            mountPath: /incomplete
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -84,11 +72,22 @@ spec:
             port: 8080
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: sabnzbd-downloads
+        globalMounts:
+          - path: /downloads
+      incomplete:
+        type: persistentVolumeClaim
+        existingClaim: sabnzbd-incomplete
+        globalMounts:
+          - path: /incomplete
     route:
       app:
         hostnames: ["sabnzbd.iacob.uk"]

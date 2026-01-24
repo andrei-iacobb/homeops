@@ -62,20 +62,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: timezone
-            configMap:
-              name: timezone
-          - name: localtime
-            configMap:
-              name: localtime
-        additionalVolumeMounts:
-          - name: timezone
-            mountPath: /etc/timezone
-            readOnly: true
-          - name: localtime
-            mountPath: /etc/localtime
-            readOnly: true
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -91,11 +77,24 @@ spec:
             port: 22
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 20Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
+      timezone:
+        type: configMap
+        name: timezone
+        globalMounts:
+          - path: /etc/timezone
+            readOnly: true
+      localtime:
+        type: configMap
+        name: localtime
+        globalMounts:
+          - path: /etc/localtime
+            readOnly: true
     route:
       app:
         hostnames: ["git.iacob.co.uk"]

@@ -64,23 +64,6 @@ spec:
               limits:
                 cpu: 4000m
                 memory: 8Gi
-        additionalVolumes:
-          - name: movies
-            persistentVolumeClaim:
-              claimName: plex-movies
-          - name: tv
-            persistentVolumeClaim:
-              claimName: plex-tv
-          - name: music
-            persistentVolumeClaim:
-              claimName: plex-music
-        additionalVolumeMounts:
-          - name: movies
-            mountPath: /data/movies
-          - name: tv
-            mountPath: /data/tv
-          - name: music
-            mountPath: /data/music
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -94,11 +77,27 @@ spec:
             port: 32400
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 10Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: plex-movies
+        globalMounts:
+          - path: /data/movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: plex-tv
+        globalMounts:
+          - path: /data/tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: plex-music
+        globalMounts:
+          - path: /data/music
     route:
       app:
         hostnames: ["plex.iacob.uk"]

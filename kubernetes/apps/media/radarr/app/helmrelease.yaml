@@ -58,33 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: radarr-downloads
-          - name: movies
-            persistentVolumeClaim:
-              claimName: radarr-movies
-          - name: tv
-            persistentVolumeClaim:
-              claimName: radarr-tv
-          - name: music
-            persistentVolumeClaim:
-              claimName: radarr-music
-          - name: books
-            persistentVolumeClaim:
-              claimName: radarr-books
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: movies
-            mountPath: /movies
-          - name: tv
-            mountPath: /tv
-          - name: music
-            mountPath: /music
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -98,11 +71,37 @@ spec:
             port: 7878
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: radarr-downloads
+        globalMounts:
+          - path: /downloads
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: radarr-movies
+        globalMounts:
+          - path: /movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: radarr-tv
+        globalMounts:
+          - path: /tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: radarr-music
+        globalMounts:
+          - path: /music
+      books:
+        type: persistentVolumeClaim
+        existingClaim: radarr-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["radarr.iacob.uk"]

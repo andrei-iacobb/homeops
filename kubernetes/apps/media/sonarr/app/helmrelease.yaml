@@ -58,33 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: sonarr-downloads
-          - name: movies
-            persistentVolumeClaim:
-              claimName: sonarr-movies
-          - name: tv
-            persistentVolumeClaim:
-              claimName: sonarr-tv
-          - name: music
-            persistentVolumeClaim:
-              claimName: sonarr-music
-          - name: books
-            persistentVolumeClaim:
-              claimName: sonarr-books
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: movies
-            mountPath: /movies
-          - name: tv
-            mountPath: /tv
-          - name: music
-            mountPath: /music
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -98,11 +71,37 @@ spec:
             port: 8989
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-downloads
+        globalMounts:
+          - path: /downloads
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-movies
+        globalMounts:
+          - path: /movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-tv
+        globalMounts:
+          - path: /tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-music
+        globalMounts:
+          - path: /music
+      books:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["sonarr.iacob.uk"]

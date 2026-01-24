@@ -58,18 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: downloads
-            persistentVolumeClaim:
-              claimName: lidarr-downloads
-          - name: music
-            persistentVolumeClaim:
-              claimName: lidarr-music
-        additionalVolumeMounts:
-          - name: downloads
-            mountPath: /downloads
-          - name: music
-            mountPath: /music
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -83,11 +71,22 @@ spec:
             port: 8686
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      downloads:
+        type: persistentVolumeClaim
+        existingClaim: lidarr-downloads
+        globalMounts:
+          - path: /downloads
+      music:
+        type: persistentVolumeClaim
+        existingClaim: lidarr-music
+        globalMounts:
+          - path: /music
     route:
       app:
         hostnames: ["lidarr.iacob.uk"]

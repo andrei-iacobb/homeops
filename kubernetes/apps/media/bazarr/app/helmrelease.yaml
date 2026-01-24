@@ -58,28 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: movies
-            persistentVolumeClaim:
-              claimName: bazarr-movies
-          - name: tv
-            persistentVolumeClaim:
-              claimName: bazarr-tv
-          - name: music
-            persistentVolumeClaim:
-              claimName: bazarr-music
-          - name: books
-            persistentVolumeClaim:
-              claimName: bazarr-books
-        additionalVolumeMounts:
-          - name: movies
-            mountPath: /movies
-          - name: tv
-            mountPath: /tv
-          - name: music
-            mountPath: /music
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -93,11 +71,32 @@ spec:
             port: 6767
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: bazarr-movies
+        globalMounts:
+          - path: /movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: bazarr-tv
+        globalMounts:
+          - path: /tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: bazarr-music
+        globalMounts:
+          - path: /music
+      books:
+        type: persistentVolumeClaim
+        existingClaim: bazarr-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["bazarr.iacob.uk"]

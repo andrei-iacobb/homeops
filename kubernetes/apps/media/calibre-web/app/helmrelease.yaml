@@ -58,13 +58,6 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
-        additionalVolumes:
-          - name: books
-            persistentVolumeClaim:
-              claimName: calibre-web-books
-        additionalVolumeMounts:
-          - name: books
-            mountPath: /books
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -78,11 +71,17 @@ spec:
             port: 8083
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 5Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      books:
+        type: persistentVolumeClaim
+        existingClaim: calibre-web-books
+        globalMounts:
+          - path: /books
     route:
       app:
         hostnames: ["calibre-web.iacob.uk"]

@@ -71,11 +71,12 @@ spec:
             port: 3033
     persistence:
       config:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 1Gi
-        accessModes:
-          - ReadWriteOnce
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
     route:
       app:
         hostnames: ["recyclarr.iacob.uk"]

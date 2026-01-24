@@ -86,12 +86,12 @@ spec:
             port: 3000
     persistence:
       data:
-        enabled: true
+        type: persistentVolumeClaim
         storageClass: openebs-hostpath
         size: 20Gi
-        accessModes:
-          - ReadWriteOnce
-        mountPath: /var/lib/outline/data
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /var/lib/outline/data
     route:
       app:
         hostnames: ["outline.iacob.uk"]
