@@ -44,14 +44,23 @@ data:
         END
         \$\$;
         
-        -- Grant privileges
+        -- Grant privileges and set owners
         GRANT ALL PRIVILEGES ON DATABASE immich TO immich;
         GRANT ALL PRIVILEGES ON DATABASE vaultwarden TO vaultwarden;
         GRANT ALL PRIVILEGES ON DATABASE outline TO outline;
         GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea;
         
-        -- Connect to each database and grant schema privileges
+        ALTER DATABASE immich OWNER TO immich;
+        ALTER DATABASE vaultwarden OWNER TO vaultwarden;
+        ALTER DATABASE outline OWNER TO outline;
+        ALTER DATABASE gitea OWNER TO gitea;
+        
+        -- Connect to immich database and create required extensions
         \c immich
+        CREATE EXTENSION IF NOT EXISTS vector;
+        CREATE EXTENSION IF NOT EXISTS cube;
+        CREATE EXTENSION IF NOT EXISTS earthdistance;
+        CREATE EXTENSION IF NOT EXISTS unaccent;
         GRANT ALL ON SCHEMA public TO immich;
         
         \c vaultwarden
