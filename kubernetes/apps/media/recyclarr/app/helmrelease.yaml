@@ -34,17 +34,10 @@ spec:
                     name: recyclarr-secret
                     key: TZ
             probes:
-              liveness: &probes
-                enabled: true
-                custom: true
-                spec:
-                  tcpSocket:
-                    port: 3033
-                  initialDelaySeconds: 60
-                  periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 6
-              readiness: *probes
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
             securityContext:
               allowPrivilegeEscalation: true
               readOnlyRootFilesystem: false
