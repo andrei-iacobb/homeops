@@ -18,31 +18,11 @@ spec:
               repository: outlinewiki/outline
               tag: latest
             env:
-              DATABASE_HOST:
+              DATABASE_URL:
                 valueFrom:
                   secretKeyRef:
                     name: outline-secret
-                    key: DATABASE_HOST
-              DATABASE_PORT:
-                valueFrom:
-                  secretKeyRef:
-                    name: outline-secret
-                    key: DATABASE_PORT
-              DATABASE_NAME:
-                valueFrom:
-                  secretKeyRef:
-                    name: outline-secret
-                    key: DATABASE_NAME
-              DATABASE_USER:
-                valueFrom:
-                  secretKeyRef:
-                    name: outline-secret
-                    key: DATABASE_USER
-              DATABASE_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: outline-secret
-                    key: DATABASE_PASSWORD
+                    key: DATABASE_URL
               REDIS_URL:
                 valueFrom:
                   secretKeyRef:
@@ -64,6 +44,10 @@ spec:
                     name: outline-secret
                     key: URL
               PGSSLMODE: disable
+              NODE_ENV: production
+              FORCE_HTTPS: "false"
+              FILE_STORAGE: local
+              FILE_STORAGE_LOCAL_ROOT_DIR: /var/lib/outline/data
             probes:
               liveness: &probes
                 enabled: true
