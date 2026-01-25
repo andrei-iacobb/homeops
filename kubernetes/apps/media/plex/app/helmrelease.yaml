@@ -57,7 +57,7 @@ spec:
               readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER", "KILL"]
             resources:
               requests:
                 cpu: 200m
