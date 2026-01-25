@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/readarr
-              tag: latest
+              tag: develop
             env:
               PUID:
                 valueFrom:
