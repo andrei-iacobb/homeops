@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: postgres
-              tag: "16-alpine"
+              repository: pgvector/pgvector
+              tag: "pg16"
             env:
               POSTGRES_PASSWORD:
                 valueFrom:
