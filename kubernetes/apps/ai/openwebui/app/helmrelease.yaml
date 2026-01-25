@@ -19,6 +19,11 @@ spec:
               tag: main
             env:
               OLLAMA_BASE_URL: http://ollama:11434
+              WEBUI_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: openwebui-secret
+                    key: WEBUI_SECRET_KEY
             probes:
               liveness: &probes
                 enabled: true
