@@ -63,6 +63,7 @@ spec:
                   secretKeyRef:
                     name: outline-secret
                     key: URL
+              PGSSLMODE: disable
             probes:
               liveness: &probes
                 enabled: true
