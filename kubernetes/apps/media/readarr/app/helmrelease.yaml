@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/readarr
-              tag: develop
+              repository: ghcr.io/linuxserver/readarr
+              tag: nightly
             env:
               PUID:
                 valueFrom:
