@@ -39,13 +39,12 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /sabnzbd/api
+                  tcpSocket:
                     port: 8080
                   initialDelaySeconds: 60
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 3
+                  failureThreshold: 6
               readiness: *probes
             securityContext:
               allowPrivilegeEscalation: true

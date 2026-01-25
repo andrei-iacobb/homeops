@@ -38,13 +38,12 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/v3/system/status
+                  tcpSocket:
                     port: 8989
                   initialDelaySeconds: 60
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 3
+                  failureThreshold: 6
               readiness: *probes
             securityContext:
               allowPrivilegeEscalation: true
