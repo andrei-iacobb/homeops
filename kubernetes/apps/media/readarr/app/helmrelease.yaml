@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: linuxserver/readarr
-              tag: develop
+              tag: develop-0.4.18.2805-ls157
             env:
               PUID:
                 valueFrom:
