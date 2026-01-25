@@ -72,10 +72,11 @@ spec:
                   httpGet:
                     path: /api/health
                     port: 3000
+                    scheme: HTTP
                   initialDelaySeconds: 60
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 3
+                  failureThreshold: 6
               readiness: *probes
             securityContext:
               allowPrivilegeEscalation: false
