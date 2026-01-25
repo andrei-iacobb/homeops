@@ -79,9 +79,9 @@ spec:
           - path: /usr/src/app/upload
     route:
       app:
-        hostnames: ["photos.iacob.co.uk"]
+        hostnames: ["photos.iacob.uk"]
         parentRefs:
-          - name: envoy-external
+          - name: envoy-internal
             namespace: network
             sectionName: https
         rules:

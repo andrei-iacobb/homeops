@@ -24,7 +24,7 @@ spec:
                     name: vaultwarden-secret
                     key: DATABASE_URL
               DOMAIN: https://vault.iacob.co.uk
-              SIGNUPS_ALLOWED: "false"
+              SIGNUPS_ALLOWED: "true"  # TEMPORARY - disable after account creation
               ADMIN_TOKEN:
                 valueFrom:
                   secretKeyRef:

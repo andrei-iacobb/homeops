@@ -5,11 +5,11 @@ metadata:
   name: immich
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: envoy-internal
       namespace: network
       sectionName: https
   hostnames:
-    - photos.iacob.co.uk
+    - photos.iacob.uk
   rules:
     - backendRefs:
         - name: immich-server
