@@ -1,0 +1,65 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+data:
+  init.sql: |
+    -- Create databases
+    CREATE DATABASE IF NOT EXISTS immich;
+    CREATE DATABASE IF NOT EXISTS vaultwarden;
+    CREATE DATABASE IF NOT EXISTS outline;
+    CREATE DATABASE IF NOT EXISTS gitea;
+    
+    -- Create users with passwords from secrets (these will be created via env vars)
+    -- The passwords are set via environment variables in the init script below
+  
+  init.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Create users and databases
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        -- Create databases
+        SELECT 'CREATE DATABASE immich' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'immich')\gexec
+        SELECT 'CREATE DATABASE vaultwarden' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vaultwarden')\gexec
+        SELECT 'CREATE DATABASE outline' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'outline')\gexec
+        SELECT 'CREATE DATABASE gitea' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gitea')\gexec
+        
+        -- Create users if they don't exist
+        DO \$\$
+        BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'immich') THEN
+                CREATE USER immich WITH PASSWORD '${IMMICH_DB_PASSWORD}';
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'vaultwarden') THEN
+                CREATE USER vaultwarden WITH PASSWORD '${VAULTWARDEN_DB_PASSWORD}';
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'outline') THEN
+                CREATE USER outline WITH PASSWORD '${OUTLINE_DB_PASSWORD}';
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'gitea') THEN
+                CREATE USER gitea WITH PASSWORD '${GITEA_DB_PASSWORD}';
+            END IF;
+        END
+        \$\$;
+        
+        -- Grant privileges
+        GRANT ALL PRIVILEGES ON DATABASE immich TO immich;
+        GRANT ALL PRIVILEGES ON DATABASE vaultwarden TO vaultwarden;
+        GRANT ALL PRIVILEGES ON DATABASE outline TO outline;
+        GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea;
+        
+        -- Connect to each database and grant schema privileges
+        \c immich
+        GRANT ALL ON SCHEMA public TO immich;
+        
+        \c vaultwarden
+        GRANT ALL ON SCHEMA public TO vaultwarden;
+        
+        \c outline
+        GRANT ALL ON SCHEMA public TO outline;
+        
+        \c gitea
+        GRANT ALL ON SCHEMA public TO gitea;
+    EOSQL

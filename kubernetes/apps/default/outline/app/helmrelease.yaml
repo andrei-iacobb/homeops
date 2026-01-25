@@ -48,6 +48,21 @@ spec:
                   secretKeyRef:
                     name: outline-secret
                     key: REDIS_URL
+              SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: SECRET_KEY
+              UTILS_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: UTILS_SECRET
+              URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: URL
             probes:
               liveness: &probes
                 enabled: true

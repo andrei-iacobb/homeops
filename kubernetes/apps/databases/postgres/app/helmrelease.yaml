@@ -24,7 +24,28 @@ spec:
                     name: postgres-secret
                     key: POSTGRES_PASSWORD
               POSTGRES_USER: postgres
+              POSTGRES_DB: postgres
               PGDATA: /var/lib/postgresql/data/pgdata
+              IMMICH_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: IMMICH_DB_PASSWORD
+              VAULTWARDEN_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: VAULTWARDEN_DB_PASSWORD
+              OUTLINE_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: OUTLINE_DB_PASSWORD
+              GITEA_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: GITEA_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true
@@ -71,3 +92,8 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /var/lib/postgresql/data
+      init:
+        type: configMap
+        name: postgres-init
+        globalMounts:
+          - path: /docker-entrypoint-initdb.d

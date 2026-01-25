@@ -73,13 +73,6 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /app/config
-      docker-socket:
-        type: hostPath
-        hostPath: /var/run/docker.sock
-        hostPathType: Socket
-        globalMounts:
-          - path: /var/run/docker.sock
-            readOnly: true
     route:
       app:
         hostnames: ["home.iacob.uk"]
