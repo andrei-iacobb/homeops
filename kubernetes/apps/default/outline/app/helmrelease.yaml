@@ -48,6 +48,28 @@ spec:
               FORCE_HTTPS: "false"
               FILE_STORAGE: local
               FILE_STORAGE_LOCAL_ROOT_DIR: /var/lib/outline/data
+              # Google OAuth
+              GOOGLE_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: GOOGLE_CLIENT_ID
+              GOOGLE_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: GOOGLE_CLIENT_SECRET
+              # Microsoft OAuth
+              AZURE_CLIENT_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: AZURE_CLIENT_ID
+              AZURE_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: outline-secret
+                    key: AZURE_CLIENT_SECRET
             probes:
               liveness: &probes
                 enabled: true
