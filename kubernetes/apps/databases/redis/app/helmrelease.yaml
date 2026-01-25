@@ -38,7 +38,7 @@ spec:
                     command:
                       - /bin/sh
                       - -c
-                      - redis-cli -a $(REDIS_PASSWORD) ping | grep PONG
+                      - redis-cli -a "$REDIS_PASSWORD" ping | grep PONG
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 5

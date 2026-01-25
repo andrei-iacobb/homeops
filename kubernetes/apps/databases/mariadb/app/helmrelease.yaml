@@ -39,7 +39,7 @@ spec:
                     command:
                       - /bin/sh
                       - -c
-                      - healthcheck.sh --connect --innodb_initialized
+                      - mysqladmin ping -h localhost -u root -p"$MYSQL_ROOT_PASSWORD"
                   initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 5

@@ -17,7 +17,7 @@ spec:
             image:
               repository: minio/minio
               tag: latest
-            command:
+            args:
               - server
               - /data
               - --console-address
