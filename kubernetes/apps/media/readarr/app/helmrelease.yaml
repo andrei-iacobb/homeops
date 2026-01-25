@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/linuxserver/readarr
-              tag: nightly
+              repository: linuxserver/readarr
+              tag: develop
             env:
               PUID:
                 valueFrom:
