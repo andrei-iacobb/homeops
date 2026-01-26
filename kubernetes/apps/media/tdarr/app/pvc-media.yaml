@@ -1,12 +1,28 @@
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tdarr-media-pv
+spec:
+  capacity:
+    storage: 5Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.1
+    path: /mnt/plex/media
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: tdarr-media
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: nfs-media
+  storageClassName: ""
+  volumeName: tdarr-media-pv
   resources:
     requests:
       storage: 5Ti
