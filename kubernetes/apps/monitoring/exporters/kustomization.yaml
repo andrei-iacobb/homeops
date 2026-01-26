@@ -8,5 +8,5 @@ resources:
   - proxmox/app
   - truenas/app
   - wireguard/app
-  - ilo/ilo-dl360/app
-  - ilo/ilo-dl380/app
+  # - ilo/ilo-dl360/app  # Disabled - no working Docker image found
+  # - ilo/ilo-dl380/app  # Disabled - no working Docker image found
