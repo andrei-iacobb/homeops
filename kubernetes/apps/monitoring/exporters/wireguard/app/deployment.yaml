@@ -20,9 +20,9 @@ spec:
       - name: exporter
         image: mindflavor/prometheus-wireguard-exporter:latest
         args:
-          - -i
+          - --interfaces
           - wg0
-          - -l
+          - --listen-address
           - ":9586"
         ports:
         - name: metrics

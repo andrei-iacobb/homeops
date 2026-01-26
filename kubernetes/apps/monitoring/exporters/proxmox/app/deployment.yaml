@@ -47,6 +47,7 @@ spec:
               password: ${PROXMOX_PASSWORD}
               verify_ssl: false
             EOF
+            # Note: pve_exporter reads config from file, but we need to ensure it can reach ${PROXMOX_HOST}:8006
             exec pve_exporter --config.file=/etc/pve/config.yml --web.listen-address=:9221
         ports:
         - name: metrics
