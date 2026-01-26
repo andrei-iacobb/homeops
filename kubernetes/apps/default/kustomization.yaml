@@ -12,7 +12,6 @@ resources:
   - ./gitea/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./homepage/ks.yaml
-  - ./homepage-stats/ks.yaml
   - ./n8n/ks.yaml
   - ./immich/ks.yaml
   - ./outline/ks.yaml
