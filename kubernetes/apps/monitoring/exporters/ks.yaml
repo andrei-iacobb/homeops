@@ -8,6 +8,7 @@ spec:
   interval: 10m
   path: ./kubernetes/apps/monitoring/exporters
   prune: true
+  targetNamespace: monitoring
   sourceRef:
     kind: GitRepository
     name: flux-system
