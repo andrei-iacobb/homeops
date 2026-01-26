@@ -96,7 +96,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(adguard_dns_queries_total[5m])",
+              "expr": "rate(adguard_num_dns_queries[5m])",
               "refId": "A"
             }
           ],
@@ -180,7 +180,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(adguard_blocked_filtering_total[5m])",
+              "expr": "rate(adguard_num_blocked_filtering[5m])",
               "refId": "A"
             }
           ],
@@ -235,7 +235,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "adguard_dns_queries_total",
+              "expr": "adguard_num_dns_queries",
               "refId": "A"
             }
           ],
@@ -290,7 +290,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "adguard_blocked_filtering_total",
+              "expr": "adguard_num_blocked_filtering",
               "refId": "A"
             }
           ],
@@ -345,7 +345,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "(adguard_blocked_filtering_total / adguard_dns_queries_total) * 100",
+              "expr": "(adguard_num_blocked_filtering / adguard_num_dns_queries) * 100",
               "refId": "A"
             }
           ],
@@ -429,7 +429,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(adguard_upstream_responses_total[5m])",
+              "expr": "rate(adguard_num_dns_queries[5m])",
               "refId": "A"
             }
           ],
@@ -453,7 +453,7 @@ data:
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "definition": "label_values(adguard_dns_queries_total, instance)",
+            "definition": "label_values(adguard_num_dns_queries, instance)",
             "hide": 0,
             "includeAll": true,
             "label": "Instance",
@@ -461,7 +461,7 @@ data:
             "name": "instance",
             "options": [],
             "query": {
-              "query": "label_values(adguard_dns_queries_total, instance)",
+              "query": "label_values(adguard_num_dns_queries, instance)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,

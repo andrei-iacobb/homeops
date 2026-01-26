@@ -19,6 +19,7 @@ spec:
       - name: exporter
         image: prom/graphite-exporter:latest
         args:
+          - --graphite.mapping-config=/etc/graphite_mapping.conf
           - --web.listen-address=:9108
         ports:
         - name: metrics
@@ -26,6 +27,11 @@ spec:
         - name: graphite
           containerPort: 9109
           protocol: UDP
+        volumeMounts:
+        - name: graphite-mapping
+          mountPath: /etc/graphite_mapping.conf
+          subPath: graphite-mapping.yaml
+          readOnly: true
         resources:
           requests:
             cpu: 100m
@@ -33,3 +39,7 @@ spec:
           limits:
             cpu: 500m
             memory: 256Mi
+      volumes:
+      - name: graphite-mapping
+        configMap:
+          name: truenas-graphite-mapping
