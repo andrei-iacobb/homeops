@@ -19,22 +19,6 @@ spec:
       - name: exporter
         image: ebrianne/adguard-exporter:latest
         env:
-        - name: ADGUARD_IP
-          valueFrom:
-            secretKeyRef:
-              name: adguard-2-secret
-              key: ADGUARD_IP
-        - name: ADGUARD_USER
-          valueFrom:
-            secretKeyRef:
-              name: adguard-2-secret
-              key: ADGUARD_USER
-        - name: ADGUARD_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: adguard-2-secret
-              key: ADGUARD_PASSWORD
-        env:
         - name: ADGUARD_PROTOCOL
           value: "http"
         - name: ADGUARD_HOSTNAME
