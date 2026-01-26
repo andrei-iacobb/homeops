@@ -176,4 +176,4 @@ spec:
               emptyDir: {}
             - name: config
               persistentVolumeClaim:
-                claimName: homepage-config
+                claimName: homepage
