@@ -5,10 +5,13 @@ metadata:
   name: prometheus
 spec:
   chartRef:
-    kind: OCIRepository
-    name: kube-prometheus-stack
+    kind: HelmRepository
+    name: prometheus-community
+    namespace: monitoring
+  chart: kube-prometheus-stack
   releaseName: prometheus
   interval: 1h
+  version: "58.0.0"
   values:
     prometheus:
       enabled: true
