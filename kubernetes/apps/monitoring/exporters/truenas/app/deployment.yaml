@@ -32,10 +32,6 @@ spec:
           mountPath: /etc/graphite_mapping.conf
           subPath: graphite-mapping.yaml
           readOnly: true
-      volumes:
-      - name: graphite-mapping
-        configMap:
-          name: truenas-graphite-mapping
         resources:
           requests:
             cpu: 100m
@@ -43,3 +39,7 @@ spec:
           limits:
             cpu: 500m
             memory: 256Mi
+      volumes:
+      - name: graphite-mapping
+        configMap:
+          name: truenas-graphite-mapping
