@@ -38,14 +38,13 @@ spec:
           - /bin/sh
           - -c
           - |
-            mkdir -p /etc/prometheus
-            cat > /etc/prometheus/pve.yml <<EOF
+            cat > /tmp/pve.yml <<EOF
             default:
               user: ${PROXMOX_USER}
               password: ${PROXMOX_PASSWORD}
               verify_ssl: false
             EOF
-            exec pve_exporter --config.file=/etc/prometheus/pve.yml --web.listen-address=:9221
+            exec pve_exporter --config.file=/tmp/pve.yml --web.listen-address=:9221
         ports:
         - name: metrics
           containerPort: 9221
