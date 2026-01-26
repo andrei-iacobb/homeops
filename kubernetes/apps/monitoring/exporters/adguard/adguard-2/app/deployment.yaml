@@ -34,10 +34,12 @@ spec:
             secretKeyRef:
               name: adguard-2-secret
               key: ADGUARD_PASSWORD
-        args:
-          - --adguard.url=http://$(ADGUARD_IP):80
-          - --adguard.username=$(ADGUARD_USER)
-          - --adguard.password=$(ADGUARD_PASSWORD)
+        command:
+          - /bin/sh
+          - -c
+          - |
+            TOKEN=$(echo -n "${ADGUARD_USER}:${ADGUARD_PASSWORD}" | base64)
+            exec /adguardhome_exporter --host=${ADGUARD_IP} --port=80 --token=${TOKEN} --listen-address=0.0.0.0:9617
         ports:
         - name: metrics
           containerPort: 9617

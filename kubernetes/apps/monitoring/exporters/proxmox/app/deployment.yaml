@@ -17,12 +17,12 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: prometheuscommunity/pve-exporter:latest
+        image: prompve/prometheus-pve-exporter:latest
         args:
           - --pve.url=https://$(PROXMOX_HOST):8006
           - --pve.user=$(PROXMOX_USER)
           - --pve.password=$(PROXMOX_PASSWORD)
-          - --pve.insecure=true
+          - --pve.insecure
         env:
         - name: PROXMOX_HOST
           valueFrom:

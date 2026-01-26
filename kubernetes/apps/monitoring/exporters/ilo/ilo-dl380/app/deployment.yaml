@@ -17,11 +17,12 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: mdvorak/ilo4-metrics-exporter:latest
+        image: ghcr.io/mauvesoftware/ilo_exporter:latest
         args:
-          - --ilo.host=$(ILO_HOST)
-          - --ilo.user=$(ILO_USER)
+          - --ilo.address=$(ILO_HOST)
+          - --ilo.username=$(ILO_USER)
           - --ilo.password=$(ILO_PASSWORD)
+          - --web.listen-address=:8080
         env:
         - name: ILO_HOST
           valueFrom:

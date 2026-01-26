@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: norby/truecharts-truenas-exporter:latest
+        image: ghcr.io/supporterino/truenas-graphite-to-prometheus:latest
         env:
         - name: TRUENAS_HOST
           valueFrom:
@@ -30,9 +30,8 @@ spec:
               name: truenas-secret
               key: TRUENAS_API_KEY
         args:
-          - --truenas.url=https://$(TRUENAS_HOST)
-          - --truenas.api-key=$(TRUENAS_API_KEY)
-          - --truenas.insecure=true
+          - --graphite.address=http://$(TRUENAS_HOST):9109
+          - --web.listen-address=:9300
         ports:
         - name: metrics
           containerPort: 9300
