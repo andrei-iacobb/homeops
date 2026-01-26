@@ -59,6 +59,18 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 4Gi
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      sleep 5
+                      if [ -f /config/sabnzbd.ini ]; then
+                        sed -i 's/^host_whitelist_enabled = 1/host_whitelist_enabled = 0/' /config/sabnzbd.ini || echo "host_whitelist_enabled = 0" >> /config/sabnzbd.ini
+                        sed -i 's/^host_whitelist = .*/host_whitelist = */' /config/sabnzbd.ini || sed -i '/^\[misc\]/a host_whitelist = *' /config/sabnzbd.ini
+                      fi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
