@@ -17,14 +17,18 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: sfragata/adguardhome_exporter:latest
+        image: ebrianne/adguard-exporter:latest
         env:
-        - name: ADGUARD_IP
+        - name: ADGUARD_PROTOCOL
+          value: "http"
+        - name: ADGUARD_HOSTNAME
           valueFrom:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_IP
-        - name: ADGUARD_USER
+        - name: ADGUARD_PORT
+          value: "80"
+        - name: ADGUARD_USERNAME
           valueFrom:
             secretKeyRef:
               name: adguard-1-secret
@@ -34,16 +38,9 @@ spec:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_PASSWORD
-        command:
-          - /bin/sh
-          - -c
-          - |
-            TOKEN=$(echo -n "${ADGUARD_USER}:${ADGUARD_PASSWORD}" | base64)
-            exec /app/adguardhome_exporter --host=${ADGUARD_IP} --port=80 --token=${TOKEN} --listen-address=0.0.0.0:9617
         ports:
         - name: metrics
           containerPort: 9617
-          protocol: TCP
         resources:
           requests:
             cpu: 50m

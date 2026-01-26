@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: quay.io/prometheuscommunity/ilo-exporter:latest
+        image: infinityworks/hpilo-exporter:latest
         env:
         - name: ILO_HOST
           valueFrom:
@@ -39,22 +39,6 @@ spec:
           - --ilo.user=$(ILO_USER)
           - --ilo.password=$(ILO_PASSWORD)
           - --web.listen-address=:8080
-        env:
-        - name: ILO_HOST
-          valueFrom:
-            secretKeyRef:
-              name: ilo-dl360-secret
-              key: ILO_HOST
-        - name: ILO_USER
-          valueFrom:
-            secretKeyRef:
-              name: ilo-dl360-secret
-              key: ILO_USER
-        - name: ILO_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: ilo-dl360-secret
-              key: ILO_PASSWORD
         ports:
         - name: metrics
           containerPort: 8080
