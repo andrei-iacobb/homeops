@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truenas-exporter
+  labels:
+    app: truenas-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truenas-exporter
+  template:
+    metadata:
+      labels:
+        app: truenas-exporter
+    spec:
+      containers:
+      - name: exporter
+        image: norby/truecharts-truenas-exporter:latest
+        env:
+        - name: TRUENAS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: truenas-secret
+              key: TRUENAS_HOST
+        - name: TRUENAS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: truenas-secret
+              key: TRUENAS_API_KEY
+        args:
+          - --truenas.url=https://$(TRUENAS_HOST)
+          - --truenas.api-key=$(TRUENAS_API_KEY)
+          - --truenas.insecure=true
+        ports:
+        - name: metrics
+          containerPort: 9300
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi

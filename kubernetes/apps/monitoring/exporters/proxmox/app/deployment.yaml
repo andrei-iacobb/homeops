@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxmox-exporter
+  labels:
+    app: proxmox-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxmox-exporter
+  template:
+    metadata:
+      labels:
+        app: proxmox-exporter
+    spec:
+      containers:
+      - name: exporter
+        image: prometheuscommunity/pve-exporter:latest
+        args:
+          - --pve.url=https://$(PROXMOX_HOST):8006
+          - --pve.user=$(PROXMOX_USER)
+          - --pve.password=$(PROXMOX_PASSWORD)
+          - --pve.insecure=true
+        env:
+        - name: PROXMOX_HOST
+          valueFrom:
+            secretKeyRef:
+              name: proxmox-secret
+              key: PROXMOX_HOST
+        - name: PROXMOX_USER
+          valueFrom:
+            secretKeyRef:
+              name: proxmox-secret
+              key: PROXMOX_USER
+        - name: PROXMOX_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: proxmox-secret
+              key: PROXMOX_PASSWORD
+        ports:
+        - name: metrics
+          containerPort: 9221
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi

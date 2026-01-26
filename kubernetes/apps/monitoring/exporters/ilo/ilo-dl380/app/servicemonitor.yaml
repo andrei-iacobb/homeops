@@ -1,0 +1,13 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ilo-exporter-dl380
+spec:
+  selector:
+    matchLabels:
+      app: ilo-exporter-dl380
+  endpoints:
+  - port: metrics
+    interval: 60s
+    path: /metrics

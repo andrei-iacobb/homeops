@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adguard-exporter-2
+  labels:
+    app: adguard-exporter-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adguard-exporter-2
+  template:
+    metadata:
+      labels:
+        app: adguard-exporter-2
+    spec:
+      containers:
+      - name: exporter
+        image: sfragata/adguardhome_exporter:latest
+        env:
+        - name: ADGUARD_IP
+          valueFrom:
+            secretKeyRef:
+              name: adguard-2-secret
+              key: ADGUARD_IP
+        - name: ADGUARD_USER
+          valueFrom:
+            secretKeyRef:
+              name: adguard-2-secret
+              key: ADGUARD_USER
+        - name: ADGUARD_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: adguard-2-secret
+              key: ADGUARD_PASSWORD
+        args:
+          - --adguard.url=http://$(ADGUARD_IP):80
+          - --adguard.username=$(ADGUARD_USER)
+          - --adguard.password=$(ADGUARD_PASSWORD)
+        ports:
+        - name: metrics
+          containerPort: 9617
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

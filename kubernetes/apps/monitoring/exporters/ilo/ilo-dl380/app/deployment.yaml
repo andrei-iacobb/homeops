@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ilo-exporter-dl380
+  labels:
+    app: ilo-exporter-dl380
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ilo-exporter-dl380
+  template:
+    metadata:
+      labels:
+        app: ilo-exporter-dl380
+    spec:
+      containers:
+      - name: exporter
+        image: mdvorak/ilo4-metrics-exporter:latest
+        args:
+          - --ilo.host=$(ILO_HOST)
+          - --ilo.user=$(ILO_USER)
+          - --ilo.password=$(ILO_PASSWORD)
+        env:
+        - name: ILO_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_HOST
+        - name: ILO_USER
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_USER
+        - name: ILO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_PASSWORD
+        ports:
+        - name: metrics
+          containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi

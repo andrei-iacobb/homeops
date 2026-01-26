@@ -1,0 +1,13 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: adguard-exporter-1
+spec:
+  selector:
+    matchLabels:
+      app: adguard-exporter-1
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics

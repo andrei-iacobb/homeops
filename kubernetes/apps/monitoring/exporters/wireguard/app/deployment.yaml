@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wireguard-exporter
+  labels:
+    app: wireguard-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wireguard-exporter
+  template:
+    metadata:
+      labels:
+        app: wireguard-exporter
+    spec:
+      hostNetwork: true
+      containers:
+      - name: exporter
+        image: mindflavor/prometheus-wireguard-exporter:latest
+        args:
+          - --wireguard.interface=wg0
+        ports:
+        - name: metrics
+          containerPort: 9586
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
