@@ -33,7 +33,7 @@ spec:
                   secretKeyRef:
                     name: sabnzbd-secret
                     key: TZ
-              HOST_WHITELIST: sabnzbd.iacob.uk
+              HOST_WHITELIST: sabnzbd.iacob.uk,localhost,127.0.0.1,0.0.0.0
             probes:
               liveness: &probes
                 enabled: true
