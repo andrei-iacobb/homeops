@@ -38,6 +38,7 @@ spec:
           - /bin/sh
           - -c
           - |
+            mkdir -p /etc/prometheus
             cat > /etc/prometheus/pve.yml <<EOF
             default:
               user: ${PROXMOX_USER}
