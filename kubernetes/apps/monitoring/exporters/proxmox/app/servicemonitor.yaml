@@ -10,4 +10,7 @@ spec:
   endpoints:
   - port: metrics
     interval: 30s
-    path: /metrics
+    path: /pve
+    params:
+      target:
+      - "192.168.1.100"
