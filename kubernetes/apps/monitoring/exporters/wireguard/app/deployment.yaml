@@ -19,8 +19,6 @@ spec:
       containers:
       - name: exporter
         image: mindflavor/prometheus-wireguard-exporter:latest
-        args:
-          - --listen-address=:9586
         ports:
         - name: metrics
           containerPort: 9586
