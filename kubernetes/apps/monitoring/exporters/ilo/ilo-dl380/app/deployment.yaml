@@ -17,10 +17,26 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: ghcr.io/mauvesoftware/ilo_exporter:latest
+        image: quay.io/prometheuscommunity/ilo-exporter:latest
+        env:
+        - name: ILO_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_HOST
+        - name: ILO_USER
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_USER
+        - name: ILO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ilo-dl380-secret
+              key: ILO_PASSWORD
         args:
-          - --ilo.address=$(ILO_HOST)
-          - --ilo.username=$(ILO_USER)
+          - --ilo.host=$(ILO_HOST)
+          - --ilo.user=$(ILO_USER)
           - --ilo.password=$(ILO_PASSWORD)
           - --web.listen-address=:8080
         env:

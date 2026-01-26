@@ -17,20 +17,8 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: ghcr.io/supporterino/truenas-graphite-to-prometheus:latest
-        env:
-        - name: TRUENAS_HOST
-          valueFrom:
-            secretKeyRef:
-              name: truenas-secret
-              key: TRUENAS_HOST
-        - name: TRUENAS_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: truenas-secret
-              key: TRUENAS_API_KEY
+        image: prom/graphite-exporter:latest
         args:
-          - --graphite.address=http://$(TRUENAS_HOST):9109
           - --web.listen-address=:9300
         ports:
         - name: metrics

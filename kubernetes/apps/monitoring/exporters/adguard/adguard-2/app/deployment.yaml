@@ -39,7 +39,7 @@ spec:
           - -c
           - |
             TOKEN=$(echo -n "${ADGUARD_USER}:${ADGUARD_PASSWORD}" | base64)
-            exec /adguardhome_exporter --host=${ADGUARD_IP} --port=80 --token=${TOKEN} --listen-address=0.0.0.0:9617
+            exec /app/adguardhome_exporter --host=${ADGUARD_IP} --port=80 --token=${TOKEN} --listen-address=0.0.0.0:9617
         ports:
         - name: metrics
           containerPort: 9617

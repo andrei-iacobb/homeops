@@ -19,10 +19,8 @@ spec:
       - name: exporter
         image: prompve/prometheus-pve-exporter:latest
         args:
-          - --pve.url=https://$(PROXMOX_HOST):8006
-          - --pve.user=$(PROXMOX_USER)
-          - --pve.password=$(PROXMOX_PASSWORD)
-          - --pve.insecure
+          - --config.file=/etc/pve/config.yml
+          - --web.listen-address=:9221
         env:
         - name: PROXMOX_HOST
           valueFrom:
@@ -39,6 +37,17 @@ spec:
             secretKeyRef:
               name: proxmox-secret
               key: PROXMOX_PASSWORD
+        command:
+          - /bin/sh
+          - -c
+          - |
+            cat > /etc/pve/config.yml <<EOF
+            default:
+              user: ${PROXMOX_USER}
+              password: ${PROXMOX_PASSWORD}
+              verify_ssl: false
+            EOF
+            exec pve_exporter --config.file=/etc/pve/config.yml --web.listen-address=:9221
         ports:
         - name: metrics
           containerPort: 9221
