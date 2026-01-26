@@ -19,11 +19,6 @@ spec:
       - name: exporter
         image: mauvesoftware/ilo_exporter:latest
         env:
-        - name: API_HOST
-          valueFrom:
-            secretKeyRef:
-              name: ilo-dl360-secret
-              key: ILO_HOST
         - name: API_USERNAME
           valueFrom:
             secretKeyRef:

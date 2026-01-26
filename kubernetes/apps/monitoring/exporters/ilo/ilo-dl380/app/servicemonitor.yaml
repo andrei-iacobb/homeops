@@ -11,3 +11,6 @@ spec:
   - port: metrics
     interval: 60s
     path: /metrics
+    params:
+      hosts:
+      - "192.168.1.180"

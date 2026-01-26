@@ -40,12 +40,8 @@ spec:
           - |
             cat > /tmp/pve.yml <<EOF
             default:
-              user: ${PROXMOX_USER}
-              password: ${PROXMOX_PASSWORD}
-              verify_ssl: false
-            ${PROXMOX_HOST}:
-              user: ${PROXMOX_USER}
-              password: ${PROXMOX_PASSWORD}
+              user: "${PROXMOX_USER}"
+              password: "${PROXMOX_PASSWORD}"
               verify_ssl: false
             EOF
             exec pve_exporter --config.file=/tmp/pve.yml --web.listen-address=:9221
