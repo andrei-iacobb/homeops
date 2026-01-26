@@ -8,6 +8,7 @@ spec:
     matchLabels:
       app: truenas-exporter
   endpoints:
-  - port: metrics
+    - port: metrics
+      interval: 15s
     interval: 30s
     path: /metrics

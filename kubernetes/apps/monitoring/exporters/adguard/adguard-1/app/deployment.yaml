@@ -38,6 +38,10 @@ spec:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_PASSWORD
+        - name: INTERVAL
+          value: "10s"
+        - name: LOG_LIMIT
+          value: "10000"
         ports:
         - name: metrics
           containerPort: 9617
