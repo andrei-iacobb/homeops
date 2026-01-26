@@ -1,0 +1,874 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-stats-scripts
+  namespace: default
+data:
+  discover-services.py: |
+    #!/usr/bin/env python3
+    """
+    Service Discovery Script for Homepage Dashboard
+
+    Discovers services from Kubernetes pods and HTTPRoutes,
+    then generates Homepage services.yaml configuration.
+    """
+
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+    from typing import Dict, List, Optional
+
+    # Service mappings: service name pattern -> Homepage widget config
+    SERVICE_MAPPINGS = {
+        # Arr Stack
+        "sonarr": {
+            "name": "Sonarr",
+            "widget": "sonarr",
+            "category": "Media",
+            "icon": "sonarr.svg",
+            "description": "TV Show Management"
+        },
+        "radarr": {
+            "name": "Radarr",
+            "widget": "radarr",
+            "category": "Media",
+            "icon": "radarr.svg",
+            "description": "Movie Management"
+        },
+        "lidarr": {
+            "name": "Lidarr",
+            "widget": "lidarr",
+            "category": "Media",
+            "icon": "lidarr.svg",
+            "description": "Music Management"
+        },
+        "readarr": {
+            "name": "Readarr",
+            "widget": "readarr",
+            "category": "Media",
+            "icon": "readarr.svg",
+            "description": "Book Management"
+        },
+        "bazarr": {
+            "name": "Bazarr",
+            "widget": "bazarr",
+            "category": "Media",
+            "icon": "bazarr.svg",
+            "description": "Subtitle Management"
+        },
+        "prowlarr": {
+            "name": "Prowlarr",
+            "widget": "prowlarr",
+            "category": "Media",
+            "icon": "prowlarr.svg",
+            "description": "Indexer Manager"
+        },
+        "overseerr": {
+            "name": "Overseerr",
+            "widget": "overseerr",
+            "category": "Media",
+            "icon": "overseerr.svg",
+            "description": "Media Request Manager"
+        },
+        # Media Servers
+        "jellyfin": {
+            "name": "Jellyfin",
+            "widget": "jellyfin",
+            "category": "Media",
+            "icon": "jellyfin.svg",
+            "description": "Media Server"
+        },
+        "plex": {
+            "name": "Plex",
+            "widget": "plex",
+            "category": "Media",
+            "icon": "plex.svg",
+            "description": "Media Server"
+        },
+        # Download Clients
+        "qbittorrent": {
+            "name": "qBittorrent",
+            "widget": "qbittorrent",
+            "category": "Media",
+            "icon": "qbittorrent.svg",
+            "description": "Torrent Client"
+        },
+        "sabnzbd": {
+            "name": "SABnzbd",
+            "widget": "sabnzbd",
+            "category": "Media",
+            "icon": "sabnzbd.svg",
+            "description": "Usenet Client"
+        },
+        # Books
+        "calibre": {
+            "name": "Calibre-Web",
+            "widget": "calibre",
+            "category": "Notes",
+            "icon": "calibre.svg",
+            "description": "eBook Library"
+        },
+        "lazylibrarian": {
+            "name": "LazyLibrarian",
+            "widget": "lazylibrarian",
+            "category": "Notes",
+            "icon": "lazylibrarian.svg",
+            "description": "Book Metadata Manager"
+        },
+        # Base Services
+        "vaultwarden": {
+            "name": "Vaultwarden",
+            "widget": "vaultwarden",
+            "category": "Base",
+            "icon": "vaultwarden.svg",
+            "description": "Password Manager"
+        },
+        "gitea": {
+            "name": "Gitea",
+            "widget": "gitea",
+            "category": "Base",
+            "icon": "gitea.svg",
+            "description": "Git Service"
+        },
+        "outline": {
+            "name": "Outline",
+            "widget": "outline",
+            "category": "Base",
+            "icon": "outline.svg",
+            "description": "Team Wiki"
+        },
+        "n8n": {
+            "name": "n8n",
+            "widget": "n8n",
+            "category": "Base",
+            "icon": "n8n.svg",
+            "description": "Workflow Automation"
+        },
+        # Photos
+        "immich": {
+            "name": "Immich",
+            "widget": "immich",
+            "category": "Notes",
+            "icon": "immich.svg",
+            "description": "Photo Backup"
+        },
+        # AI
+        "ollama": {
+            "name": "Ollama",
+            "widget": "ollama",
+            "category": "Base",
+            "icon": "ollama.svg",
+            "description": "LLM Server"
+        },
+        "openwebui": {
+            "name": "Open WebUI",
+            "widget": "openwebui",
+            "category": "Base",
+            "icon": "openwebui.svg",
+            "description": "AI Chat Interface"
+        },
+        # Monitoring
+        "grafana": {
+            "name": "Grafana",
+            "widget": "grafana",
+            "category": "Monitoring",
+            "icon": "grafana.svg",
+            "description": "Monitoring Dashboard"
+        },
+        "prometheus": {
+            "name": "Prometheus",
+            "widget": "prometheus",
+            "category": "Monitoring",
+            "icon": "prometheus.svg",
+            "description": "Metrics Server"
+        },
+        # Other
+        "tdarr": {
+            "name": "Tdarr",
+            "widget": "tdarr",
+            "category": "Media",
+            "icon": "tdarr.svg",
+            "description": "Media Transcoding"
+        },
+        "recyclarr": {
+            "name": "Recyclarr",
+            "widget": "recyclarr",
+            "category": "Media",
+            "icon": "recyclarr.svg",
+            "description": "TRaSH Guides Sync"
+        },
+        "huntarr": {
+            "name": "Huntarr",
+            "widget": "huntarr",
+            "category": "Media",
+            "icon": "huntarr.svg",
+            "description": "Hunt Missing Media"
+        },
+        "recommendarr": {
+            "name": "Recommendarr",
+            "widget": "recommendarr",
+            "category": "Media",
+            "icon": "recommendarr.svg",
+            "description": "Media Recommendations"
+        },
+        "lidify": {
+            "name": "Lidify",
+            "widget": "lidify",
+            "category": "Notes",
+            "icon": "lidify.svg",
+            "description": "Audiobook Manager"
+        },
+    }
+
+    # Namespace to category mapping
+    NAMESPACE_CATEGORIES = {
+        "media": "Media",
+        "default": "Base",
+        "monitoring": "Monitoring",
+        "databases": "Base",
+        "network": "Base",
+        "ai": "Base",
+        "kube-system": "Monitoring",
+    }
+
+
+    def run_kubectl(command: List[str]) -> Dict:
+        """Run kubectl command and return JSON output."""
+        try:
+            result = subprocess.run(
+                ["kubectl"] + command,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            return json.loads(result.stdout)
+        except subprocess.CalledProcessError as e:
+            print(f"Error running kubectl: {e.stderr}", file=sys.stderr)
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+    def get_running_pods() -> List[Dict]:
+        """Get all running pods from Kubernetes."""
+        pods = run_kubectl(["get", "pods", "-A", "-o", "json"])
+        running_pods = []
+        
+        for item in pods.get("items", []):
+            status = item.get("status", {})
+            phase = status.get("phase", "")
+            conditions = status.get("conditions", [])
+            
+            # Check if pod is running
+            is_ready = any(
+                cond.get("type") == "Ready" and cond.get("status") == "True"
+                for cond in conditions
+            )
+            
+            if phase == "Running" and is_ready:
+                running_pods.append(item)
+        
+        return running_pods
+
+
+    def get_httproutes() -> Dict[str, str]:
+        """Get HTTPRoute resources and map service names to hostnames."""
+        routes = run_kubectl(["get", "httproute", "-A", "-o", "json"])
+        route_map = {}
+        
+        for item in routes.get("items", []):
+            metadata = item.get("metadata", {})
+            name = metadata.get("name", "")
+            namespace = metadata.get("namespace", "")
+            spec = item.get("spec", {})
+            hostnames = spec.get("hostnames", [])
+            
+            if hostnames:
+                # Use first hostname
+                route_map[f"{namespace}/{name}"] = hostnames[0]
+                route_map[name] = hostnames[0]  # Also map by name only
+        
+        return route_map
+
+
+    def identify_service(pod_name: str, namespace: str) -> Optional[Dict]:
+        """Identify service type from pod name."""
+        pod_lower = pod_name.lower()
+        
+        # Check for exact matches first
+        for pattern, config in SERVICE_MAPPINGS.items():
+            if pattern in pod_lower:
+                return config.copy()
+        
+        # Try namespace-based categorization
+        if namespace in NAMESPACE_CATEGORIES:
+            category = NAMESPACE_CATEGORIES[namespace]
+            return {
+                "name": pod_name.split("-")[0].title(),
+                "widget": None,
+                "category": category,
+                "icon": None,
+                "description": "Service"
+            }
+        
+        return None
+
+
+    def generate_services_yaml(services: List[Dict], output_path: Path):
+        """Generate Homepage services.yaml file."""
+        # Group services by category
+        categories = {}
+        for service in services:
+            category = service.get("category", "Other")
+            if category not in categories:
+                categories[category] = []
+            categories[category].append(service)
+        
+        # Generate YAML
+        yaml_lines = []
+        yaml_lines.append("# Auto-generated by discover-services.py")
+        yaml_lines.append("# Do not edit manually - this file is regenerated automatically")
+        yaml_lines.append("")
+        
+        for category in sorted(categories.keys()):
+            yaml_lines.append(f"{category}:")
+            for service in sorted(categories[category], key=lambda x: x["name"]):
+                yaml_lines.append(f"  {service['name']}:")
+                yaml_lines.append(f"    href: https://{service['url']}")
+                
+                if service.get("widget"):
+                    yaml_lines.append(f"    widget:")
+                    yaml_lines.append(f"      type: {service['widget']}")
+                    yaml_lines.append(f"      url: https://{service['url']}")
+                    # API key will be added by stats service
+                
+                if service.get("icon"):
+                    yaml_lines.append(f"    icon: {service['icon']}")
+                
+                if service.get("description"):
+                    yaml_lines.append(f"    description: {service['description']}")
+                
+                yaml_lines.append("")
+        
+        # Write to file
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("\n".join(yaml_lines))
+        print(f"Generated services.yaml with {len(services)} services", file=sys.stderr)
+
+
+    def main():
+        """Main function."""
+        # Get running pods
+        pods = get_running_pods()
+        print(f"Found {len(pods)} running pods", file=sys.stderr)
+        
+        # Get HTTPRoutes
+        routes = get_httproutes()
+        print(f"Found {len(routes)} HTTPRoutes", file=sys.stderr)
+        
+        # Discover services
+        services = []
+        for pod in pods:
+            metadata = pod.get("metadata", {})
+            name = metadata.get("name", "")
+            namespace = metadata.get("namespace", "")
+            
+            # Skip system pods
+            if namespace in ["kube-system", "flux-system"] and "homepage" not in name.lower():
+                continue
+            
+            # Identify service
+            service_config = identify_service(name, namespace)
+            if not service_config:
+                continue
+            
+            # Get URL from HTTPRoute
+            url = routes.get(f"{namespace}/{name}") or routes.get(name)
+            if not url:
+                # Try to construct from service name
+                service_name = name.split("-")[0]
+                url = routes.get(service_name)
+            
+            if url:
+                service_config["url"] = url
+                services.append(service_config)
+                print(f"Discovered: {service_config['name']} -> {url}", file=sys.stderr)
+        
+        # Generate services.yaml
+        output_path = Path("/app/config/services.yaml")
+        if len(sys.argv) > 1:
+            output_path = Path(sys.argv[1])
+        
+        generate_services_yaml(services, output_path)
+
+
+    if __name__ == "__main__":
+        main()
+  fetch-stats.py: |
+    #!/usr/bin/env python3
+    """
+    Stats Aggregation Script for Homepage Dashboard
+
+    Fetches statistics from arr stack APIs and other services,
+    then updates Homepage widgets.yaml configuration.
+    """
+
+    import json
+    import os
+    import sys
+    from pathlib import Path
+    from typing import Dict, List, Optional
+    import urllib.request
+    import urllib.error
+    import urllib.parse
+
+    # API endpoints for different services
+    API_ENDPOINTS = {
+        "sonarr": {
+            "base": "/api/v3",
+            "series": "/api/v3/series",
+            "queue": "/api/v3/queue",
+            "system": "/api/v3/system/status",
+            "calendar": "/api/v3/calendar"
+        },
+        "radarr": {
+            "base": "/api/v3",
+            "movies": "/api/v3/movie",
+            "queue": "/api/v3/queue",
+            "system": "/api/v3/system/status",
+            "calendar": "/api/v3/calendar"
+        },
+        "lidarr": {
+            "base": "/api/v1",
+            "artists": "/api/v1/artist",
+            "albums": "/api/v1/album",
+            "tracks": "/api/v1/track",
+            "queue": "/api/v1/queue",
+            "system": "/api/v1/system/status"
+        },
+        "readarr": {
+            "base": "/api/v1",
+            "books": "/api/v1/book",
+            "authors": "/api/v1/author",
+            "queue": "/api/v1/queue",
+            "system": "/api/v1/system/status"
+        },
+        "bazarr": {
+            "base": "/api",
+            "subtitles": "/api/subtitles",
+            "movies": "/api/movies",
+            "series": "/api/series"
+        },
+        "prowlarr": {
+            "base": "/api/v1",
+            "indexers": "/api/v1/indexer",
+            "system": "/api/v1/system/status"
+        },
+        "jellyfin": {
+            "base": "/",
+            "items": "/Items",
+            "sessions": "/Sessions",
+            "library": "/Library/MediaFolders"
+        },
+        "immich": {
+            "base": "/api",
+            "assets": "/api/asset",
+            "users": "/api/user",
+            "stats": "/api/server-info/stats"
+        },
+        "calibre": {
+            "base": "/api",
+            "books": "/api/books",
+            "authors": "/api/authors",
+            "categories": "/api/categories"
+        },
+        "qbittorrent": {
+            "base": "/api/v2",
+            "torrents": "/api/v2/torrents/info",
+            "transfer": "/api/v2/transfer/info"
+        },
+        "sabnzbd": {
+            "base": "/api",
+            "queue": "/api?mode=queue",
+            "history": "/api?mode=history"
+        }
+    }
+
+
+    def get_api_key(service: str) -> Optional[str]:
+        """Get API key from environment variable or secret file."""
+        # Try environment variable first
+        env_key = f"{service.upper()}_API_KEY"
+        api_key = os.getenv(env_key)
+        if api_key:
+            return api_key
+        
+        # Try reading from secret file
+        secret_path = Path(f"/secrets/{service}-api-key")
+        if secret_path.exists():
+            return secret_path.read_text().strip()
+        
+        return None
+
+
+    def make_api_request(url: str, api_key: Optional[str] = None, headers: Optional[Dict] = None) -> Optional[Dict]:
+        """Make API request and return JSON response."""
+        if headers is None:
+            headers = {}
+        
+        if api_key:
+            headers["X-Api-Key"] = api_key
+        
+        headers.setdefault("Accept", "application/json")
+        headers.setdefault("User-Agent", "Homepage-Stats/1.0")
+        
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                return json.loads(response.read().decode())
+        except urllib.error.HTTPError as e:
+            print(f"HTTP error for {url}: {e.code}", file=sys.stderr)
+            return None
+        except urllib.error.URLError as e:
+            print(f"URL error for {url}: {e.reason}", file=sys.stderr)
+            return None
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error for {url}: {e}", file=sys.stderr)
+            return None
+        except Exception as e:
+            print(f"Error fetching {url}: {e}", file=sys.stderr)
+            return None
+
+
+    def fetch_sonarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Sonarr statistics."""
+        stats = {}
+        
+        # Get series
+        series_url = f"{base_url}{API_ENDPOINTS['sonarr']['series']}"
+        series_data = make_api_request(series_url, api_key)
+        if series_data:
+            stats["series"] = len(series_data)
+            # Count episodes
+            total_episodes = sum(s.get("episodeCount", 0) for s in series_data)
+            stats["episodes"] = total_episodes
+        
+        # Get queue
+        queue_url = f"{base_url}{API_ENDPOINTS['sonarr']['queue']}"
+        queue_data = make_api_request(queue_url, api_key)
+        if queue_data:
+            stats["queue"] = len(queue_data)
+        
+        return stats
+
+
+    def fetch_radarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Radarr statistics."""
+        stats = {}
+        
+        # Get movies
+        movies_url = f"{base_url}{API_ENDPOINTS['radarr']['movies']}"
+        movies_data = make_api_request(movies_url, api_key)
+        if movies_data:
+            stats["movies"] = len(movies_data)
+            downloaded = sum(1 for m in movies_data if m.get("hasFile", False))
+            stats["downloaded"] = downloaded
+            stats["missing"] = len(movies_data) - downloaded
+        
+        # Get queue
+        queue_url = f"{base_url}{API_ENDPOINTS['radarr']['queue']}"
+        queue_data = make_api_request(queue_url, api_key)
+        if queue_data:
+            stats["queue"] = len(queue_data)
+        
+        return stats
+
+
+    def fetch_lidarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Lidarr statistics."""
+        stats = {}
+        
+        # Get artists
+        artists_url = f"{base_url}{API_ENDPOINTS['lidarr']['artists']}"
+        artists_data = make_api_request(artists_url, api_key)
+        if artists_data:
+            stats["artists"] = len(artists_data)
+        
+        # Get albums
+        albums_url = f"{base_url}{API_ENDPOINTS['lidarr']['albums']}"
+        albums_data = make_api_request(albums_url, api_key)
+        if albums_data:
+            stats["albums"] = len(albums_data)
+        
+        # Get tracks
+        tracks_url = f"{base_url}{API_ENDPOINTS['lidarr']['tracks']}"
+        tracks_data = make_api_request(tracks_url, api_key)
+        if tracks_data:
+            stats["tracks"] = len(tracks_data)
+        
+        # Get queue
+        queue_url = f"{base_url}{API_ENDPOINTS['lidarr']['queue']}"
+        queue_data = make_api_request(queue_url, api_key)
+        if queue_data:
+            stats["queue"] = len(queue_data)
+        
+        return stats
+
+
+    def fetch_readarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Readarr statistics."""
+        stats = {}
+        
+        # Get books
+        books_url = f"{base_url}{API_ENDPOINTS['readarr']['books']}"
+        books_data = make_api_request(books_url, api_key)
+        if books_data:
+            stats["books"] = len(books_data)
+        
+        # Get authors
+        authors_url = f"{base_url}{API_ENDPOINTS['readarr']['authors']}"
+        authors_data = make_api_request(authors_url, api_key)
+        if authors_data:
+            stats["authors"] = len(authors_data)
+        
+        # Get queue
+        queue_url = f"{base_url}{API_ENDPOINTS['readarr']['queue']}"
+        queue_data = make_api_request(queue_url, api_key)
+        if queue_data:
+            stats["queue"] = len(queue_data)
+        
+        return stats
+
+
+    def fetch_bazarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Bazarr statistics."""
+        stats = {}
+        
+        # Get movies
+        movies_url = f"{base_url}{API_ENDPOINTS['bazarr']['movies']}"
+        movies_data = make_api_request(movies_url, api_key)
+        if movies_data:
+            stats["movies"] = len(movies_data)
+        
+        # Get series
+        series_url = f"{base_url}{API_ENDPOINTS['bazarr']['series']}"
+        series_data = make_api_request(series_url, api_key)
+        if series_data:
+            stats["series"] = len(series_data)
+        
+        return stats
+
+
+    def fetch_prowlarr_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Prowlarr statistics."""
+        stats = {}
+        
+        # Get indexers
+        indexers_url = f"{base_url}{API_ENDPOINTS['prowlarr']['indexers']}"
+        indexers_data = make_api_request(indexers_url, api_key)
+        if indexers_data:
+            stats["indexers"] = len(indexers_data)
+            active = sum(1 for i in indexers_data if i.get("enable", False))
+            stats["active"] = active
+        
+        return stats
+
+
+    def fetch_jellyfin_stats(base_url: str, api_key: Optional[str] = None) -> Dict:
+        """Fetch Jellyfin statistics."""
+        stats = {}
+        
+        # Jellyfin uses different auth - try without API key first
+        # Get items (requires authentication, but we can try public endpoints)
+        # For now, return empty - would need proper Jellyfin auth token
+        # This is a placeholder for future implementation
+        
+        return stats
+
+
+    def fetch_immich_stats(base_url: str, api_key: str) -> Dict:
+        """Fetch Immich statistics."""
+        stats = {}
+        
+        # Get stats
+        stats_url = f"{base_url}{API_ENDPOINTS['immich']['stats']}"
+        stats_data = make_api_request(stats_url, api_key)
+        if stats_data:
+            stats["photos"] = stats_data.get("photos", 0)
+            stats["videos"] = stats_data.get("videos", 0)
+            stats["usage"] = stats_data.get("usage", 0)
+        
+        # Get users
+        users_url = f"{base_url}{API_ENDPOINTS['immich']['users']}"
+        users_data = make_api_request(users_url, api_key)
+        if users_data:
+            stats["users"] = len(users_data)
+        
+        return stats
+
+
+    def fetch_calibre_stats(base_url: str, api_key: Optional[str] = None) -> Dict:
+        """Fetch Calibre-Web statistics."""
+        stats = {}
+        
+        # Get books
+        books_url = f"{base_url}{API_ENDPOINTS['calibre']['books']}"
+        books_data = make_api_request(books_url, api_key)
+        if books_data:
+            stats["books"] = len(books_data)
+        
+        # Get authors
+        authors_url = f"{base_url}{API_ENDPOINTS['calibre']['authors']}"
+        authors_data = make_api_request(authors_url, api_key)
+        if authors_data:
+            stats["authors"] = len(authors_data)
+        
+        # Get categories
+        categories_url = f"{base_url}{API_ENDPOINTS['calibre']['categories']}"
+        categories_data = make_api_request(categories_url, api_key)
+        if categories_data:
+            stats["categories"] = len(categories_data)
+        
+        return stats
+
+
+    def fetch_qbittorrent_stats(base_url: str, api_key: Optional[str] = None) -> Dict:
+        """Fetch qBittorrent statistics."""
+        stats = {}
+        
+        # qBittorrent uses cookie-based auth, simplified for now
+        # Get torrents
+        torrents_url = f"{base_url}{API_ENDPOINTS['qbittorrent']['torrents']}"
+        torrents_data = make_api_request(torrents_url, api_key)
+        if torrents_data:
+            stats["torrents"] = len(torrents_data)
+            downloading = sum(1 for t in torrents_data if t.get("state") == "downloading")
+            stats["downloading"] = downloading
+        
+        return stats
+
+
+    def fetch_sabnzbd_stats(base_url: str, api_key: Optional[str] = None) -> Dict:
+        """Fetch SABnzbd statistics."""
+        stats = {}
+        
+        # SABnzbd uses query parameters for API key
+        queue_url = f"{base_url}{API_ENDPOINTS['sabnzbd']['queue']}"
+        if api_key:
+            queue_url += f"&apikey={api_key}"
+        
+        queue_data = make_api_request(queue_url)
+        if queue_data and "queue" in queue_data:
+            queue_info = queue_data["queue"]
+            stats["queue"] = queue_info.get("noofslots_total", 0)
+        
+        return stats
+
+
+    # Service fetcher mapping
+    FETCHERS = {
+        "sonarr": fetch_sonarr_stats,
+        "radarr": fetch_radarr_stats,
+        "lidarr": fetch_lidarr_stats,
+        "readarr": fetch_readarr_stats,
+        "bazarr": fetch_bazarr_stats,
+        "prowlarr": fetch_prowlarr_stats,
+        "jellyfin": fetch_jellyfin_stats,
+        "immich": fetch_immich_stats,
+        "calibre": fetch_calibre_stats,
+        "qbittorrent": fetch_qbittorrent_stats,
+        "sabnzbd": fetch_sabnzbd_stats,
+    }
+
+
+    def generate_widgets_yaml(stats: Dict[str, Dict], output_path: Path):
+        """Generate Homepage widgets.yaml file with stats."""
+        yaml_lines = []
+        yaml_lines.append("# Auto-generated by fetch-stats.py")
+        yaml_lines.append("# Do not edit manually - this file is regenerated automatically")
+        yaml_lines.append("")
+        yaml_lines.append("widgets:")
+        yaml_lines.append("")
+        
+        # Add arr stack stats
+        arr_services = ["sonarr", "radarr", "lidarr", "readarr", "bazarr", "prowlarr"]
+        for service in arr_services:
+            if service in stats and stats[service]:
+                yaml_lines.append(f"  - type: {service}")
+                yaml_lines.append(f"    service: {service}")
+                yaml_lines.append("    stats:")
+                for key, value in stats[service].items():
+                    yaml_lines.append(f"      {key}: {value}")
+                yaml_lines.append("")
+        
+        # Add other service stats
+        other_services = ["jellyfin", "immich", "calibre", "qbittorrent", "sabnzbd"]
+        for service in other_services:
+            if service in stats and stats[service]:
+                yaml_lines.append(f"  - type: {service}")
+                yaml_lines.append(f"    service: {service}")
+                yaml_lines.append("    stats:")
+                for key, value in stats[service].items():
+                    yaml_lines.append(f"      {key}: {value}")
+                yaml_lines.append("")
+        
+        # Write to file
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("\n".join(yaml_lines))
+        print(f"Generated widgets.yaml with stats for {len(stats)} services", file=sys.stderr)
+
+
+    def main():
+        """Main function."""
+        # Get service URLs from environment or config
+        services_config = os.getenv("SERVICES_CONFIG", "/app/config/services.yaml")
+        
+        # For now, use hardcoded service URLs from HTTPRoutes
+        # In production, this would read from services.yaml or Kubernetes
+        service_urls = {
+            "sonarr": os.getenv("SONARR_URL", "https://sonarr.iacob.uk"),
+            "radarr": os.getenv("RADARR_URL", "https://radarr.iacob.uk"),
+            "lidarr": os.getenv("LIDARR_URL", "https://lidarr.iacob.uk"),
+            "readarr": os.getenv("READARR_URL", "https://readarr.iacob.uk"),
+            "bazarr": os.getenv("BAZARR_URL", "https://bazarr.iacob.uk"),
+            "prowlarr": os.getenv("PROWLARR_URL", "https://prowlarr.iacob.uk"),
+            "jellyfin": os.getenv("JELLYFIN_URL", "https://jellyfin.iacob.uk"),
+            "immich": os.getenv("IMMICH_URL", "https://photos.iacob.uk"),
+            "calibre": os.getenv("CALIBRE_URL", "https://calibre.iacob.uk"),
+            "qbittorrent": os.getenv("QBITTORRENT_URL", "https://qbittorrent.iacob.uk"),
+            "sabnzbd": os.getenv("SABNZBD_URL", "https://sabnzbd.iacob.uk"),
+        }
+        
+        # Fetch stats for each service
+        all_stats = {}
+        for service, base_url in service_urls.items():
+            if service not in FETCHERS:
+                continue
+            
+            api_key = get_api_key(service)
+            if not api_key and service in ["sonarr", "radarr", "lidarr", "readarr", "bazarr", "prowlarr"]:
+                print(f"Skipping {service}: no API key found", file=sys.stderr)
+                continue
+            
+            print(f"Fetching stats for {service}...", file=sys.stderr)
+            try:
+                stats = FETCHERS[service](base_url, api_key)
+                if stats:
+                    all_stats[service] = stats
+                    print(f"  Got stats: {stats}", file=sys.stderr)
+            except Exception as e:
+                print(f"Error fetching stats for {service}: {e}", file=sys.stderr)
+        
+        # Generate widgets.yaml
+        output_path = Path("/app/config/widgets.yaml")
+        if len(sys.argv) > 1:
+            output_path = Path(sys.argv[1])
+        
+        generate_widgets_yaml(all_stats, output_path)
+
+
+    if __name__ == "__main__":
+        main()

@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-stats-config
+  namespace: default
+data:
+  discover-script.sh: |
+    #!/bin/sh
+    set -e
+    
+    # Run service discovery
+    python3 /scripts/discover-services.py /app/config/services.yaml
+    
+    # Run stats fetching
+    python3 /scripts/fetch-stats.py /app/config/widgets.yaml
+    
+    echo "Homepage config updated successfully"

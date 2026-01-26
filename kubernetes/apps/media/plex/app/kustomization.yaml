@@ -7,3 +7,4 @@ resources:
   - ./httproute.yaml
   - ./secret.sops.yaml
   - ./pvc-media.yaml
+  - ./service-loadbalancer.yaml
