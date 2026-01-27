@@ -5,5 +5,7 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./httproute.yaml
+  - ./serviceaccount.yaml
+  - ./rbac.yaml
   - ./configmap.yaml
   - ./secret.sops.yaml
