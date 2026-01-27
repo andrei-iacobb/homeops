@@ -74,6 +74,12 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /app/config
+      services:
+        type: configMap
+        name: homepage-services
+        globalMounts:
+          - path: /app/config/services.yaml
+            subPath: services.yaml
     route:
       app:
         hostnames: ["home.iacob.uk"]

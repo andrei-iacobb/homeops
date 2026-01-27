@@ -8,4 +8,5 @@ resources:
   - ./serviceaccount.yaml
   - ./rbac.yaml
   - ./configmap.yaml
+  - ./services-configmap.yaml
   - ./secret.sops.yaml

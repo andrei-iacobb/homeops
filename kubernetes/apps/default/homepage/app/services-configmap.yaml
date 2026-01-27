@@ -1,0 +1,178 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-services
+data:
+  services.yaml: |
+    # Static services for Homepage - Infrastructure, Social, Base, Media, AI, Monitoring, Databases
+    - Infrastructure:
+      - TrueNAS:
+          icon: truenas.svg
+          href: https://192.168.1.1
+          description: NAS storage
+          siteMonitor: https://192.168.1.1
+      - Proxmox:
+          icon: proxmox.svg
+          href: https://192.168.1.100:8006
+          description: Virtualization
+          siteMonitor: https://192.168.1.100:8006
+      - Router:
+          icon: mdi-router-wireless
+          href: http://192.168.1.254
+          description: Network router
+          siteMonitor: http://192.168.1.254
+    - Social:
+      - GitHub:
+          icon: si-github
+          href: https://github.com/andrei-iacobb
+          description: andrei-iacobb
+      - Reddit:
+          icon: si-reddit
+          href: https://reddit.com
+          description: Reddit
+      - Outlook:
+          icon: si-microsoftoutlook
+          href: https://outlook.com
+          description: Outlook mail
+      - Gmail:
+          icon: si-gmail
+          href: https://mail.google.com
+          description: Gmail
+      - YouTube:
+          icon: si-youtube
+          href: https://youtube.com
+          description: YouTube
+      - LinkedIn:
+          icon: si-linkedin
+          href: https://linkedin.com
+          description: LinkedIn
+      - Discord:
+          icon: si-discord
+          href: https://discord.com
+          description: Discord
+      - X:
+          icon: si-x
+          href: https://x.com
+          description: X (Twitter)
+    - Base:
+      - Gitea:
+          icon: gitea.svg
+          href: https://git.iacob.co.uk
+          description: Git service
+      - Outline:
+          icon: outline.svg
+          href: https://outline.iacob.uk
+          description: Team wiki
+      - n8n:
+          icon: n8n.svg
+          href: https://n8n.iacob.uk
+          description: Workflow automation
+      - Vaultwarden:
+          icon: vaultwarden.svg
+          href: https://vault.iacob.co.uk
+          description: Password manager
+      - Immich:
+          icon: immich.svg
+          href: https://photos.iacob.uk
+          description: Photo backup
+      - Echo:
+          icon: mdi-message-text
+          href: https://echo.iacob.uk
+          description: Echo service
+    - Media:
+      - Jellyfin:
+          icon: jellyfin.svg
+          href: https://jellyfin.iacob.uk
+          description: Media server
+      - Plex:
+          icon: plex.svg
+          href: https://plex.iacob.uk
+          description: Media server
+      - Sonarr:
+          icon: sonarr.svg
+          href: https://sonarr.iacob.uk
+          description: TV show management
+      - Radarr:
+          icon: radarr.svg
+          href: https://radarr.iacob.uk
+          description: Movie management
+      - Lidarr:
+          icon: lidarr.svg
+          href: https://lidarr.iacob.uk
+          description: Music management
+      - Readarr:
+          icon: readarr.svg
+          href: https://readarr.iacob.uk
+          description: Book management
+      - Bazarr:
+          icon: bazarr.svg
+          href: https://bazarr.iacob.uk
+          description: Subtitle management
+      - Prowlarr:
+          icon: prowlarr.svg
+          href: https://prowlarr.iacob.uk
+          description: Indexer manager
+      - Overseerr:
+          icon: overseerr.svg
+          href: https://overseerr.iacob.uk
+          description: Media requests
+      - qBittorrent:
+          icon: qbittorrent.svg
+          href: https://qbittorrent.iacob.uk
+          description: Torrent client
+      - SABnzbd:
+          icon: sabnzbd.svg
+          href: https://sabnzbd.iacob.uk
+          description: Usenet client
+      - Calibre-Web:
+          icon: calibre.svg
+          href: https://calibre-web.iacob.uk
+          description: eBook library
+      - Lazylibrarian:
+          icon: lazylibrarian.svg
+          href: https://lazylibrarian.iacob.uk
+          description: Book metadata
+      - Tdarr:
+          icon: tdarr.svg
+          href: https://tdarr.iacob.uk
+          description: Media transcoding
+      - Recyclarr:
+          icon: recyclarr.svg
+          href: https://recyclarr.iacob.uk
+          description: TRaSH guides sync
+      - Huntarr:
+          icon: huntarr.svg
+          href: https://huntarr.iacob.uk
+          description: Hunt missing media
+      - Recommendarr:
+          icon: recommendarr.svg
+          href: https://recommendarr.iacob.uk
+          description: Media recommendations
+      - Lidify:
+          icon: lidify.svg
+          href: https://lidify.iacob.uk
+          description: Audiobook manager
+    - AI:
+      - Ollama:
+          icon: ollama.svg
+          href: https://ollama.iacob.uk
+          description: LLM server
+      - Open WebUI:
+          icon: openwebui.svg
+          href: https://openwebui.iacob.co.uk
+          description: AI chat interface
+    - Monitoring:
+      - Grafana:
+          icon: grafana.svg
+          href: https://grafana.iacob.uk
+          description: Dashboards
+      - Prometheus:
+          icon: prometheus.svg
+          href: https://prometheus.iacob.uk
+          description: Metrics
+    - Databases:
+      - pgAdmin:
+          icon: pgadmin.svg
+          href: https://pgadmin.iacob.uk
+          description: PostgreSQL admin
