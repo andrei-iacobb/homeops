@@ -24,6 +24,9 @@ data:
       Infrastructure:
         style: row
         columns: 3
+      Network:
+        style: row
+        columns: 2
       Social:
         style: row
         columns: 4
@@ -62,21 +65,58 @@ data:
           href: https://192.168.1.1
           description: NAS storage
           siteMonitor: https://192.168.1.1
+          widget:
+            type: truenas
+            url: https://192.168.1.1
+            key: ${HOMEPAGE_TRUENAS_KEY}
+            version: 2
+            enablePools: true
       - Proxmox:
           icon: proxmox.svg
           href: https://192.168.1.100:8006
           description: Virtualization
           siteMonitor: https://192.168.1.100:8006
+          widget:
+            type: proxmox
+            url: https://192.168.1.100:8006
+            username: ${HOMEPAGE_PROXMOX_USER}
+            password: ${HOMEPAGE_PROXMOX_PASS}
       - Router:
           icon: mdi-router-wireless
           href: http://192.168.1.254
           description: Network router
           siteMonitor: http://192.168.1.254
+    - Network:
+      - AdGuard Primary:
+          icon: adguard-home
+          href: ${HOMEPAGE_ADGUARD_1_URL}
+          description: Web filtering and DNS
+          siteMonitor: ${HOMEPAGE_ADGUARD_1_URL}
+          widget:
+            type: adguard
+            url: ${HOMEPAGE_ADGUARD_1_URL}
+            username: ${HOMEPAGE_ADGUARD_1_USER}
+            password: ${HOMEPAGE_ADGUARD_1_PASS}
+      - AdGuard Secondary:
+          icon: adguard-home
+          href: ${HOMEPAGE_ADGUARD_2_URL}
+          description: DNS failover
+          siteMonitor: ${HOMEPAGE_ADGUARD_2_URL}
+          widget:
+            type: adguard
+            url: ${HOMEPAGE_ADGUARD_2_URL}
+            username: ${HOMEPAGE_ADGUARD_2_USER}
+            password: ${HOMEPAGE_ADGUARD_2_PASS}
     - Social:
       - GitHub:
           icon: si-github
           href: https://github.com/andrei-iacobb
           description: andrei-iacobb
+          widget:
+            type: iframe
+            name: github-contributions
+            src: https://ghchart.app/andrei-iacobb
+            classes: h-32 sm:h-32 md:h-36 lg:h-40 xl:h-44 2xl:h-48
       - Reddit:
           icon: si-reddit
           href: https://reddit.com
@@ -126,6 +166,11 @@ data:
           icon: immich.svg
           href: https://photos.iacob.uk
           description: Photo backup
+          widget:
+            type: immich
+            url: https://photos.iacob.uk
+            key: ${HOMEPAGE_IMMICH_KEY}
+            version: 2
       - Echo:
           icon: mdi-message-text
           href: https://echo.iacob.uk
@@ -135,42 +180,90 @@ data:
           icon: jellyfin.svg
           href: https://jellyfin.iacob.uk
           description: Media server
+          widget:
+            type: jellyfin
+            url: https://jellyfin.iacob.uk
+            key: ${HOMEPAGE_JELLYFIN_KEY}
+            enableBlocks: true
+            enableNowPlaying: true
       - Plex:
           icon: plex.svg
           href: https://plex.iacob.uk
           description: Media server
+          widget:
+            type: plex
+            url: https://plex.iacob.uk
+            key: ${HOMEPAGE_PLEX_TOKEN}
       - Sonarr:
           icon: sonarr.svg
           href: https://sonarr.iacob.uk
           description: TV show management
+          widget:
+            type: sonarr
+            url: https://sonarr.iacob.uk
+            key: ${HOMEPAGE_SONARR_KEY}
+            enableQueue: true
       - Radarr:
           icon: radarr.svg
           href: https://radarr.iacob.uk
           description: Movie management
+          widget:
+            type: radarr
+            url: https://radarr.iacob.uk
+            key: ${HOMEPAGE_RADARR_KEY}
+            enableQueue: true
       - Lidarr:
           icon: lidarr.svg
           href: https://lidarr.iacob.uk
           description: Music management
+          widget:
+            type: lidarr
+            url: https://lidarr.iacob.uk
+            key: ${HOMEPAGE_LIDARR_KEY}
+            enableQueue: true
       - Readarr:
           icon: readarr.svg
           href: https://readarr.iacob.uk
           description: Book management
+          widget:
+            type: readarr
+            url: https://readarr.iacob.uk
+            key: ${HOMEPAGE_READARR_KEY}
+            enableQueue: true
       - Bazarr:
           icon: bazarr.svg
           href: https://bazarr.iacob.uk
           description: Subtitle management
+          widget:
+            type: bazarr
+            url: https://bazarr.iacob.uk
+            key: ${HOMEPAGE_BAZARR_KEY}
       - Prowlarr:
           icon: prowlarr.svg
           href: https://prowlarr.iacob.uk
           description: Indexer manager
+          widget:
+            type: prowlarr
+            url: https://prowlarr.iacob.uk
+            key: ${HOMEPAGE_PROWLARR_KEY}
       - Overseerr:
           icon: overseerr.svg
           href: https://overseerr.iacob.uk
           description: Media requests
+          widget:
+            type: overseerr
+            url: https://overseerr.iacob.uk
+            key: ${HOMEPAGE_OVERSEERR_KEY}
       - qBittorrent:
           icon: qbittorrent.svg
           href: https://qbittorrent.iacob.uk
           description: Torrent client
+          widget:
+            type: qbittorrent
+            url: https://qbittorrent.iacob.uk
+            username: ${HOMEPAGE_QBT_USER}
+            password: ${HOMEPAGE_QBT_PASS}
+            enableLeechProgress: true
       - SABnzbd:
           icon: sabnzbd.svg
           href: https://sabnzbd.iacob.uk
