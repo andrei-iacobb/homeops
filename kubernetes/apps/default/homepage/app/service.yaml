@@ -14,4 +14,6 @@ spec:
       protocol: TCP
       name: http
   selector:
+    app.kubernetes.io/controller: homepage
+    app.kubernetes.io/instance: homepage
     app.kubernetes.io/name: homepage
