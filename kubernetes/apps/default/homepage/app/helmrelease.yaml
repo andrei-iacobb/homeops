@@ -29,6 +29,7 @@ spec:
                     name: homepage-secret
                     key: PGID
               HOMEPAGE_ALLOWED_HOSTS: home.iacob.uk,iacob.uk
+              LOG_TARGETS: stdout
             probes:
               liveness: &probes
                 enabled: true
@@ -68,18 +69,10 @@ spec:
             port: 3000
     persistence:
       config:
-        type: persistentVolumeClaim
-        storageClass: openebs-hostpath
-        size: 1Gi
-        accessMode: ReadWriteOnce
+        type: configMap
+        name: homepage-config
         globalMounts:
           - path: /app/config
-      services:
-        type: configMap
-        name: homepage-services
-        globalMounts:
-          - path: /app/config/services.yaml
-            subPath: services.yaml
     route:
       app:
         hostnames: ["home.iacob.uk"]
