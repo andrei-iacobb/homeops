@@ -9,9 +9,30 @@ spec:
     name: plex
   interval: 1h
   values:
+    # No GPU: transcoding disabled via init container (Preferences.xml) and lower CPU limit
     controllers:
       plex:
         strategy: RollingUpdate
+        initContainers:
+          disable-transcoding:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - |
+                PREFS="/config/Library/Application Support/Plex Media Server/Preferences.xml"
+                if [ -f "$PREFS" ]; then
+                  if grep -q 'transcoderCanOnlyRemuxVideo=' "$PREFS"; then
+                    sed -i 's/transcoderCanOnlyRemuxVideo="[^"]*"/transcoderCanOnlyRemuxVideo="1"/' "$PREFS"
+                  else
+                    sed -i 's/<Preferences /<Preferences transcoderCanOnlyRemuxVideo="1" /' "$PREFS"
+                  fi
+                fi
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
         containers:
           app:
             image:
@@ -63,7 +84,7 @@ spec:
                 cpu: 200m
                 memory: 512Mi
               limits:
-                cpu: 4000m
+                cpu: 2000m
                 memory: 8Gi
     defaultPodOptions:
       securityContext:
