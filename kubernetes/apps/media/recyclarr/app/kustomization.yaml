@@ -6,3 +6,9 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+configMapGenerator:
+  - name: recyclarr-configmap
+    files:
+      - recyclarr.yml=./resources/recyclarr.yml
+    options:
+      disableNameSuffixHash: true

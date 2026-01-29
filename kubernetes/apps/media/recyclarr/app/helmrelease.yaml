@@ -33,6 +33,9 @@ spec:
                   secretKeyRef:
                     name: recyclarr-secret
                     key: TZ
+            envFrom:
+              - secretRef:
+                  name: recyclarr-secret
             probes:
               liveness:
                 enabled: false
@@ -72,6 +75,12 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      config-file:
+        type: configMap
+        name: recyclarr-configmap
+        globalMounts:
+          - path: /config/recyclarr.yml
+            subPath: recyclarr.yml
     route:
       app:
         hostnames: ["recyclarr.iacob.uk"]
