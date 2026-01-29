@@ -7,24 +7,17 @@ Homepage service widgets (TrueNAS, Proxmox, AdGuard, Jellyfin, Plex, *arr apps, 
 **Already in `cluster-secrets` (widgets will work once Flux reconciles):**
 
 - **Infrastructure:** TrueNAS key, Proxmox token (`root@pam!again` + secret)
-- **Network:** AdGuard Primary (192.168.1.120, andrei / andreiadmin), AdGuard Secondary (192.168.1.125, andrei / andreiadmin)
-- **Media:** Radarr, Sonarr, Prowlarr, SABnzbd API keys
+- **Network:** AdGuard Primary (192.168.1.120), AdGuard Secondary (192.168.1.125)
+- **Media:** Radarr, Sonarr, Lidarr, Readarr, Prowlarr, Bazarr, SABnzbd, Overseerr, qBittorrent (admin/andrei)
+- **Base:** Jellyfin, Immich
 
-**Still required (add to `cluster-secrets` via `sops kubernetes/components/sops/cluster-secrets.sops.yaml`):**
+**Still required:**
 
 | Key | Where to get it |
 |-----|-----------------|
-| `HOMEPAGE_JELLYFIN_KEY` | Jellyfin → Dashboard → API Keys |
 | `HOMEPAGE_PLEX_TOKEN` | [Plex token](https://www.plexopedia.com/plex-media-server/general/plex-token/) |
-| `HOMEPAGE_LIDARR_KEY` | Lidarr → Settings → General |
-| `HOMEPAGE_READARR_KEY` | Readarr → Settings → General |
-| `HOMEPAGE_BAZARR_KEY` | Bazarr → Settings → General |
-| `HOMEPAGE_OVERSEERR_KEY` | Overseerr → Settings → General |
-| `HOMEPAGE_QBT_USER` | qBittorrent web UI username |
-| `HOMEPAGE_QBT_PASS` | qBittorrent web UI password |
-| `HOMEPAGE_IMMICH_KEY` | Immich → Account Settings → API Keys (`server.statistics`; use admin) |
 
-Until these are set, those widgets will keep using `${HOMEPAGE_...}` and won’t load data. The rest (TrueNAS, Proxmox, AdGuard, Radarr, Sonarr, Prowlarr, SABnzbd) are ready.
+Until set, the Plex widget will not load data. All other widgets above are ready.
 
 ---
 
