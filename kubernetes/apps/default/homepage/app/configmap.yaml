@@ -71,6 +71,7 @@ data:
             key: ${HOMEPAGE_TRUENAS_KEY}
             version: 1
             enablePools: false
+      # TODO: fix PVE widget (invalid data)
       - Proxmox:
           icon: proxmox.svg
           href: https://192.168.1.100:8006
