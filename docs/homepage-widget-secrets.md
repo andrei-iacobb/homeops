@@ -73,6 +73,12 @@ Until set, the Plex widget will not load data. All other widgets above are ready
 3. Reconcile Flux: `flux reconcile kustomization flux-system --with-source` then `flux reconcile kustomization homepage -n default`.
 4. Restart Homepage if needed: `kubectl rollout restart deployment/homepage -n default`.
 
+## Troubleshooting
+
+- **TrueNAS “invalid data”**: The config uses `version: 1` and `enablePools: false` for compatibility. If you’re on TrueNAS ≥ 26.04, try `version: 2` in the widget. For pool stats, set `enablePools: true`; if you use TrueNAS Core, add `nasType: core`.
+- **Proxmox “invalid data”**: Often TLS (self-signed) or auth. Ensure the API token has enough permissions (e.g. VM Admin, Datastore). Test from the Homepage pod: `kubectl exec -n default deployment/homepage -- curl -k -u 'USER@realm!TOKENID:SECRET' 'https://192.168.1.100:8006/api2/json/nodes'`. If that works, the widget should too once TLS/auth are correct.
+- **GitHub contribution graph**: The iframe widget was removed (ghchart.app etc. were unreliable). GitHub remains a link-only card. To try another embed, add a `widget` with `type: iframe` and a `src` that works for you.
+
 ## References
 
 - [Homepage widgets](https://gethomepage.dev/widgets/)

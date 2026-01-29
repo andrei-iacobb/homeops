@@ -69,8 +69,8 @@ data:
             type: truenas
             url: https://192.168.1.1
             key: ${HOMEPAGE_TRUENAS_KEY}
-            version: 2
-            enablePools: true
+            version: 1
+            enablePools: false
       - Proxmox:
           icon: proxmox.svg
           href: https://192.168.1.100:8006
@@ -112,11 +112,6 @@ data:
           icon: si-github
           href: https://github.com/andrei-iacobb
           description: andrei-iacobb
-          widget:
-            type: iframe
-            name: github-contributions
-            src: https://ghchart.app/andrei-iacobb
-            classes: h-32 sm:h-32 md:h-36 lg:h-40 xl:h-44 2xl:h-48
       - Reddit:
           icon: si-reddit
           href: https://reddit.com
