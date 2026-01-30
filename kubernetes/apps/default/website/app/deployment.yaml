@@ -23,6 +23,8 @@ spec:
         app.kubernetes.io/instance: website
         app.kubernetes.io/name: website
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
