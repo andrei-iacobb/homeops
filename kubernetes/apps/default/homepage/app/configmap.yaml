@@ -171,6 +171,10 @@ data:
           icon: mdi-message-text
           href: https://echo.iacob.uk
           description: Echo service
+      - Website:
+          icon: mdi-web
+          href: https://andrei.iacob.co.uk
+          description: Personal website
     - Media:
       - Jellyfin:
           icon: jellyfin.svg

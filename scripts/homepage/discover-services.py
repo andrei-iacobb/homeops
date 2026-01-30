@@ -212,6 +212,13 @@ SERVICE_MAPPINGS = {
         "icon": "lidify.svg",
         "description": "Audiobook Manager"
     },
+    "website": {
+        "name": "Website",
+        "widget": None,
+        "category": "Base",
+        "icon": None,
+        "description": "Personal website"
+    },
 }
 
 # Namespace to category mapping
