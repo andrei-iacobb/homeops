@@ -9,7 +9,10 @@ spec:
     name: plex
   interval: 1h
   values:
-    # CPU transcoding enabled - resources sized for 5-6 concurrent 1080p transcodes
+    # Performance: CPU transcoding, RAM transcode dir. In Plex UI: Settings → Transcoder →
+    # - Transcoder temp directory: /transcode
+    # - Transcoder quality: Prefer higher speed encoding (faster start, less buffering)
+    # - Throttle transcoder: Disabled
     controllers:
       plex:
         strategy: RollingUpdate
@@ -102,6 +105,13 @@ spec:
         existingClaim: plex-music
         globalMounts:
           - path: /data/music
+      # RAM-backed transcode dir - set Plex Settings → Transcoder → Transcoder temp directory to /transcode
+      transcode:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 2Gi
+        globalMounts:
+          - path: /transcode
     route:
       app:
         hostnames: ["plex.iacob.uk"]
