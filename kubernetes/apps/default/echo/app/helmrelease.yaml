@@ -60,7 +60,7 @@ spec:
           - port: http
     route:
       app:
-        hostnames: ["{{ .Release.Name }}.iacob"]
+        hostnames: ["echo.iacob.uk"]
         parentRefs:
           - name: envoy-internal
             namespace: network
