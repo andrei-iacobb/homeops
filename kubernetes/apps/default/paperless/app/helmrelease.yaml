@@ -60,9 +60,8 @@ spec:
               PAPERLESS_DBPASS:
                 valueFrom:
                   secretKeyRef:
-                    name: postgres-secret
-                    namespace: databases
-                    key: PAPERLESS_DB_PASSWORD
+                    name: paperless-secret
+                    key: PAPERLESS_DBPASS
             probes:
               liveness:
                 enabled: true
