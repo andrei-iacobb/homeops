@@ -78,6 +78,14 @@ All secrets need to be encrypted with SOPS before committing:
 - **Grafana**: https://grafana.iacob.uk
 - **Prometheus**: https://prometheus.iacob.uk
 
+## Troubleshooting Exporters
+
+If iLO, Proxmox, or TrueNAS return no data:
+
+- **iLO**: ServiceMonitor uses `host` param (not `hosts`). Ensure IPs in servicemonitor match your iLO: dl360=192.168.1.175, dl380=192.168.1.180.
+- **Proxmox**: ServiceMonitor must have `path: /pve` and params `target`, `module`, `cluster`, `node`. Ensure `target` matches PROXMOX_HOST in your secret.
+- **TrueNAS**: Ensure the image is built and pushed (`task monitoring:build-truenas-exporter`). Verify TRUENAS_HOST and TRUENAS_API_KEY in truenas-secret. Check pod logs: `kubectl logs -n monitoring -l app=truenas-exporter`.
+
 ## Grafana Dashboards
 
 Recommended dashboards to import:

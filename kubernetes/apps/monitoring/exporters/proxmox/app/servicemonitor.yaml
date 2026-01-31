@@ -1,4 +1,5 @@
 ---
+# target must match PROXMOX_HOST in proxmox-secret - update if your Proxmox has a different IP
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -10,7 +11,14 @@ spec:
   endpoints:
   - port: metrics
     interval: 30s
+    scrapeTimeout: 60s
     path: /pve
     params:
       target:
       - "192.168.1.100"
+      module:
+      - default
+      cluster:
+      - "1"
+      node:
+      - "1"

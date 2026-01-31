@@ -12,5 +12,5 @@ spec:
     interval: 60s
     path: /metrics
     params:
-      hosts:
+      host:
       - "192.168.1.175"
