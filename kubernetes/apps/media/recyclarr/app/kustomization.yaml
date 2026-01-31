@@ -6,6 +6,7 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./cronjob-sync.yaml
 configMapGenerator:
   - name: recyclarr-configmap
     files:

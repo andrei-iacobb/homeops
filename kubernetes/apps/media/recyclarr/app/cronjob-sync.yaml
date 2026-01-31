@@ -1,0 +1,38 @@
+---
+# Runs recyclarr sync daily to push TRaSH quality profiles/custom formats to Sonarr/Radarr.
+# API keys must be set in recyclarr-secret (sops kubernetes/apps/media/recyclarr/app/secret.sops.yaml).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recyclarr-sync
+spec:
+  schedule: "0 4 * * *"  # 04:00 daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
+          containers:
+            - name: recyclarr
+              image: ghcr.io/recyclarr/recyclarr:latest
+              command: ["recyclarr", "sync"]
+              envFrom:
+                - secretRef:
+                    name: recyclarr-secret
+              volumeMounts:
+                - name: config
+                  mountPath: /config/recyclarr.yml
+                  subPath: recyclarr.yml
+                  readOnly: true
+          volumes:
+            - name: config
+              configMap:
+                name: recyclarr-configmap
