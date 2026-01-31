@@ -1,0 +1,112 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: paperless
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: paperless
+  interval: 1h
+  values:
+    controllers:
+      paperless:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/paperless-ngx/paperless-ngx
+              tag: 2.20.6
+            env:
+              PAPERLESS_URL: https://paperless.iacob.uk
+              PAPERLESS_PORT: &port 8000
+              PAPERLESS_TIME_ZONE: Europe/London
+              PAPERLESS_WEBSERVER_WORKERS: "2"
+              PAPERLESS_TASK_WORKERS: "2"
+              PAPERLESS_CONSUMPTION_DIR: /data/consume
+              PAPERLESS_DATA_DIR: /data/data
+              PAPERLESS_EXPORT_DIR: /data/export
+              PAPERLESS_MEDIA_ROOT: /data/media
+              PAPERLESS_CONSUMER_POLLING: "60"
+              PAPERLESS_CONSUMER_RECURSIVE: "true"
+              PAPERLESS_OCR_LANGUAGE: eng
+              PAPERLESS_OCR_LANGUAGES: eng
+              PAPERLESS_DBENGINE: postgresql
+              PAPERLESS_DBHOST: postgres.databases.svc.cluster.local
+              PAPERLESS_DBPORT: "5432"
+              PAPERLESS_DBNAME: paperless
+              PAPERLESS_DBUSER: paperless
+              PAPERLESS_ACCOUNT_ALLOW_SIGNUPS: "false"
+              PAPERLESS_SECRET_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: paperless-secret
+                    key: PAPERLESS_SECRET_KEY
+              PAPERLESS_ADMIN_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: paperless-secret
+                    key: PAPERLESS_ADMIN_USER
+              PAPERLESS_ADMIN_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: paperless-secret
+                    key: PAPERLESS_ADMIN_PASSWORD
+              PAPERLESS_REDIS:
+                valueFrom:
+                  secretKeyRef:
+                    name: paperless-secret
+                    key: PAPERLESS_REDIS
+              PAPERLESS_DBPASS:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    namespace: databases
+                    key: PAPERLESS_DB_PASSWORD
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
+    route:
+      app:
+        hostnames: ["paperless.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

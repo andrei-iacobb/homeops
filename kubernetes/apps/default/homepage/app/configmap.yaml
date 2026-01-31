@@ -45,6 +45,9 @@ data:
       Databases:
         style: row
         columns: 2
+      Tools:
+        style: row
+        columns: 3
   widgets.yaml: |
     - greeting:
         text: Home
@@ -300,6 +303,10 @@ data:
           icon: lidify.svg
           href: https://lidify.iacob.uk
           description: Audiobook manager
+      - Tautulli:
+          icon: tautulli.svg
+          href: https://tautulli.iacob.uk
+          description: Plex analytics
     - AI:
       - Ollama:
           icon: ollama.svg
@@ -323,3 +330,20 @@ data:
           icon: pgadmin.svg
           href: https://pgadmin.iacob.uk
           description: PostgreSQL admin
+      - MinIO:
+          icon: minio.svg
+          href: https://minio.iacob.uk
+          description: Object storage console
+    - Tools:
+      - OpenSpeedTest:
+          icon: mdi-speedometer
+          href: https://openspeedtest.iacob.uk
+          description: Network speed test
+      - IT-Tools:
+          icon: mdi-tools
+          href: https://it-tools.iacob.uk
+          description: Developer utilities
+      - Paperless NGX:
+          icon: paperless.svg
+          href: https://paperless.iacob.uk
+          description: Document management

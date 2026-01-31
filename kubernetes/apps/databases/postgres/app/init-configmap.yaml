@@ -10,6 +10,7 @@ data:
     CREATE DATABASE IF NOT EXISTS vaultwarden;
     CREATE DATABASE IF NOT EXISTS outline;
     CREATE DATABASE IF NOT EXISTS gitea;
+    CREATE DATABASE IF NOT EXISTS paperless;
     
     -- Create users with passwords from secrets (these will be created via env vars)
     -- The passwords are set via environment variables in the init script below
@@ -25,6 +26,7 @@ data:
         SELECT 'CREATE DATABASE vaultwarden' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vaultwarden')\gexec
         SELECT 'CREATE DATABASE outline' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'outline')\gexec
         SELECT 'CREATE DATABASE gitea' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gitea')\gexec
+        SELECT 'CREATE DATABASE paperless' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')\gexec
         
         -- Create users if they don't exist
         DO \$\$
@@ -41,6 +43,9 @@ data:
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'gitea') THEN
                 CREATE USER gitea WITH PASSWORD '${GITEA_DB_PASSWORD}';
             END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'paperless') THEN
+                CREATE USER paperless WITH PASSWORD '${PAPERLESS_DB_PASSWORD}';
+            END IF;
         END
         \$\$;
         
@@ -49,11 +54,13 @@ data:
         GRANT ALL PRIVILEGES ON DATABASE vaultwarden TO vaultwarden;
         GRANT ALL PRIVILEGES ON DATABASE outline TO outline;
         GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea;
+        GRANT ALL PRIVILEGES ON DATABASE paperless TO paperless;
         
         ALTER DATABASE immich OWNER TO immich;
         ALTER DATABASE vaultwarden OWNER TO vaultwarden;
         ALTER DATABASE outline OWNER TO outline;
         ALTER DATABASE gitea OWNER TO gitea;
+        ALTER DATABASE paperless OWNER TO paperless;
         
         -- Connect to immich database and create required extensions
         \c immich
@@ -71,4 +78,7 @@ data:
         
         \c gitea
         GRANT ALL ON SCHEMA public TO gitea;
+        
+        \c paperless
+        GRANT ALL ON SCHEMA public TO paperless;
     EOSQL

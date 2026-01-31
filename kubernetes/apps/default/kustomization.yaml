@@ -9,6 +9,9 @@ components:
 resources:
   - ./namespace.yaml
   - ./echo/ks.yaml
+  - ./openspeedtest/ks.yaml
+  - ./it-tools/ks.yaml
+  - ./paperless/ks.yaml
   - ./gitea/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./homepage/ks.yaml

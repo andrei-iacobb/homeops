@@ -219,6 +219,41 @@ SERVICE_MAPPINGS = {
         "icon": None,
         "description": "Personal website"
     },
+    "openspeedtest": {
+        "name": "OpenSpeedTest",
+        "widget": None,
+        "category": "Tools",
+        "icon": "mdi-speedometer",
+        "description": "Network speed test"
+    },
+    "it-tools": {
+        "name": "IT-Tools",
+        "widget": None,
+        "category": "Tools",
+        "icon": "mdi-tools",
+        "description": "Developer utilities"
+    },
+    "paperless": {
+        "name": "Paperless NGX",
+        "widget": None,
+        "category": "Tools",
+        "icon": "paperless.svg",
+        "description": "Document management"
+    },
+    "tautulli": {
+        "name": "Tautulli",
+        "widget": "tautulli",
+        "category": "Media",
+        "icon": "tautulli.svg",
+        "description": "Plex analytics"
+    },
+    "minio": {
+        "name": "MinIO",
+        "widget": None,
+        "category": "Databases",
+        "icon": "minio.svg",
+        "description": "Object storage console"
+    },
 }
 
 # Namespace to category mapping

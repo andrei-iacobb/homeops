@@ -1,0 +1,84 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tautulli
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tautulli
+  interval: 1h
+  values:
+    controllers:
+      tautulli:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/tautulli
+              tag: 2.16.0
+            env:
+              TZ: Europe/London
+              TAUTULLI_HTTP_BASE_URL: https://tautulli.iacob.uk
+              TAUTULLI_HTTP_PORT: &port 80
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /status
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      tmp:
+        type: emptyDir
+      add-ons:
+        type: emptyDir
+    route:
+      app:
+        hostnames: ["tautulli.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

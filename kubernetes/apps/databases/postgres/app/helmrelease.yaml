@@ -46,6 +46,11 @@ spec:
                   secretKeyRef:
                     name: postgres-secret
                     key: GITEA_DB_PASSWORD
+              PAPERLESS_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: PAPERLESS_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true
