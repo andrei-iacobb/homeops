@@ -17,29 +17,25 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: prom/graphite-exporter:latest
-        args:
-          - --graphite.mapping-config=/etc/graphite_mapping.conf
-          - --web.listen-address=:9108
+        image: ghcr.io/andrei-iacobb/truenas-exporter:latest
         ports:
         - name: metrics
-          containerPort: 9108
-        - name: graphite
-          containerPort: 9109
-          protocol: UDP
-        volumeMounts:
-        - name: graphite-mapping
-          mountPath: /etc/graphite_mapping.conf
-          subPath: graphite-mapping.yaml
-          readOnly: true
+          containerPort: 9814
+        env:
+        - name: TRUENAS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: truenas-secret
+              key: TRUENAS_HOST
+        - name: TRUENAS_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: truenas-secret
+              key: TRUENAS_API_KEY
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 50m
+            memory: 64Mi
           limits:
-            cpu: 500m
-            memory: 256Mi
-      volumes:
-      - name: graphite-mapping
-        configMap:
-          name: truenas-graphite-mapping
+            cpu: 200m
+            memory: 128Mi

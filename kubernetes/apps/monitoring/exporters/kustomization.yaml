@@ -7,6 +7,5 @@ resources:
   - adguard/adguard-2/app
   - proxmox/app
   - truenas/app
-  - wireguard/app
   - ilo/ilo-dl360/app
   - ilo/ilo-dl380/app

@@ -32,3 +32,10 @@ tasks:
     preconditions:
       - test -f {{.KUBECONFIG}}
       - which flux
+
+  monitoring:build-truenas-exporter:
+    desc: Build and push TrueNAS API exporter image
+    dir: '{{.ROOT_DIR}}/kubernetes/apps/monitoring/exporters/truenas'
+    cmds:
+      - docker build -t ghcr.io/andrei-iacobb/truenas-exporter:latest .
+      - docker push ghcr.io/andrei-iacobb/truenas-exporter:latest

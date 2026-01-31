@@ -25,16 +25,18 @@ This directory contains the Prometheus and Grafana monitoring stack for the home
 - **Metrics**: VM stats, node resources, storage
 
 #### TrueNAS
-- **Exporter**: `norby/truecharts-truenas-exporter`
-- **Port**: 9300
-- **Secret**: `truenas-secret`
-- **Metrics**: Storage pools, datasets, system stats
+- **Exporter**: `ghcr.io/andrei-iacobb/truenas-exporter` (API-based, pulls from TrueNAS)
+- **Port**: 9814
+- **Secret**: `truenas-secret` (TRUENAS_HOST, TRUENAS_API_KEY)
+- **Metrics**: Replication, apps, VMs, Incus instances
+- **Build**: `docker build -t ghcr.io/andrei-iacobb/truenas-exporter:latest kubernetes/apps/monitoring/exporters/truenas && docker push ghcr.io/andrei-iacobb/truenas-exporter:latest`
 
 #### WireGuard
 - **Exporter**: `mindflavor/prometheus-wireguard-exporter`
 - **Port**: 9586
 - **Metrics**: VPN connections, traffic stats
-- **Note**: Requires hostNetwork: true
+- **Note**: Runs on WireGuard host (192.168.1.67). Prometheus scrapes it remotely.
+- **Setup on WireGuard host**: `docker run -d --restart unless-stopped --net=host --cap-add=NET_ADMIN --name wireguard-exporter mindflavor/prometheus-wireguard-exporter`
 
 #### iLO (DL360 G9 & DL380 G9)
 - **Exporter**: `mdvorak/ilo4-metrics-exporter`
