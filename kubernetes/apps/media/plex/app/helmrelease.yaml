@@ -9,30 +9,10 @@ spec:
     name: plex
   interval: 1h
   values:
-    # No GPU: transcoding disabled via init container (Preferences.xml) and lower CPU limit
+    # CPU transcoding enabled - resources sized for 2-3 concurrent 1080p transcodes
     controllers:
       plex:
         strategy: RollingUpdate
-        initContainers:
-          disable-transcoding:
-            image:
-              repository: busybox
-              tag: latest
-            command:
-              - /bin/sh
-              - -c
-              - |
-                PREFS="/config/Library/Application Support/Plex Media Server/Preferences.xml"
-                if [ -f "$PREFS" ]; then
-                  if grep -q 'transcoderCanOnlyRemuxVideo=' "$PREFS"; then
-                    sed -i 's/transcoderCanOnlyRemuxVideo="[^"]*"/transcoderCanOnlyRemuxVideo="1"/' "$PREFS"
-                  else
-                    sed -i 's/<Preferences /<Preferences transcoderCanOnlyRemuxVideo="1" /' "$PREFS"
-                  fi
-                fi
-            securityContext:
-              runAsUser: 0
-              runAsGroup: 0
         containers:
           app:
             image:
@@ -60,26 +40,6 @@ spec:
                   secretKeyRef:
                     name: plex-secret
                     key: PLEX_CLAIM
-            lifecycle:
-              postStart:
-                exec:
-                  command:
-                    - /bin/sh
-                    - -c
-                    - |
-                      PREFS="/config/Library/Application Support/Plex Media Server/Preferences.xml"
-                      for i in 1 2 3 4 5 6 7 8 9 10; do
-                        if [ -f "$PREFS" ]; then
-                          if grep -q 'transcoderCanOnlyRemuxVideo=' "$PREFS"; then
-                            sed -i 's/transcoderCanOnlyRemuxVideo="[^"]*"/transcoderCanOnlyRemuxVideo="1"/' "$PREFS"
-                          else
-                            sed -i 's/<Preferences /<Preferences transcoderCanOnlyRemuxVideo="1" /' "$PREFS"
-                          fi
-                          exit 0
-                        fi
-                        sleep 6
-                      done
-                      exit 0
             probes:
               liveness: &probes
                 enabled: true
@@ -101,11 +61,11 @@ spec:
                 add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER", "KILL"]
             resources:
               requests:
-                cpu: 200m
-                memory: 512Mi
+                cpu: 500m
+                memory: 1Gi
               limits:
-                cpu: 2000m
-                memory: 8Gi
+                cpu: 4000m
+                memory: 4Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
