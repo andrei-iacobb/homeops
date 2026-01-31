@@ -3,11 +3,13 @@ apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
   name: cloudflare-tunnel
+  annotations:
+    external-dns.alpha.kubernetes.io/ttl: "300"
 spec:
   endpoints:
     - dnsName: "${SECRET_DOMAIN}"
       recordType: CNAME
       targets: ["23a328b3-0b31-4340-b92f-de050b161c20.cfargotunnel.com"]
-    - dnsName: "external.${SECRET_DOMAIN}"
+    - dnsName: "*.${SECRET_DOMAIN}"
       recordType: CNAME
       targets: ["23a328b3-0b31-4340-b92f-de050b161c20.cfargotunnel.com"]
