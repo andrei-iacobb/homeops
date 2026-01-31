@@ -1,0 +1,17 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: apex-iacob-co-uk
+  namespace: network
+spec:
+  parentRefs:
+    - name: envoy-external
+      sectionName: https
+  hostnames:
+    - ${SECRET_DOMAIN}
+  rules:
+    - backendRefs:
+        - name: website
+          namespace: default
+          port: 3000
