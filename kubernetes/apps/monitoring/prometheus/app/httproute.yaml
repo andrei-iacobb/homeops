@@ -13,4 +13,5 @@ spec:
   rules:
     - backendRefs:
         - name: prometheus-kube-prometheus-stack-prometheus
+          namespace: monitoring
           port: 9090
