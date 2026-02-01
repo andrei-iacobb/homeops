@@ -9,5 +9,4 @@ resources:
   - ./nfs-backup-pv-pvc.yaml
   - ./test-pvc.yaml
   - ./replicationsource-test.yaml
-  - ./servicemonitor.yaml
   - ./clusterrolebinding-volsync-metrics.yaml

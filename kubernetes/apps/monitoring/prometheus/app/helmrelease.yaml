@@ -28,7 +28,6 @@ spec:
                 requests:
                   storage: 50Gi
         serviceMonitorSelectorNilUsesHelmValues: false
-        serviceMonitorNamespaceSelector: {}
         podMonitorSelectorNilUsesHelmValues: false
         ruleSelectorNilUsesHelmValues: false
         additionalScrapeConfigs:
@@ -38,6 +37,17 @@ spec:
                   - 192.168.1.67:9586
                 labels:
                   instance: wireguard-vpn
+          - job_name: volsync
+            scheme: https
+            metrics_path: /metrics
+            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+            tls_config:
+              insecure_skip_verify: true
+            static_configs:
+              - targets:
+                  - volsync-metrics.volsync-system.svc.cluster.local:8443
+                labels:
+                  component: volsync
         resources:
           requests:
             cpu: 500m
