@@ -16,6 +16,7 @@ spec:
       daily: 2
     pruneIntervalDays: 7
     copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
     moverVolumes:
       - volumeSource:
           persistentVolumeClaim:
