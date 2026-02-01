@@ -1,15 +1,14 @@
 # Example restic-config Secret for VolSync backup destination.
-# Copy to restic-config.sops.yaml in the namespace where ReplicationSource runs,
-# fill values, then: sops -e -i restic-config.sops.yaml
+# TrueNAS NFS 192.168.1.1:/mnt/sexy-pool is configured in restic-config.sops.yaml;
+# ReplicationSource must use moverVolumes to mount that NFS (see replicationsource-example.yaml).
 #
-# For TrueNAS NFS backup (when you provide NFS server + export path):
-#   We'll add a PV/PVC that mounts your NFS export. The repo path will be the
-#   mount path inside the mover pod (e.g. /data/restic-repo). Set RESTIC_REPOSITORY
-#   to that path once the NFS-backed volume is configured.
+# For a new namespace: copy restic-config.sops.yaml, ensure RESTIC_REPOSITORY is
+# /mnt/volsync-backups/restic and add moverVolumes (NFS 192.168.1.1, path /mnt/sexy-pool)
+# to each ReplicationSource.
 #
 # For S3/MinIO (e.g. MinIO on TrueNAS):
 #   RESTIC_REPOSITORY: "s3:https://minio.truenas.local/bucket/restic-repo"
-#   Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to this Secret.
+#   Add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to the Secret.
 #
 apiVersion: v1
 kind: Secret
@@ -18,5 +17,5 @@ metadata:
   namespace: volsync-system
 type: Opaque
 stringData:
-  RESTIC_REPOSITORY: ""   # e.g. /data/restic-repo (NFS mount path) or s3:https://...
-  RESTIC_PASSWORD: ""    # From secrets/api-keys.yaml volsync.RESTIC_PASSWORD
+  RESTIC_REPOSITORY: /mnt/volsync-backups/restic
+  RESTIC_PASSWORD: ""   # Stored in restic-config.sops.yaml (SOPS); add to api-keys.yaml for reference

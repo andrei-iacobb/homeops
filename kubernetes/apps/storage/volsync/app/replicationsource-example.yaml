@@ -1,29 +1,40 @@
-# Example ReplicationSource: backup a PVC to the restic repo (TrueNAS NFS or S3).
-# Copy to the namespace of the PVC you want to backup, adjust sourcePVC and
-# ensure restic-config Secret exists in that namespace.
+# Example ReplicationSource: backup a PVC to TrueNAS NFS (192.168.1.1:/mnt/sexy-pool).
+# Copy to the namespace of the PVC you want to backup; set sourcePVC and ensure
+# restic-config Secret exists in that namespace (copy from volsync-system or create).
 #
-# Prereqs: VolSync installed; restic-config Secret in same namespace;
-# Kubernetes snapshot controller (for copyMethod: Snapshot). Use copyMethod: Direct
+# NFS is mounted in the mover pod via moverVolumes; RESTIC_REPOSITORY in restic-config
+# must be /mnt/volsync-backups/restic (or /mnt/<mountPath>/restic).
+#
+# Prereqs: VolSync installed; restic-config in same namespace; use copyMethod: Direct
 # if your StorageClass does not support snapshots.
 #
-# When you create a TrueNAS NFS pool and provide: NFS server host/IP, export path,
-# we add a PV+PVC for that export and configure restic-config so backups go there.
+# Create folder volsync-backups on TrueNAS under /mnt/sexy-pool (e.g. Datasets >
+# sexy-pool > Add Dataset or Create directory "volsync-backups"), then export
+# /mnt/sexy-pool (or /mnt/sexy-pool/volsync-backups) via NFS. Path below uses
+# the dedicated subfolder.
 ---
-# apiVersion: volsync.backube/v1alpha1
-# kind: ReplicationSource
-# metadata:
-#   name: my-pvc-backup
-# spec:
-#   sourcePVC: my-pvc-name
-#   trigger:
-#     schedule: "0 */6 * * *"   # every 6 hours
-#   restic:
-#     repository: restic-config
-#     retain:
-#       hourly: 6
-#       daily: 5
-#       weekly: 4
-#       monthly: 2
-#     pruneIntervalDays: 14
-#     copyMethod: Direct   # or Snapshot if your StorageClass supports it
-# ---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: example-pvc-backup
+  namespace: volsync-system
+spec:
+  sourcePVC: CHANGEME   # e.g. postgres, gitea, or any PVC name in this namespace
+  trigger:
+    schedule: "0 */6 * * *"   # every 6 hours
+  restic:
+    repository: restic-config
+    retain:
+      hourly: 6
+      daily: 5
+      weekly: 4
+      monthly: 2
+    pruneIntervalDays: 14
+    copyMethod: Direct
+  # Mount TrueNAS NFS so restic can write to /mnt/volsync-backups/restic
+  moverVolumes:
+    - volumeSource:
+        nfs:
+          server: 192.168.1.1
+          path: /mnt/sexy-pool/volsync-backups
+      mountPath: volsync-backups
