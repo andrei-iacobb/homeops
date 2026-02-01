@@ -6,5 +6,4 @@ resources:
   - ./helmrelease.yaml
   - ./helmrepository.yaml
   - ./restic-config.sops.yaml
-  - ./test-pvc.yaml
-  - ./replicationsource-test.yaml
+  # Test backup (uncomment after VolSync is running): ./test-pvc.yaml, ./replicationsource-test.yaml
