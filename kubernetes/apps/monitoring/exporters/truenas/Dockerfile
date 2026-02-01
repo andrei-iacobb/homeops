@@ -1,6 +1,6 @@
 # TrueNAS API Exporter - pulls metrics from TrueNAS REST API
 # Based on https://github.com/alexlmiller/truenas-grafana
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
