@@ -25,10 +25,6 @@ sonarr:
         reset_unmatched_scores:
           enabled: true
         min_format_score: 0
-        upgrade:
-          allowed: true
-          until_quality: WEB 1080p
-          until_score: 10000
         quality_sort: top
         qualities:
           - name: WEB 1080p
