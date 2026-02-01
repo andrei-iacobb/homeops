@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of pgadmin (databases namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath databases-pgadmin
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-pgadmin
+  namespace: databases
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:Y6XkumQjPyO7M9QjRXjW34aduqCmm8KkZSFDTA/TJXbmU8LicE+zSKVWUKH+,iv:T5raaedPMUw/nz2hqjfJaKuZoM/2IgUE6crPgxLeaJg=,tag:LCxtE6kqc+xrTbbh4dEMvw==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:4zi5PAvQ/mCJ5iCT4x+2HmLjsbLjZkYzXF/wokicFIYRfcrKSOhw75G7oGs=,iv:BF0tLNsBIBAD2/353XLB3cjio4JBOwpji72OU24W8Lc=,tag:OINu4X5FYeSH34c9kF+f2w==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBYdlkzajVLZlhTdWlvamF1
+        ZHhPaXlNUUJWazlENFZMVVlRM1N0eHo5Wnl3CjNFUUxYZ2lwL1BUY09HYmZ6c0o1
+        Qmt5OEFtcnU2cG8zdE84dlBqQ3dodWMKLS0tIEdHQmQ4QUNDaHhtalBQbzZWOVd1
+        V0ZhWHAwSDh4WklVNUJqN2IyNyt3TnMKLdfh4m9f2Nfi47ECKhJawEZ3xJ7AI5T6
+        9f69Zd/H7Ida5rv34IK2JCLPQT4lLRw/HuZ0PUe+MOnqi64Z/aPtfQ==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:+hP6h+SJwZ1p2QL8gO9vjD2B9EGVfeZyJfSDxsUjX8JzXB7OlqYa0Asn/xEpJ3aRdbilFVhwCvRWsewqsxCkLT4ZXBAzZjUjLwd74XpjShFF9FLBmq7OzxqSdwZ/QPuMY0efDz3qB8J1AsUAhneHSoOqe9w/wmyCwSgyji/xgG0=,iv:xDRKQ+OqYXrmWXr9j5on7EULSU0HCv1QA28aE4AgWuQ=,tag:Sg8DpRGnLx6PvwqQTT8/6A==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

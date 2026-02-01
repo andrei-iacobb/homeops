@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./restic-config-pgadmin.sops.yaml
+  - ./volsync-replicationsource-pgadmin.yaml

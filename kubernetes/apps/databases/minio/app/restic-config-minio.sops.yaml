@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of minio (databases namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath databases-minio
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-minio
+  namespace: databases
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:3UHXduihhgXXSQU1TKmV3DK5yjhyybXEM6YIuq1+bilAA62+tEzNqX1KjQ==,iv:3M2T+ay6H75GeipMeneffK5iOMVCprY4pHlyuTarT6o=,tag:LOnTsAERumo9j+RJtaXuBg==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:8WADqITwkw8BM4ReeRPUPW7a8i5M+Kzlg4AbV+U2iiowjtCx6fvG89/4VN4=,iv:R+ixq92iA/gEvL0JXwhvwLo+qEtWGjy7NWB14vyhZ58=,tag:UnbnVpm4Vj1GuQDLWkwIWA==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBaTjZGWWRBbGl5Mjd0T2Nr
+        QW9kd2YxVTFtTDkyMUJqSU02THBaRUczalRRCmpUcjk0WDE5SmhUalNrZjJSajlL
+        ejd0OGticy9FMXJiYU94dGRUWWZIUzQKLS0tIGQ1UFRScGRYVXdUdE1RcktMRWlx
+        Umh5VUhoZWtXZUNhYVpUVkp0T1FDRWcKE5ET8hGx32MObfd17s/gA45LfbdYB0Pp
+        h/IJRJpnJL+a95sk1FX6J7PGo8stfSixu82PL4z94uGiJY5yWVHrJw==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:nHaLs+XM7M74CWxLUGE5xrvrgCAvw0A3ClhvmJb6wm5iSa6phqXpIv6QRDvWB6qJJaMv3jHz6sM45QKLLwMrcDUicbmuTBSYaRA6FKS9hzl/PQT0jXtzCPgULboyB5qKCP9Yip7fWmnFCcQkaWrWHsjaDt8ZKVrE3ksD0LdEGt4=,iv:uWtgRn+zuLrV7tsOntP/GNBdYzfBK9V+0Py+b0mUCwY=,tag:cuYlyTblwzo5554TER99Mw==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

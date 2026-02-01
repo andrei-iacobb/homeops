@@ -7,17 +7,14 @@ metadata:
   name: grafana-storage-backup
   namespace: monitoring
 spec:
-  sourcePVC: storage-prometheus-grafana-0
+  sourcePVC: prometheus-grafana
   trigger:
     schedule: "0 */6 * * *"   # every 6 hours
   restic:
     repository: restic-config-grafana
     retain:
-      hourly: 6
-      daily: 5
-      weekly: 4
-      monthly: 2
-    pruneIntervalDays: 14
+      last: "1"
+    pruneIntervalDays: 7
     copyMethod: Direct
     cacheStorageClassName: openebs-hostpath
     moverVolumes:

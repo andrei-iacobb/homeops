@@ -6,3 +6,6 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./volsync-nfs-backup-pv-pvc.yaml
+  - ./restic-config-openwebui.sops.yaml
+  - ./volsync-replicationsource-openwebui.yaml

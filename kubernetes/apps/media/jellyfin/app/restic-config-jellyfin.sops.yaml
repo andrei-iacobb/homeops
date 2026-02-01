@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of jellyfin (media namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath media-jellyfin
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-jellyfin
+  namespace: media
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:t9PU8kUzAAXz+biLrPLQabFJ7kooyjbwiBXjI9NCAajbhDNxAT9FZ3ZJ,iv:rh78r2CL5WSEfQRtytBwf1h54VwKIZZi7H9oTXRU2tM=,tag:BXUWoUIpBTZR8LPesivHbA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:+eTZeN4ZnefIrO73nB99ANmoZj8tlWtFjw79RkiTPRWglEOsB4jjcdW4FdI=,iv:sHHSw77y85xIAYwRHUpSNVMZVvQwYwO2wGOA60StH3E=,tag:3bmHq8EuLwulOAwhQyzssg==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAvUm84dnR6SGdnU2JaZWhQ
+        VTVRSEkrclR2emd1QTVqVzF2TTRlWGcweENzCks4T2Z1eEd5dVkxQTE2NDM0cGJk
+        VGRMa29pUUE3NDlnWVAvcVBHVTlsTm8KLS0tIE1PazVrRmNkYWRBK0lKaE9lcE5Z
+        c3hBVVVCZFRZTDZBaGNxckR6bDJQbUEKPGFGIe+tJPycIQIA4Jh2PBIzR3Vh0bDA
+        xDvqsRjgndO+k9A97TxfmoCRpxxYYxO70rU7qIi3mJo56Yvc2xuPgA==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:oA2pw+u6Yo7hDG/TIRWHxgF88mA/P9U2q0u2+ntoIRx3oYtoKbdUMSX946BtshQ+AH7UNPEN1ekJNef2ReOUwIAZBOx8XG0E1TbnIPIOmoz2Sx7P4uYW2+rxbaxtBOng4Vf8saLbi8Ir41Dlpj9nUUFFaufYV5Z502rCJAHen9g=,iv:wWp0Bo0FjGFKROsjNQBeIs0lffsX8GzEoKsYNLo6MZY=,tag:fIPtFk4r7Sslw2+MTYMg8A==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

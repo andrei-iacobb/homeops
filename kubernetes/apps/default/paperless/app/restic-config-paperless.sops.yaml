@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of paperless (default namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath default-paperless
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-paperless
+  namespace: default
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:VMsfh7vYfw66SZ8RAweAnNdbHr1Oel0RvfUx9b0i+LeipZkzT2rYE9LIb+l4,iv:UCaKkInPrpluW7OfcMKAhEafXschg7aQ41+VGHbgHwc=,tag:jvuGGitJhapV+G4YPRrzjA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:knnUz05Nua2OZgcX7H5H98k5QGkoCsv/E8lDXXHJouW042RkhTrK5EgRWn0=,iv:lFIVl1iKB6eaPwXQxGt1D12sAfCN6gpdnmdhpNqeXGU=,tag:ZA4eXt3K94YHxvNrZWOReA==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBCYnVxU2FLUUIrRFVoN2tt
+        STExYjBtWUdkWTJpQTQrWnBJRGdqRklzSHlZCkcxUVpNU0FjeW9hYUxuY0ViTWVD
+        ZkgweGl5cS8zMHhScEY4MkFQRUNyMEEKLS0tIFVUdEpsenpoNHpvWEpUb0JGeWQ4
+        RWFsS3FNdnZMN0dzQ29NSXkvZk1acm8KzhiDXh/sw30DNn3unOtOtz7ZEYdk+8KO
+        jPJL6aVMLE2xf9INtIb+ciWwfov0BnuoMsWr+UIhwelg9hYppWgFZg==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:eRkSJBKAvkRt+Baa3R6ome9gBIAOMKy7Nd8JqNzU0zz1GVSoo5YJmslYqK0GpAnH/AcOupF4tyuF1a1ssmKUvL2GO4VUjoSMQPfQLehNw616fEZMyE1wPOmRfu0HjDsqih8Q6pM21K4mdar1ZODG7I6RHABHJ0GWQDMfcEwvQQE=,iv:h5zm0xkqFJtMwQDbIqu7TKklQYWvivWe/KWO0ajh+fY=,tag:ODK8LgJoZhjKhN5bwpNCfg==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

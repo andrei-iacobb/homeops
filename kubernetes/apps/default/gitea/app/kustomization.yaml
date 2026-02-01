@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./restic-config-gitea.sops.yaml
+  - ./volsync-replicationsource-gitea.yaml

@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./secret.sops.yaml
   - ./httproute.yaml
+  - ./restic-config-minio.sops.yaml
+  - ./volsync-replicationsource-minio.yaml

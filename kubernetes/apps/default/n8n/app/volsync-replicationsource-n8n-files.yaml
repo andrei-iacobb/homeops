@@ -12,11 +12,8 @@ spec:
   restic:
     repository: restic-config-n8n-files
     retain:
-      hourly: 6
-      daily: 5
-      weekly: 4
-      monthly: 2
-    pruneIntervalDays: 14
+      last: "1"
+    pruneIntervalDays: 7
     copyMethod: Direct
     cacheStorageClassName: openebs-hostpath
     moverVolumes:

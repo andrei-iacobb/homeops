@@ -7,3 +7,5 @@ resources:
   - ./httproute.yaml
   - ./secret.sops.yaml
   - ./pvc-media.yaml
+  - ./restic-config-bazarr.sops.yaml
+  - ./volsync-replicationsource-bazarr.yaml

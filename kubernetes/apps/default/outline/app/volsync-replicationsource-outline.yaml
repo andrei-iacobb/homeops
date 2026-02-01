@@ -1,0 +1,23 @@
+---
+# Backup Outline PVC (OpenEBS) to TrueNAS NFS via VolSync restic.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: outline-backup
+  namespace: default
+spec:
+  sourcePVC: outline
+  trigger:
+    schedule: "0 */6 * * *"   # every 6 hours
+  restic:
+    repository: restic-config-outline
+    retain:
+      last: "1"
+    pruneIntervalDays: 7
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
+    moverVolumes:
+      - volumeSource:
+          persistentVolumeClaim:
+            claimName: volsync-nfs-backup
+        mountPath: volsync-backups

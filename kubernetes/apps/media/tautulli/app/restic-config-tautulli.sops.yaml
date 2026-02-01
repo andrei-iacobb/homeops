@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of tautulli (media namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath media-tautulli
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-tautulli
+  namespace: media
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:u0AabfmS3MwTtjm66OH9LFmqaWCv4EMmioo8xhSWTntrud94Lb/Nd2LZ,iv:4RT6+MT747yWUa2peZVqvV/OExMDZAmuc8mf2+3+918=,tag:7B1NSqTsemPSD8Agkwv+cQ==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:dR1gCVPvFc45cKmBlw3mCBrke+sueeC7S+3di68v+YkcQNumgl086gsOYC4=,iv:JzIeDmRfcuzuHXyvGr0GZ3R3Iwj+6JH6vSXufBSmCdU=,tag:DGAyLwv6lFwwMR7XSWy4SA==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBrcXZNYmdQcjFRMkxhaEI4
+        ZFdCS0VJVy9OWG5JT29IRGRzcnVzZ2JFY0NRCnZOQm4rWmVBQVh4RmF2cWtuMEwz
+        UEJvT2U2M052QlJka1lYNnkyaFgwQUUKLS0tIGpzUFVONXZMalJoclhuOVJLVjMw
+        blNhMzdscEsrRmhaL3pCTlhBa2dZTk0KMiBBQKH+7sNCPpWNEt6Fjn9gF+86HERB
+        tx47WQfoMnppLQZrUR6sU7MeHoSzaHi3oA9zyO2vYamlcIsvQalcig==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:bYqZBrbIHFp5Mej8cOOd0O+66jl681Fd5d/3/p3Vel9ihDJX1JZRGkeqK67hUmnZ1hhyqvQG+7gWPQAc5z/YcWZask/JKx4qy97VHok37d/WeyfTXnc2tmIdCwvqsyE+BMTMYlrT7hkIPj2pD/3G7h3atXvG3b495soDlc67a/Q=,iv:beDIdML3wx85Sfhoj/Pd4zzKD4IvuErqB6iiRWw3Sts=,tag:fMxdCPQFn1fKj0q+ApofJA==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

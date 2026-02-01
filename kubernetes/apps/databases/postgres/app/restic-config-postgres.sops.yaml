@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of postgres (databases namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath databases-postgres
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-postgres
+  namespace: databases
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:g/PvlTxSvXMLuLwig1TG7LVes4ukMV7fLIhrGZPFMt84h5R2cY2L87bWJzXvhg==,iv:97zvlXSJj/fguSsR12Tdm80lojjpjAH1ThwuPovnBz8=,tag:mOAs7SUWe9CIOH5A9oHZgw==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:MSmJz7/7D5nPhj3kwFauoRK7sKo7Ipwx0uZNRL6nI8y0MvlQuuuY4ZT3bTs=,iv:3qRBCcqLWiEVjeo11cV71E6bzFhQU6zF/Pvi0Ez/jxs=,tag:rKBx1fiscE7KOOdGnjXHWA==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBMRzJPa3pDMFNMRzFvQ1dH
+        YUM5ZEZycTBNNERobnJDN1JuRUtCWTVVUjNNCisxdnpzSzQ5SGFvM0hzUXRqcGdz
+        M0ZUbWNGU2tlNnpaNE9VaElZTlBWRDgKLS0tIHRFS1gvdzRPcDNDVWV2OXRadjNz
+        bitkVnF2dmpqa3o1M05NeDlzQ1FuSUkKPVlABXxb8EXwudK2vWxrYnLyPZBLUoAR
+        LrcbYYp2kb75zkEZa1bwxBwWxgWD41STGtKkzyDYsSVqwyaJkBzeaQ==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:/EjjpzNNjbZwxLh3QN/HeHvHPtw1fNSV7tfyxHld5E7OyiypXEXZqWfBkLeuklVrXm59oOaLnJnxOFRYpYu7qRWBxgf7fG+PQ8fVmKUdJ+iAfNulpqnrhe/hOUjIAeN/y4G8EItORCemJMKPp7qmHPM3VOyvsFUqOnVS6hIwNGo=,iv:jc3lIqXr+sbC/0P7LTy8Yev4Jjr7XQuzfwn6yzXWpLk=,tag:TJf9MhJRqbuKByPeLyxuMg==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

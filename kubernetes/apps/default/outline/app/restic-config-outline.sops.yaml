@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of outline (default namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath default-outline
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-outline
+  namespace: default
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:+OfLES6lDBxONn+sggLDFqqLKLZXI4cmCEDTeHFUyCBZiy5GgvvkeoXO1w==,iv:wP/FjYQmn6aNk6+miRPd/3wOW6qt2YVQXsgMz6KAF3A=,tag:Wq49E39rDuarmiIyWGB2qA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:GKIZHO7XBx9SMlfeRpKcrIikC8oyrWH57Hfjt1guyYWvzM+gnK3ofByMK6Y=,iv:JgcME1Dc0HAh09ShCMPSjFdpikwHVCwqvOIKqD9CwJY=,tag:Z1pvgfIQHlYPNRBet8DjHQ==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtNldXTS9Hc3hZU3lmbkxn
+        ckVkR2Izak9jeE9OeXdJMUp1d3o1cVR6YUJZCkpZV0xkUWVOZ2FoQWhuWHFUcDJL
+        aURmdllkV3YwV0pGZjlFbThMUXFpUncKLS0tIHVUcWpNc3J0MVk5U3U3bW1kc3Uz
+        akkzV2E5ZCswQ2hjbmRCTnNRWU0rbEEK127hWv7d5suucNch5lPj9CxAjDp1/8/W
+        /XvgAQJYmXA/ofVW5+9m5LDtfqQVZ9QYlaZbAOujae8OcQEFlHm/sg==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:dkCL5vptFkn8eZ/msSZmJNEmIIfcEsY3i60KcEsX8mmb4uM4g686GR5SRQgy3DdhME1m1MNqYrbUvnVJ2Bp1x69UACiEwigFNUAmkBCENFibCg7I8OTQYF4cPB5fxwfGRNpE/q+6/69vpgdVxpeCn5lBXnh6f/9VV2CiI1s5abE=,iv:7r3KR0CvjVN210xQeju9FBaT+DHzIva/o7yBJPciRc4=,tag:RlaEnMQoVvTnSD9AytrtZg==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

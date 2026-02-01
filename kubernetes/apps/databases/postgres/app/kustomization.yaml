@@ -6,3 +6,6 @@ resources:
   - ./ocirepository.yaml
   - ./secret.sops.yaml
   - ./init-configmap.yaml
+  - ./volsync-nfs-backup-pv-pvc.yaml
+  - ./restic-config-postgres.sops.yaml
+  - ./volsync-replicationsource-postgres.yaml

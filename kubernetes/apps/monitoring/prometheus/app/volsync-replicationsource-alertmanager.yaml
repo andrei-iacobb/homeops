@@ -6,17 +6,14 @@ metadata:
   name: alertmanager-db-backup
   namespace: monitoring
 spec:
-  sourcePVC: alertmanager-db-prometheus-kube-prometheus-alertmanager-0
+  sourcePVC: alertmanager-prometheus-kube-prometheus-alertmanager-db-alertmanager-prometheus-kube-prometheus-alertmanager-0
   trigger:
     schedule: "0 */6 * * *"   # every 6 hours
   restic:
     repository: restic-config-alertmanager-db
     retain:
-      hourly: 6
-      daily: 5
-      weekly: 4
-      monthly: 2
-    pruneIntervalDays: 14
+      last: "1"
+    pruneIntervalDays: 7
     copyMethod: Direct
     cacheStorageClassName: openebs-hostpath
     moverVolumes:

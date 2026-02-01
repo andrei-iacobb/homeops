@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of mariadb (databases namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath databases-mariadb
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-mariadb
+  namespace: databases
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:AiXiZ7wUGKMAfeNqQYcpqIS2XLfYM4gnnUhvGsUxu/cJQp4QcJBEpYoubKKj,iv:bsFTkRWCSvdIHAw415WI1Z2cpLoUcCkDFf/wVWGjq8M=,tag:lc/AgKYEDRPeTx5x9pr+RQ==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:8ZXrT8fy3muRIVxgLcfb92oDtMXSXR/YdKd51QGBydOjmfm6QugmSkPIVcI=,iv:W4MzocuLlbYrQtNcZCulDvucDW9Pp/A4FihLaYSqTbE=,tag:yHlKDYBgRrb307vqJnl5OQ==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiUGhPSkpzbnZCZmJQWGVO
+        M1cwMVFxNjQ3ZjdzN3BoOVZoRXJranUra2s0CmJYbEZtTHZ4eEhWdm16Z1BvYVYz
+        dFV1TFZwT0laNFFjaWYyWEg5ZkZxamsKLS0tIDBka2gveVZ4aGszWUNjdDdjajFW
+        cE9TaEhQdWE2VHd5L0xrQkpSbytzWFkKBnDc+oHkntSsBDpHrpvSa8IbABBtghjM
+        Eb8YenWwcoIhKubS2i9pOnLCIHWYiluE/n2rWop6EvlhTm1g0ZQrQA==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:Mkph/3qCwA2OKtAoRnOen/HidNVCxfdyxI0LccHOCPqlJSU2ODTlsgWmlwMHf3W8RNl3INmgxZ2lAI/n47giq/NJ7lFbZ2s/pIvB8kj9a4cIDO3c/e2Gvum0ZUTjcIinySXEl85RQKkeTYSLHHN3WTNSLeRhuOgIV97KscEOQX4=,iv:3S4qM0h9n1JXr3jiLYS6oXuRwcTVRewy3HiBaqdpr6A=,tag:j0QkWBJOwjEPbIQaRlFiNA==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

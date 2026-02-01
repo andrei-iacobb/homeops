@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./restic-config-prowlarr.sops.yaml
+  - ./volsync-replicationsource-prowlarr.yaml

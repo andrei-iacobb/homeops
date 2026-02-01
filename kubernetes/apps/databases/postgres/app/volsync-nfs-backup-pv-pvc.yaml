@@ -1,0 +1,31 @@
+---
+# Static NFS PV for VolSync restic backup (TrueNAS 192.168.1.1:/mnt/sexy-pool/volsync-backup).
+# Used by ReplicationSource in databases namespace so restic can write to the NFS share.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: volsync-nfs-backup-pv-databases
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.1
+    path: /mnt/sexy-pool/volsync-backup
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: volsync-nfs-backup
+  namespace: databases
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: volsync-nfs-backup-pv-databases
+  resources:
+    requests:
+      storage: 100Gi

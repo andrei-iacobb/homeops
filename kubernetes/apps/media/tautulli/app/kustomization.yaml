@@ -5,3 +5,5 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./httproute.yaml
+  - ./restic-config-tautulli.sops.yaml
+  - ./volsync-replicationsource-tautulli.yaml

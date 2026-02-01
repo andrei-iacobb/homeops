@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of overseerr (media namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath media-overseerr
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-overseerr
+  namespace: media
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:TaRfIInrxMWHgAhIhEnYGXDQ7ws7v0veHaYsBDzCvFS0Q6MrGtq+5liYmg==,iv:/wIyOmbsDIG8DXUaDPtB2RZJx+iUSEsj1ukxrPbeJg4=,tag:tzR+ALx6rVGvGaYOqeDEJA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:BLSScT1C0IozxWxtJZEssM8BAn2HCweaoq33ck8tCE+tPc6/2veuYLytfK4=,iv:ZwxFmoN4gcyvhgYYBnBolwXZkaWwid7NUeqsnQyYmQY=,tag:cFsPUlPq02xGzbX4bcxmiA==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA3S1JpSjJXK1dkQ3hzOEg4
+        NURrOFdXaVY4ZE9TaGI3SUpYem9LZ2pyRlIwCkQ5aElFUlI0am1EeFcwU1RjNDYw
+        S1diOWh5eHdwcUR5Q3o2ZXU1ejR3WkEKLS0tIENTTENIaFEyNFpXSEVaNkVzUlRu
+        Nlo3alFQV2tDZnFuWkVoSXNobU1RajAKVRPPzrexBowCPUjGeaT/eeRJROCeBK25
+        oXXI0MHxAhzBgd2JipMLbyFB/ccGRnKtFk5J0XJmdkTzwSHarct9kA==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:lesCpPE9aer7zlQLL78a+sytyTuv9AGkOA/5EFScMWAt/eTuOi3YbmVhRSxbzltpwLW4Y8a8/RtXRgM/yldZnpQvwBxOJDPLQQKxlqA7V2QWJdi7Vx+NJq9T940gVyk5bksB4daq/lJPTOTRBofEoF5EAuDCsilzFvX+G97/o7A=,iv:0IkgQaOBi2aDmjOdjcqAeHWCbPAR9oSS84/O776gw3M=,tag:l0t6Oq+ANLEUMgeXcEmGgw==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

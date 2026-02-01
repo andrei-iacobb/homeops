@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of openwebui (ai namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath ai-openwebui
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-openwebui
+  namespace: ai
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:8C0hO592v4W4VQblRDZliKy25QScZS8gl8ZNAibLl+zz8a8+mux47w==,iv:v3pOzRpomMMCYSY62nUIFkXgxlqSzMh3tIG9uCFrbSY=,tag:OPDgmok+0Sf5Yj+y3o8ysA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:TNm7wbkgkS4xAZCMoX30SgT78E6eX3MJ5sPk+s4AT3Ki+AmWp8AA4a2SIMM=,iv:IDkNb+4BeqTVKCKks9gF/PQQ4YGAFqAq2DvPkhjH7Zs=,tag:AtpBbIF+pFuF6s1yLrd3iQ==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSArN0xYNnBCdDhKbXhJNy9x
+        eHpJeWZiRHNrQk9BaThrNUUya2tEdmFxU0VZCnFxeC9yOFF3a1RvUm94YXIrZVpD
+        V1FMTWdzc0JnUWZSVHZWWmRCSkpqRTgKLS0tIDFrUXpjUTQ1NFI0UkNpWG9PMysy
+        eXNCNDlHS1U5TGlXVzQ0MmlwSFI5Rk0KZZerhJ9ZiTsm1XQRg9fhplO/7/AsuqR/
+        mnW8fyvL9srgByDnrh4GpFIRNfqJqi/oPpEvUenQPF9qUYH283T5ag==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:aQGlu2gi/iy9b06MflDkhOljV4oejo0wbcTIAUONoS93uNaaNRMBp1OUPu2CnH6ZScCfVhHSKlkSaMlRtCc4LbQD2CXuF5SUqQf+6YNHJoxaHFViFJcmIT8o+vV4fQ8BUdB/GPBXRNo8Pv403/p+cS3TXlPv/rFSA8YndJ6xb4o=,iv:jVej0Bbi4FwWf3/e5QPzsPM9wTa0QKh5O/pA3pr00I0=,tag:SdFEQok4/gUEGmk2qoxCcw==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

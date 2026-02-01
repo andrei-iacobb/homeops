@@ -7,17 +7,14 @@ metadata:
   name: prometheus-db-backup
   namespace: monitoring
 spec:
-  sourcePVC: prometheus-db-prometheus-kube-prometheus-prometheus-0
+  sourcePVC: prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0
   trigger:
     schedule: "0 */6 * * *"   # every 6 hours
   restic:
     repository: restic-config-prometheus-db
     retain:
-      hourly: 6
-      daily: 5
-      weekly: 4
-      monthly: 2
-    pruneIntervalDays: 14
+      last: "1"
+    pruneIntervalDays: 7
     copyMethod: Direct
     cacheStorageClassName: openebs-hostpath
     moverVolumes:

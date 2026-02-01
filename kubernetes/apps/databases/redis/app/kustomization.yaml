@@ -5,3 +5,5 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./secret.sops.yaml
+  - ./restic-config-redis.sops.yaml
+  - ./volsync-replicationsource-redis.yaml

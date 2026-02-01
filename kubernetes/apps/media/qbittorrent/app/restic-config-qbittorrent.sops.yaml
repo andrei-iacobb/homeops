@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of qbittorrent (media namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath media-qbittorrent
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-qbittorrent
+  namespace: media
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:3NKHNStZm3URZaul2Vx8Mx+GmWSxq7FlPjcwQEiuPkbrMSmhly9OG36yyo8e,iv:QWyT029AfvhQhMA4kw3yWUu+5Renl6SCtHrG43AWFAY=,tag:czKGS1a1oK9Tl6BNSV5Z3A==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:NOipqo5Oav9xoHqGB5SzcPWlZAvdyLjOF8u1c3EwW6MKSbvAMr4RjUZufxI=,iv:sL3zOR8xibrwhPrmUcpxYrcMI/n808b49b7sb+x/hwQ=,tag:HxoIQVYXKb7Aigic+aRoUg==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDbm5RZWNQbjRqZGcvWDhi
+        bzJ5eTJVb2FVdTh0V0pFSThGZFdLNUZRd1JNCnZwQS9tcC9WL212WTVvQk1PUDdF
+        akpobU1nZU53WmU4QnlIeGtwdC8xeTgKLS0tIFk2NWNPSDFmZzNjbkcrT3l6TGNY
+        clgvcTZWSXJyT0FDUGdxSHBaNXdNeVEKYzggOgeI2NNkBn0HlTJUy2lUjcF/ouwb
+        a3bY6JOBfgqfpAlNvHh2J8g+oyiPyAqzQy1EMa30Oeh2t1q3EGlILQ==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:25:48Z"
+  mac: ENC[AES256_GCM,data:IHE+ulc77cwPsWWgM2GlVSpTM8y4eeeUcXmXM3u7YofrlTfBE4l11ffhbreQFHs3yJw5id5SxJkHAyn9Nq2RxNGtJp3bcPW1bmd5tQnJ620k1GNUQrWu6JgBgRCttH3EmVecd9Mw8OzW1oaRhWUfQG+CH9c0QSmNgupFbQBvIvY=,iv:cyuHmQpqo6lCoTKf7uxryJ/t7uN8enVHAsnaQlwzGyg=,tag:FRhT0Ui6IOpfxX4nrmRRKw==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0
