@@ -28,10 +28,9 @@ spec:
       monthly: 2
     pruneIntervalDays: 14
     copyMethod: Direct
-  # Mount TrueNAS NFS so restic can write to /mnt/volsync-backups/restic
-  moverVolumes:
-    - volumeSource:
-        nfs:
-          server: 192.168.1.1
-          path: /mnt/sexy-pool/volsync-backup
-      mountPath: volsync-backups
+    # Mount NFS backup PVC (volsync-nfs-backup → TrueNAS 192.168.1.1:/mnt/sexy-pool/volsync-backup)
+    moverVolumes:
+      - volumeSource:
+          persistentVolumeClaim:
+            claimName: volsync-nfs-backup
+        mountPath: volsync-backups

@@ -6,5 +6,6 @@ resources:
   - ./helmrelease.yaml
   - ./helmrepository.yaml
   - ./restic-config.sops.yaml
+  - ./nfs-backup-pv-pvc.yaml
   - ./test-pvc.yaml
   - ./replicationsource-test.yaml

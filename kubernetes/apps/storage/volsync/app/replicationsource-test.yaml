@@ -16,9 +16,8 @@ spec:
       daily: 2
     pruneIntervalDays: 7
     copyMethod: Direct
-  moverVolumes:
-    - volumeSource:
-        nfs:
-          server: 192.168.1.1
-          path: /mnt/sexy-pool/volsync-backup
-      mountPath: volsync-backups
+    moverVolumes:
+      - volumeSource:
+          persistentVolumeClaim:
+            claimName: volsync-nfs-backup
+        mountPath: volsync-backups
