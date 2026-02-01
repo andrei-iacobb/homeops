@@ -28,7 +28,14 @@ spec:
                 requests:
                   storage: 50Gi
         serviceMonitorSelectorNilUsesHelmValues: false
+        # Restrict to monitoring namespace only; Prometheus SA lacks RBAC elsewhere (causes 500)
+        serviceMonitorNamespaceSelector:
+          matchNames:
+            - monitoring
         podMonitorSelectorNilUsesHelmValues: false
+        podMonitorNamespaceSelector:
+          matchNames:
+            - monitoring
         ruleSelectorNilUsesHelmValues: false
         additionalScrapeConfigs:
           - job_name: wireguard
