@@ -12,7 +12,8 @@ sonarr:
       - template: sonarr-quality-definition-series
       - template: sonarr-v4-quality-profile-web-1080p
       - template: sonarr-v4-quality-profile-web-2160p
-    assign_scores_to:
+
+    quality_profiles:
       - name: Remux-1080p
         reset_unmatched_scores:
           enabled: true
