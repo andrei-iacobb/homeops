@@ -1,0 +1,26 @@
+# Restic config for VolSync backup of Grafana storage (monitoring namespace).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-grafana
+  namespace: monitoring
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:ZSVcPEui8wEiuRTDSa5o7lynE/D8cTcMMCR/Aowo8OYki9VbcyJveKvX8wrAY66M1w==,iv:xs4DujZUqLND66srnNhyuVHeM9jURwm8Qf2kWvmMZZ0=,tag:kz3FXZSVgBzHZtVk6dHokA==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:Mt+GKAMLs5w/hqkIZ1qQffl3vCLtDMzQhSbwRkrpQxRvE+kQdIK3SuqATo0=,iv:G/Df3E84w06trJhzWRgUbIXZ9dgtzXJcZsa2DRVvzL8=,tag:GZw0CgoGs4lBYL86gzUxtg==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA1ZU5MczNMN1lJQ090NmZu
+        MFgwdDkyamN5dnNLV2NFZUxnTWhOckFQeFhVCjFiL2JnWHk3cjgyb1pHcVpUMWRM
+        UnFNTmNSMHJzL1JpN2hzSWxqZ2ZSVWcKLS0tIEJiV0RVUVAxdTc1QitGa21XWTV4
+        Y291dHphT1RUNVJTWlpLOWhocjhGZnMK40Q3t+HM8Tzz7evH0fhjzo2/oonPyjOo
+        iK5r3ttcu1ohrYsVrrIqLx9FPecSj2xAwpcEph36WVZyKrMhZmFeWg==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:00:29Z"
+  mac: ENC[AES256_GCM,data:tFZuVvwuh1g2jynPQKd7DBaKA4DpFdbkGhkG5gG9N+JqvoLdc/zFgVmb4lrwQo7MHDxSHwGgtmhE6z/bdc9gFYjSiZ/+dDuXEWagkSUDXVw8T8dPZRqtFarQQHevj6mWdnVj4PTLgx1IfXKYHwyAy6bhteiCJlj9H8qTtbtenMc=,iv:08cRnsL2BS50eo4rOREWCuDRJRfWZvarnZ4JH4V/EfQ=,tag:757OPpk+Ujlhsf/HgfvexA==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

@@ -1,0 +1,26 @@
+---
+# Backup n8n-files (OpenEBS) to TrueNAS NFS via VolSync restic.
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: n8n-files-backup
+  namespace: default
+spec:
+  sourcePVC: n8n-files
+  trigger:
+    schedule: "0 */6 * * *"   # every 6 hours
+  restic:
+    repository: restic-config-n8n-files
+    retain:
+      hourly: 6
+      daily: 5
+      weekly: 4
+      monthly: 2
+    pruneIntervalDays: 14
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
+    moverVolumes:
+      - volumeSource:
+          persistentVolumeClaim:
+            claimName: volsync-nfs-backup
+        mountPath: volsync-backups

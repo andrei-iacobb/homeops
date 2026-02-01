@@ -6,3 +6,10 @@ resources:
   - helmrelease.yaml
   - httproute.yaml
   - secret.sops.yaml
+  - volsync-nfs-backup-pv-pvc.yaml
+  - restic-config-prometheus-db.sops.yaml
+  - restic-config-alertmanager-db.sops.yaml
+  - restic-config-grafana.sops.yaml
+  - volsync-replicationsource-prometheus.yaml
+  - volsync-replicationsource-alertmanager.yaml
+  - volsync-replicationsource-grafana.yaml

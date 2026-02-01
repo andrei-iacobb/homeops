@@ -1,0 +1,27 @@
+---
+# Backup Prometheus DB PVC (OpenEBS) to TrueNAS NFS via VolSync restic.
+# PVC name from kube-prometheus-stack release "prometheus"; if different run: kubectl get pvc -n monitoring
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: prometheus-db-backup
+  namespace: monitoring
+spec:
+  sourcePVC: prometheus-db-prometheus-kube-prometheus-prometheus-0
+  trigger:
+    schedule: "0 */6 * * *"   # every 6 hours
+  restic:
+    repository: restic-config-prometheus-db
+    retain:
+      hourly: 6
+      daily: 5
+      weekly: 4
+      monthly: 2
+    pruneIntervalDays: 14
+    copyMethod: Direct
+    cacheStorageClassName: openebs-hostpath
+    moverVolumes:
+      - volumeSource:
+          persistentVolumeClaim:
+            claimName: volsync-nfs-backup
+        mountPath: volsync-backups

@@ -1,0 +1,26 @@
+# Restic config for VolSync backup of Prometheus DB (monitoring namespace).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-prometheus-db
+  namespace: monitoring
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:b/wVLZ/NkjamMnHFrvaMXs/MpGN/rK53WSiPWD75SJfr7wpZrV8isyiz7X2pbOPX3Avky33RUA==,iv:tfBTYEsRWTGR43cWyc1L/tHNQHr7ZvcN4haUrFYobjc=,tag:VUHZn3ZSJ3Ni3HaAkbNdEw==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:OFO9W/LlQmOwH9pTF9lkRYqYtecmxECEJERw9vjosWyI1iK8DjiCZy6yAEo=,iv:vsag6NAIP+UjCpOZDlKY4gky2/jfELBwYBM5UtAB2hs=,tag:2WyORRUqIqZXN6FtCI9Rew==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBJQ28xQitGanpSeEZvbXFI
+        SWtHMVNZNTFnMS9Kb2FxaXBxaGF6a3BsUFFvCmU3WHdDNGtlVXNUbnF5WTc1dDRZ
+        ZFBDYnl6MDArWUJoS3BSZGhIYjJ6cnMKLS0tIHFnbzZLZ1J4SW1NZ3h4ZklVL1I1
+        am4ycC9jbzZqd1pjNGM1cHBaZzlXMnMKE6wdTz23tTfa+XxVxbmISCwoGcfez+mw
+        XTJESNk/EHKaCsryhN3fnDFA0aYOlEPX3FHDboF6zibVF2W7rzkDPA==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T13:00:25Z"
+  mac: ENC[AES256_GCM,data:gLjkcN1JIXjx39L5dk+mxIJL2lmpJT1Qbi3DXV/LH3g/wPHbFryizlvvBw6S7WmfwAl0Hura5Gqt0uZhlFyun6sM0CzkV1r3hbiOFbK7eD+mLCfPMoy7Zrm+ujsTkjNMy4MfDZVo92dQBhTg63+Wjy8Ws8iDZAVT/+oOmCLBn9I=,iv:1moYJC+8K5wHRO7ZKQTZLBmLoyNY+zzi8QEgMCLtwJc=,tag:879aqQtVD0fikf5pqaq5wQ==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0

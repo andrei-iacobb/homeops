@@ -7,3 +7,6 @@ resources:
   - ./httproute.yaml
   - ./secret.sops.yaml
   - ./pvc-files.yaml
+  - ./volsync-nfs-backup-pv-pvc.yaml
+  - ./restic-config-n8n-files.sops.yaml
+  - ./volsync-replicationsource-n8n-files.yaml

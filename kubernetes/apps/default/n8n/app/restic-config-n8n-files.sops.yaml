@@ -1,0 +1,27 @@
+# Restic config for VolSync backup of n8n-files (default namespace).
+# Repo path on NFS: /mnt/volsync-backups → subpath default-n8n-files
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restic-config-n8n-files
+  namespace: default
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: ENC[AES256_GCM,data:c40SgowNioMoCABd6IuRzNerwXx8oj5UU3Voa8YePug+ICQX+2/tN7bt5Ud6qwPw,iv:5OYmfV1Sy9ckMzkUNrW5q2+2hNSjPAI2QdfBKHhx0o8=,tag:aAcwaY4JFj3hsUkfO6TjeQ==,type:str]
+  RESTIC_PASSWORD: ENC[AES256_GCM,data:GEZcdhljc1EUG3y3lfhsak3gNYPdwCW4yrhIHB+6mtHzheoUTkPq+3KDzMM=,iv:bhekRXIuCPeJ6IBOA9mpQG2T5IoUcCusohgK0dPij0I=,tag:0nV3vwBwdCAoNSI4BwledQ==,type:str]
+sops:
+  age:
+    - recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+      enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBaeXE5b0pDSzh1NlM5NEgw
+        Y05CYktoYUdiaWlPSHg5cmxOVFVnaHdkdW5nCnpwWkM1cm80K1dRVlhkSFhaWjJV
+        YlNBVytCNW5KdlQ2OUI5ejZ4TVpqWVkKLS0tIDN1Q1VqMlRkdXBqb2d4UkpDNjNE
+        VHRlaEt3a2UrRXRoWVBVUnBJRksreUkK1mPKxxeMBlilJEf87dYFzX/3Z7XTdfo2
+        mSOVaeo1bx0TDCBodGFwW3BTa32Lutlop+6wE7zeC0CyT3d3yaXimw==
+        -----END AGE ENCRYPTED FILE-----
+  lastmodified: "2026-02-01T12:59:50Z"
+  mac: ENC[AES256_GCM,data:FIU4J+u9IVI07sBo4CXgUUpujCI7j5jPBApwqucoLp3X8ALqYQxXuGxb3sL9+EJSAKK+kBbpS1va/o+MuGol5CT5UnEzGc/BR8/oGKPFoTywj/nAZt9wyVwozMVlpeCxH7QQgp3P3EDPXK4OecN9F1GEnyAlQgGdST7QCTusr2k=,iv:obSxlzo+OdD6MlcXDsUG8Z267p1lYT+sj+KnN19DQOE=,tag:x2G/HFUytzc1L8GgAigr5A==,type:str]
+  encrypted_regex: ^(data|stringData)$
+  mac_only_encrypted: true
+  version: 3.11.0
