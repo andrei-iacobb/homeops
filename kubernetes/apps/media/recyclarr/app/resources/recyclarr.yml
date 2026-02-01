@@ -25,7 +25,6 @@ sonarr:
         reset_unmatched_scores:
           enabled: true
         min_format_score: 0
-        cutoff: WEB 1080p
         upgrade:
           allowed: true
           until_quality: WEB 1080p
