@@ -30,12 +30,18 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         # Restrict to monitoring namespace only; Prometheus SA lacks RBAC elsewhere (causes 500)
         serviceMonitorNamespaceSelector:
-          matchNames:
-            - monitoring
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: In
+              values:
+                - monitoring
         podMonitorSelectorNilUsesHelmValues: false
         podMonitorNamespaceSelector:
-          matchNames:
-            - monitoring
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: In
+              values:
+                - monitoring
         ruleSelectorNilUsesHelmValues: false
         additionalScrapeConfigs:
           - job_name: wireguard
