@@ -1,0 +1,22 @@
+---
+# ServiceMonitor for VolSync operator metrics (Prometheus).
+# VolSync exposes metrics on port https (kube-rbac-proxy); Prometheus needs
+# volsync-metrics-reader ClusterRole via ClusterRoleBinding (see clusterrolebinding-volsync-metrics.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: volsync
+  namespace: volsync-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      control-plane: volsync-controller
+  endpoints:
+  - port: https
+    path: /metrics
+    interval: 30s
+    scheme: https
+    tlsConfig:
+      insecureSkipVerify: true
