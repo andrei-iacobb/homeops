@@ -90,6 +90,10 @@ data:
           href: http://192.168.1.254
           description: Network router
           siteMonitor: http://192.168.1.254
+      - VolSync:
+          icon: mdi-backup-restore
+          href: https://volsync.readthedocs.io/
+          description: PVC backup (Restic)
     - Network:
       - AdGuard Primary:
           icon: adguard-home

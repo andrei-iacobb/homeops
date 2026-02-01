@@ -1,0 +1,22 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: volsync
+spec:
+  chart:
+    spec:
+      chart: volsync
+      sourceRef:
+        kind: HelmRepository
+        name: backube
+      version: "0.14.x"
+  interval: 1h
+  timeout: 10m
+  install:
+    createNamespace: false
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3

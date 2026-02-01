@@ -1,0 +1,29 @@
+# Example ReplicationSource: backup a PVC to the restic repo (TrueNAS NFS or S3).
+# Copy to the namespace of the PVC you want to backup, adjust sourcePVC and
+# ensure restic-config Secret exists in that namespace.
+#
+# Prereqs: VolSync installed; restic-config Secret in same namespace;
+# Kubernetes snapshot controller (for copyMethod: Snapshot). Use copyMethod: Direct
+# if your StorageClass does not support snapshots.
+#
+# When you create a TrueNAS NFS pool and provide: NFS server host/IP, export path,
+# we add a PV+PVC for that export and configure restic-config so backups go there.
+---
+# apiVersion: volsync.backube/v1alpha1
+# kind: ReplicationSource
+# metadata:
+#   name: my-pvc-backup
+# spec:
+#   sourcePVC: my-pvc-name
+#   trigger:
+#     schedule: "0 */6 * * *"   # every 6 hours
+#   restic:
+#     repository: restic-config
+#     retain:
+#       hourly: 6
+#       daily: 5
+#       weekly: 4
+#       monthly: 2
+#     pruneIntervalDays: 14
+#     copyMethod: Direct   # or Snapshot if your StorageClass supports it
+# ---
