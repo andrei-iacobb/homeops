@@ -8,10 +8,7 @@
 # Prereqs: VolSync installed; restic-config in same namespace; use copyMethod: Direct
 # if your StorageClass does not support snapshots.
 #
-# Create folder volsync-backups on TrueNAS under /mnt/sexy-pool (e.g. Datasets >
-# sexy-pool > Add Dataset or Create directory "volsync-backups"), then export
-# /mnt/sexy-pool (or /mnt/sexy-pool/volsync-backups) via NFS. Path below uses
-# the dedicated subfolder.
+# NFS path /mnt/sexy-pool/volsync-backup (192.168.1.0/24) on TrueNAS.
 ---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
@@ -36,5 +33,5 @@ spec:
     - volumeSource:
         nfs:
           server: 192.168.1.1
-          path: /mnt/sexy-pool/volsync-backups
+          path: /mnt/sexy-pool/volsync-backup
       mountPath: volsync-backups

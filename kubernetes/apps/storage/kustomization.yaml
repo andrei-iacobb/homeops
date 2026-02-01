@@ -12,5 +12,4 @@ resources:
   - ./nfs-csi/ks.yaml
   - ./nfs-csi-immich/ks.yaml
   - ./nfs-csi/storageclasses/ks.yaml
-  - ./volsync/namespace.yaml
   - ./volsync/ks.yaml
