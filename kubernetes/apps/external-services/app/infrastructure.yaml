@@ -1,35 +1,17 @@
 ---
-# TrueNAS
-apiVersion: v1
-kind: Service
+# TrueNAS - Using Envoy Backend for self-signed cert
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
 metadata:
   name: truenas
   namespace: external-services
-  labels:
-    app.kubernetes.io/name: truenas
 spec:
-  ports:
-    - name: https
-      port: 443
-      protocol: TCP
-      targetPort: 443
----
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
-metadata:
-  name: truenas
-  namespace: external-services
-  labels:
-    kubernetes.io/service-name: truenas
-addressType: IPv4
-ports:
-  - name: https
-    appProtocol: https
-    protocol: TCP
-    port: 443
-endpoints:
-  - addresses:
-      - "192.168.1.1"
+  endpoints:
+    - ip:
+        address: 192.168.1.1
+        port: 443
+  tls:
+    insecureSkipVerify: true
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -45,40 +27,24 @@ spec:
     - truenas.iacob.uk
   rules:
     - backendRefs:
-        - name: truenas
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: truenas
           port: 443
 ---
-# Proxmox
-apiVersion: v1
-kind: Service
+# Proxmox - Using Envoy Backend for self-signed cert
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
 metadata:
   name: proxmox
   namespace: external-services
-  labels:
-    app.kubernetes.io/name: proxmox
 spec:
-  ports:
-    - name: https
-      port: 8006
-      protocol: TCP
-      targetPort: 8006
----
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
-metadata:
-  name: proxmox
-  namespace: external-services
-  labels:
-    kubernetes.io/service-name: proxmox
-addressType: IPv4
-ports:
-  - name: https
-    appProtocol: https
-    protocol: TCP
-    port: 8006
-endpoints:
-  - addresses:
-      - "192.168.1.100"
+  endpoints:
+    - ip:
+        address: 192.168.1.100
+        port: 8006
+  tls:
+    insecureSkipVerify: true
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -94,10 +60,12 @@ spec:
     - proxmox.iacob.uk
   rules:
     - backendRefs:
-        - name: proxmox
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: proxmox
           port: 8006
 ---
-# Router (Virgin Media Hub)
+# Router - HTTP backend (no TLS)
 apiVersion: v1
 kind: Service
 metadata:
@@ -146,7 +114,7 @@ spec:
         - name: router
           port: 80
 ---
-# HP Switch
+# HP Switch - HTTP backend (no TLS)
 apiVersion: v1
 kind: Service
 metadata:
