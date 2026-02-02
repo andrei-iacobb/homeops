@@ -10,6 +10,9 @@ spec:
   trigger:
     schedule: "*/15 * * * *"   # every 15 min for testing (change to "0 */6 * * *" for production)
   restic:
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
     repository: restic-config
     retain:
       hourly: 2
