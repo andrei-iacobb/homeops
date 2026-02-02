@@ -1,3 +1,5 @@
+claude.md
+
 # Secrets
 *.pub
 *.key
@@ -47,3 +49,6 @@ __pycache__/
 # Logs
 logs/
 *.log
+claude.md
+issues.md
+test.md
