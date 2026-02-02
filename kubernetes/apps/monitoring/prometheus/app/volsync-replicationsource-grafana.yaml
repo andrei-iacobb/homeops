@@ -12,8 +12,8 @@ spec:
     schedule: "0 */6 * * *"   # every 6 hours
   restic:
     moverSecurityContext:
-      runAsUser: 472
-      runAsGroup: 472
+      runAsUser: 1000
+      runAsGroup: 1000
     repository: restic-config-grafana
     retain:
       last: "1"

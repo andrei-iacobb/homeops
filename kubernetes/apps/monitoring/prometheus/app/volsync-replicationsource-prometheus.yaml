@@ -13,7 +13,7 @@ spec:
   restic:
     moverSecurityContext:
       runAsUser: 1000
-      runAsGroup: 2000
+      runAsGroup: 1000
     repository: restic-config-prometheus-db
     retain:
       last: "1"
