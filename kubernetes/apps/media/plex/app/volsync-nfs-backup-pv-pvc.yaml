@@ -1,21 +1,5 @@
 ---
-# Static NFS PV for VolSync restic backup (TrueNAS 192.168.1.1:/mnt/sexy-pool/volsync-backup).
-# Used by ReplicationSource in media namespace so restic can write to the NFS share.
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: volsync-nfs-backup-pv-media
-spec:
-  capacity:
-    storage: 100Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
-  nfs:
-    server: 192.168.1.1
-    path: /mnt/sexy-pool/volsync-backup
----
+# Dynamic NFS PVC for VolSync restic backup (nfs-media storage class).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -24,8 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: ""
-  volumeName: volsync-nfs-backup-pv-media
+  storageClassName: nfs-media
   resources:
     requests:
       storage: 100Gi
