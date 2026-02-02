@@ -1,4 +1,5 @@
 ---
+# TODO: iLO4 may need HTTP/1.1 instead of HTTP/2 - test and add alpnProtocols if needed
 # HP iLO 1 (DL360 G9) - Using Envoy Backend for self-signed cert
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: Backend

@@ -1,4 +1,5 @@
 ---
+# TODO: Home Assistant returns 400 - may need Host header configuration or websocket support
 # Home Assistant - External Access via Cloudflare Tunnel
 apiVersion: v1
 kind: Service
