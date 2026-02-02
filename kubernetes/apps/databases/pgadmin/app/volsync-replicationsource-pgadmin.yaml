@@ -10,6 +10,9 @@ spec:
   trigger:
     schedule: "0 */6 * * *"   # every 6 hours
   restic:
+    moverSecurityContext:
+      runAsUser: 5050
+      runAsGroup: 5050
     repository: restic-config-pgadmin
     retain:
       last: "1"
