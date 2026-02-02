@@ -63,33 +63,56 @@ data:
               href: https://github.com/andrei-iacobb
   services.yaml: |
     - Infrastructure:
+      - Home Assistant:
+          icon: home-assistant.svg
+          href: https://hass.iacob.co.uk
+          description: Smart home
+          siteMonitor: https://hass.iacob.co.uk
+          widget:
+            type: homeassistant
+            url: https://hass.iacob.co.uk
+            key: ${HOMEPAGE_HASS_KEY}
       - TrueNAS:
           icon: truenas.svg
-          href: https://192.168.1.1
+          href: https://truenas.iacob.uk
           description: NAS storage
-          siteMonitor: https://192.168.1.1
+          siteMonitor: https://truenas.iacob.uk
           widget:
             type: truenas
-            url: https://192.168.1.1
+            url: https://truenas.iacob.uk
             key: ${HOMEPAGE_TRUENAS_KEY}
             version: 1
             enablePools: false
-      # TODO: fix PVE widget (invalid data)
       - Proxmox:
           icon: proxmox.svg
-          href: https://192.168.1.100:8006
+          href: https://proxmox.iacob.uk
           description: Virtualization
-          siteMonitor: https://192.168.1.100:8006
+          siteMonitor: https://proxmox.iacob.uk
           widget:
             type: proxmox
-            url: https://192.168.1.100:8006
+            url: https://proxmox.iacob.uk
             username: ${HOMEPAGE_PROXMOX_USER}
             password: ${HOMEPAGE_PROXMOX_PASS}
+      - iLO DL360:
+          icon: mdi-server
+          href: https://ilo1.iacob.uk
+          description: HP DL360 G9 iLO
+          siteMonitor: https://ilo1.iacob.uk
+      - iLO DL380:
+          icon: mdi-server
+          href: https://ilo2.iacob.uk
+          description: HP DL380 G9 iLO
+          siteMonitor: https://ilo2.iacob.uk
       - Router:
           icon: mdi-router-wireless
-          href: http://192.168.1.254
+          href: https://router.iacob.uk
           description: Network router
-          siteMonitor: http://192.168.1.254
+          siteMonitor: https://router.iacob.uk
+      - HP Switch:
+          icon: mdi-switch
+          href: https://switch.iacob.uk
+          description: Network switch
+          siteMonitor: https://switch.iacob.uk
       - VolSync:
           icon: mdi-backup-restore
           href: https://volsync.readthedocs.io/
@@ -97,22 +120,22 @@ data:
     - Network:
       - AdGuard Primary:
           icon: adguard-home
-          href: ${HOMEPAGE_ADGUARD_1_URL}
+          href: https://dns1.iacob.uk
           description: Web filtering and DNS
-          siteMonitor: ${HOMEPAGE_ADGUARD_1_URL}
+          siteMonitor: https://dns1.iacob.uk
           widget:
             type: adguard
-            url: ${HOMEPAGE_ADGUARD_1_URL}
+            url: https://dns1.iacob.uk
             username: ${HOMEPAGE_ADGUARD_1_USER}
             password: ${HOMEPAGE_ADGUARD_1_PASS}
       - AdGuard Secondary:
           icon: adguard-home
-          href: ${HOMEPAGE_ADGUARD_2_URL}
+          href: https://dns2.iacob.uk
           description: DNS failover
-          siteMonitor: ${HOMEPAGE_ADGUARD_2_URL}
+          siteMonitor: https://dns2.iacob.uk
           widget:
             type: adguard
-            url: ${HOMEPAGE_ADGUARD_2_URL}
+            url: https://dns2.iacob.uk
             username: ${HOMEPAGE_ADGUARD_2_USER}
             password: ${HOMEPAGE_ADGUARD_2_PASS}
     - Social:

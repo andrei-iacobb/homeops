@@ -1,0 +1,98 @@
+---
+# DNS 1 (AdGuard Home)
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns1
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: dns1
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: dns1
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: dns1
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.1.120"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dns1
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - dns1.iacob.uk
+  rules:
+    - backendRefs:
+        - name: dns1
+          port: 80
+---
+# DNS 2 (AdGuard Home)
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns2
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: dns2
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: dns2
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: dns2
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.1.125"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dns2
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - dns2.iacob.uk
+  rules:
+    - backendRefs:
+        - name: dns2
+          port: 80

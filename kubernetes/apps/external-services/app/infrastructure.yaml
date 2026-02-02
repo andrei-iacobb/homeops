@@ -1,0 +1,196 @@
+---
+# TrueNAS
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenas
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: truenas
+spec:
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 443
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: truenas
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: truenas
+addressType: IPv4
+ports:
+  - name: https
+    appProtocol: https
+    protocol: TCP
+    port: 443
+endpoints:
+  - addresses:
+      - "192.168.1.1"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: truenas
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - truenas.iacob.uk
+  rules:
+    - backendRefs:
+        - name: truenas
+          port: 443
+---
+# Proxmox
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxmox
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: proxmox
+spec:
+  ports:
+    - name: https
+      port: 8006
+      protocol: TCP
+      targetPort: 8006
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: proxmox
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: proxmox
+addressType: IPv4
+ports:
+  - name: https
+    appProtocol: https
+    protocol: TCP
+    port: 8006
+endpoints:
+  - addresses:
+      - "192.168.1.100"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: proxmox
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - proxmox.iacob.uk
+  rules:
+    - backendRefs:
+        - name: proxmox
+          port: 8006
+---
+# Router (Virgin Media Hub)
+apiVersion: v1
+kind: Service
+metadata:
+  name: router
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: router
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: router
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: router
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.1.254"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: router
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - router.iacob.uk
+  rules:
+    - backendRefs:
+        - name: router
+          port: 80
+---
+# HP Switch
+apiVersion: v1
+kind: Service
+metadata:
+  name: switch
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: switch
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: switch
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: switch
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.1.101"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: switch
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - switch.iacob.uk
+  rules:
+    - backendRefs:
+        - name: switch
+          port: 80
