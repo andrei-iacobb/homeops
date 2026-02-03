@@ -13,6 +13,8 @@ spec:
     moverSecurityContext:
       runAsUser: 0
       runAsGroup: 0
+      supplementalGroups:
+        - 1000
     repository: restic-config-gitea
     retain:
       last: "1"

@@ -32,6 +32,14 @@ spec:
             image:
               repository: gitea/gitea
               tag: latest
+            lifecycle:
+              postStart:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
             env:
               USER_UID:
                 valueFrom:
