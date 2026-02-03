@@ -114,25 +114,28 @@ data:
               "color": {
                 "mode": "thresholds"
               },
+              "decimals": 1,
+              "max": 100,
+              "min": 0,
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
                   },
                   {
                     "color": "yellow",
-                    "value": 40
+                    "value": 10
                   },
                   {
-                    "color": "red",
-                    "value": 50
+                    "color": "green",
+                    "value": 20
                   }
                 ]
               },
-              "unit": "celsius"
+              "unit": "percent"
             },
             "overrides": []
           },
@@ -160,12 +163,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "label_replace({__name__=~\"truenas_server_cputemp_temperatures_\\\\d+\"}, \"sensor\", \"$1\", \"__name__\", \"truenas_server_cputemp_temperatures_(\\\\d+)\")",
-              "legendFormat": "CPU {{sensor}}",
+              "expr": "truenas_pool_free_percent{pool=~\"SSD|plex|sexy_pool\"}",
+              "legendFormat": "{{pool}}",
               "refId": "A"
             }
           ],
-          "title": "Current CPU Temperatures",
+          "title": "Pool Capacity Left",
           "type": "gauge"
         },
         {

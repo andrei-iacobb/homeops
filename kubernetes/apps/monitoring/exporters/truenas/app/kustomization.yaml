@@ -6,3 +6,9 @@ resources:
   - service.yaml
   - servicemonitor.yaml
   - secret.sops.yaml
+configMapGenerator:
+  - name: truenas-exporter-script
+    files:
+      - truenas-exporter.py=./resources/truenas-exporter.py
+    options:
+      disableNameSuffixHash: true

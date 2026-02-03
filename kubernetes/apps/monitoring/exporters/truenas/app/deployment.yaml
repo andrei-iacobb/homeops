@@ -32,6 +32,11 @@ spec:
             secretKeyRef:
               name: truenas-secret
               key: TRUENAS_API_KEY
+        volumeMounts:
+        - name: exporter-script
+          mountPath: /app/truenas-exporter.py
+          subPath: truenas-exporter.py
+          readOnly: true
         resources:
           requests:
             cpu: 50m
@@ -39,3 +44,7 @@ spec:
           limits:
             cpu: 200m
             memory: 128Mi
+      volumes:
+      - name: exporter-script
+        configMap:
+          name: truenas-exporter-script
