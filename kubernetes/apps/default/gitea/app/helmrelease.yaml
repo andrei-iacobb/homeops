@@ -11,7 +11,7 @@ spec:
   values:
     controllers:
       gitea:
-        strategy: RollingUpdate
+        strategy: Recreate
         initContainers:
           init-permissions:
             image:
