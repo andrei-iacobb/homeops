@@ -31,7 +31,7 @@ spec:
           perms-fix:
             image:
               repository: busybox
-              tag: 1.36.1
+              tag: latest
             command:
               - /bin/sh
               - -c
