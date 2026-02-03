@@ -5,6 +5,8 @@ metadata:
   name: graphite-exporter
   labels:
     app: graphite-exporter
+  annotations:
+    lbipam.cilium.io/ips: "192.168.1.10"
 spec:
   type: LoadBalancer
   ports:
