@@ -39,8 +39,14 @@ spec:
                     - /bin/sh
                     - -c
                     - |
-                      chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
-                      chmod 640 /data/git/.ssh/authorized_keys 2>/dev/null || true
+                      for i in $(seq 1 60); do
+                        chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
+                        if [ -f /data/git/.ssh/authorized_keys ]; then
+                          chmod 640 /data/git/.ssh/authorized_keys || true
+                          break
+                        fi
+                        sleep 1
+                      done
             env:
               USER_UID:
                 valueFrom:
