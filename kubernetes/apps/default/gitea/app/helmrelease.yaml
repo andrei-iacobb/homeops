@@ -40,6 +40,7 @@ spec:
                     - -c
                     - |
                       chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
+                      chmod 640 /data/git/.ssh/authorized_keys 2>/dev/null || true
             env:
               USER_UID:
                 valueFrom:
