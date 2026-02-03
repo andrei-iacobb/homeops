@@ -9,7 +9,8 @@ spec:
       app: ilo-exporter-dl380
   endpoints:
   - port: metrics
-    interval: 60s
+    interval: 120s
+    scrapeTimeout: 120s
     path: /metrics
     params:
       host:
