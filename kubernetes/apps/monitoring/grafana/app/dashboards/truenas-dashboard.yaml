@@ -163,7 +163,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "truenas_pool_free_percent{pool=~\"SSD|plex|sexy_pool\"}",
+              "expr": "truenas_pool_free_percent{pool=~\"SSD|plex|sexy-pool\"}",
               "legendFormat": "{{pool}}",
               "refId": "A"
             }
