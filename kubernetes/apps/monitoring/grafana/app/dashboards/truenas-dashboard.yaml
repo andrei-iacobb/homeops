@@ -97,6 +97,7 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_cputemp_temperatures_\\\\d+\"}, \"sensor\", \"$1\", \"__name__\", \"truenas_server_cputemp_temperatures_(\\\\d+)\")",
+              "legendFormat": "CPU {{sensor}}",
               "refId": "A"
             }
           ],
@@ -160,6 +161,7 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_cputemp_temperatures_\\\\d+\"}, \"sensor\", \"$1\", \"__name__\", \"truenas_server_cputemp_temperatures_(\\\\d+)\")",
+              "legendFormat": "CPU {{sensor}}",
               "refId": "A"
             }
           ],
@@ -244,6 +246,7 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_disk_qops_(.+)_operations\"}, \"disk\", \"$1\", \"__name__\", \"truenas_server_disk_qops_(.+)_operations\")",
+              "legendFormat": "{{disk}}",
               "refId": "A"
             }
           ],
@@ -328,10 +331,96 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_disk_util_(.+)_utilization\"}, \"disk\", \"$1\", \"__name__\", \"truenas_server_disk_util_(.+)_utilization\")",
+              "legendFormat": "{{disk}}",
               "refId": "A"
             }
           ],
           "title": "Disk Utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "id": 6,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "100 - avg(label_replace({__name__=~\"truenas_server_cpu_cpu\\\\d+_idle\"}, \"cpu\", \"$1\", \"__name__\", \"truenas_server_cpu_cpu(\\\\d+)_idle\"))",
+              "legendFormat": "usage",
+              "refId": "A"
+            }
+          ],
+          "title": "CPU Usage",
           "type": "timeseries"
         },
         {
@@ -392,7 +481,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 16
+            "y": 24
           },
           "id": 5,
           "options": {
@@ -412,6 +501,7 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_net_(.+)_received\"}, \"interface\", \"$1\", \"__name__\", \"truenas_server_net_(.+)_received\")",
+              "legendFormat": "{{interface}} rx",
               "refId": "A"
             },
             {
@@ -420,6 +510,7 @@ data:
                 "uid": "prometheus"
               },
               "expr": "label_replace({__name__=~\"truenas_server_net_(.+)_sent\"}, \"interface\", \"$1\", \"__name__\", \"truenas_server_net_(.+)_sent\")",
+              "legendFormat": "{{interface}} tx",
               "refId": "B"
             }
           ],
