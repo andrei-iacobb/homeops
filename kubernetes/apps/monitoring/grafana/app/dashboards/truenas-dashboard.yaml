@@ -27,91 +27,6 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "celsius"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
-          "options": {
-            "legend": {
-              "calcs": ["mean", "max"],
-              "displayMode": "table",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "multi"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "label_replace({__name__=~\"truenas_server_cputemp_temperatures_\\\\d+\"}, \"sensor\", \"$1\", \"__name__\", \"truenas_server_cputemp_temperatures_(\\\\d+)\")",
-              "legendFormat": "CPU {{sensor}}",
-              "refId": "A"
-            }
-          ],
-          "title": "CPU Temperatures",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
                 "mode": "thresholds"
               },
               "decimals": 1,
@@ -141,8 +56,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 12,
-            "x": 12,
+            "w": 24,
+            "x": 0,
             "y": 0
           },
           "id": 2,
@@ -248,7 +163,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "label_replace({__name__=~\"truenas_server_disk_qops_(.+)_operations\"}, \"disk\", \"$1\", \"__name__\", \"truenas_server_disk_qops_(.+)_operations\")",
+              "expr": "sum by (disk) (label_replace({__name__=~\"truenas_server_disk_ops_(.+)_(reads|writes)\"}, \"disk\", \"$1\", \"__name__\", \"truenas_server_disk_ops_(.+)_(reads|writes)\"))",
               "legendFormat": "{{disk}}",
               "refId": "A"
             }
