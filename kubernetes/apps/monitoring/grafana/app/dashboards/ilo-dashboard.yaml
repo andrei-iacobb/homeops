@@ -81,7 +81,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_temperature_celsius",
+              "expr": "max by (host) (ilo_chassis_temperature_current{host=~\"$server\", name=~\".*CPU.*\"})",
               "refId": "A"
             }
           ],
@@ -165,7 +165,8 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_temperature_celsius",
+              "expr": "max by (host) (ilo_chassis_temperature_current{host=~\"$server\", name=~\".*CPU.*\"})",
+              "legendFormat": "{{host}}",
               "refId": "A"
             }
           ],
@@ -236,7 +237,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_power_supplies_status",
+              "expr": "min by (host) (ilo_power_supply_healthy{host=~\"$server\"})",
               "refId": "A"
             }
           ],
@@ -291,7 +292,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_power_consumption_watt",
+              "expr": "ilo_power_current_watt{host=~\"$server\"}",
               "refId": "A"
             }
           ],
@@ -362,7 +363,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_fans_status",
+              "expr": "min by (host) (ilo_chassis_fan_healthy{host=~\"$server\"})",
               "refId": "A"
             }
           ],
@@ -419,7 +420,7 @@ data:
                   }
                 ]
               },
-              "unit": "rpm"
+              "unit": "percent"
             },
             "overrides": []
           },
@@ -446,11 +447,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "hpilo_fans_speed_rpm",
+              "expr": "ilo_chassis_fan_current_percent{host=~\"$server\"}",
+              "legendFormat": "{{host}} {{name}}",
               "refId": "A"
             }
           ],
-          "title": "Fan Speed",
+          "title": "Fan Speed (%)",
           "type": "timeseries"
         }
       ],
@@ -470,7 +472,7 @@ data:
               "type": "prometheus",
               "uid": "prometheus"
             },
-            "definition": "label_values(hpilo_temperature_celsius, server_name)",
+            "definition": "label_values(ilo_manager_info, host)",
             "hide": 0,
             "includeAll": true,
             "label": "Server",
@@ -478,7 +480,7 @@ data:
             "name": "server",
             "options": [],
             "query": {
-              "query": "label_values(hpilo_temperature_celsius, server_name)",
+              "query": "label_values(ilo_manager_info, host)",
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
