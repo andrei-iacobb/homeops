@@ -1048,6 +1048,7 @@ data:
             "definition": "query_result(ilo_system_info)",
             "hide": 0,
             "includeAll": true,
+            "allValue": ".*",
             "label": "Server",
             "multi": true,
             "name": "server",
@@ -1057,7 +1058,7 @@ data:
               "refId": "StandardVariableQuery"
             },
             "refresh": 1,
-            "regex": "host=\"(?<value>[^\"]+)\".*host_name=\"(?<text>[^\"]+)\"",
+            "regex": "host=\"(?P<value>[^\"]+)\".*host_name=\"(?P<text>[^\"]+)\"",
             "skipUrlSync": false,
             "sort": 0,
             "type": "query"
