@@ -31,7 +31,9 @@ spec:
           enabled: false
         zfs:
           enabled: false
-    observability:
+    loki:
+      enabled: false
+    alloy:
       enabled: false
     openebs-crds:
       csi:

@@ -8,6 +8,10 @@ spec:
     kind: OCIRepository
     name: outline
   interval: 1h
+  timeout: 10m
+  upgrade:
+    remediation:
+      retries: 3
   values:
     controllers:
       outline:
