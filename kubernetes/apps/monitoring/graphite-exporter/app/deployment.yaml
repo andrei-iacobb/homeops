@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graphite-exporter
+  labels:
+    app: graphite-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graphite-exporter
+  template:
+    metadata:
+      labels:
+        app: graphite-exporter
+    spec:
+      containers:
+        - name: graphite-exporter
+          image: prom/graphite-exporter:v0.16.0
+          ports:
+            - name: metrics
+              containerPort: 9108
+            - name: graphite-tcp
+              containerPort: 9109
+              protocol: TCP
+            - name: graphite-udp
+              containerPort: 9109
+              protocol: UDP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

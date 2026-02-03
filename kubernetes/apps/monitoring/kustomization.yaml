@@ -6,3 +6,4 @@ resources:
   - prometheus/ks.yaml
   - grafana/ks.yaml
   - exporters/ks.yaml
+  - graphite-exporter/ks.yaml
