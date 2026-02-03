@@ -28,25 +28,26 @@ spec:
               runAsUser: 0
               runAsGroup: 0
         containers:
+          perms-fix:
+            image:
+              repository: busybox
+              tag: 1.36.1
+            command:
+              - /bin/sh
+              - -c
+              - |
+                while true; do
+                  chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
+                  chmod 640 /data/git/.ssh/authorized_keys 2>/dev/null || true
+                  sleep 60
+                done
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
           app:
             image:
               repository: gitea/gitea
               tag: latest
-            lifecycle:
-              postStart:
-                exec:
-                  command:
-                    - /bin/sh
-                    - -c
-                    - |
-                      for i in $(seq 1 60); do
-                        chmod 750 /data/ssh /data/git/.ssh 2>/dev/null || true
-                        if [ -f /data/git/.ssh/authorized_keys ]; then
-                          chmod 640 /data/git/.ssh/authorized_keys || true
-                          break
-                        fi
-                        sleep 1
-                      done
             env:
               USER_UID:
                 valueFrom:
