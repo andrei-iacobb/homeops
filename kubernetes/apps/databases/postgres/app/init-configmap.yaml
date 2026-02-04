@@ -11,6 +11,7 @@ data:
     CREATE DATABASE IF NOT EXISTS outline;
     CREATE DATABASE IF NOT EXISTS gitea;
     CREATE DATABASE IF NOT EXISTS paperless;
+    CREATE DATABASE IF NOT EXISTS authentik;
     
     -- Create users with passwords from secrets (these will be created via env vars)
     -- The passwords are set via environment variables in the init script below
@@ -27,6 +28,7 @@ data:
         SELECT 'CREATE DATABASE outline' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'outline')\gexec
         SELECT 'CREATE DATABASE gitea' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gitea')\gexec
         SELECT 'CREATE DATABASE paperless' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')\gexec
+        SELECT 'CREATE DATABASE authentik' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'authentik')\gexec
         
         -- Create users if they don't exist
         DO \$\$
@@ -46,6 +48,9 @@ data:
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'paperless') THEN
                 CREATE USER paperless WITH PASSWORD '${PAPERLESS_DB_PASSWORD}';
             END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authentik') THEN
+                CREATE USER authentik WITH PASSWORD '${AUTHENTIK_DB_PASSWORD}';
+            END IF;
         END
         \$\$;
         
@@ -55,12 +60,14 @@ data:
         GRANT ALL PRIVILEGES ON DATABASE outline TO outline;
         GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea;
         GRANT ALL PRIVILEGES ON DATABASE paperless TO paperless;
+        GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
         
         ALTER DATABASE immich OWNER TO immich;
         ALTER DATABASE vaultwarden OWNER TO vaultwarden;
         ALTER DATABASE outline OWNER TO outline;
         ALTER DATABASE gitea OWNER TO gitea;
         ALTER DATABASE paperless OWNER TO paperless;
+        ALTER DATABASE authentik OWNER TO authentik;
         
         -- Connect to immich database and create required extensions
         \c immich
@@ -81,4 +88,7 @@ data:
         
         \c paperless
         GRANT ALL ON SCHEMA public TO paperless;
+
+        \c authentik
+        GRANT ALL ON SCHEMA public TO authentik;
     EOSQL

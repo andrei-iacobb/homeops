@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./authentik/ks.yaml
   - ./echo/ks.yaml
   - ./openspeedtest/ks.yaml
   - ./it-tools/ks.yaml
