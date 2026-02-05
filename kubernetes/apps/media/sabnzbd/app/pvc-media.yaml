@@ -40,7 +40,7 @@ spec:
   storageClassName: ""
   nfs:
     server: 192.168.1.1
-    path: /mnt/plex/media/downloads
+    path: /mnt/plex/media/incomplete
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
