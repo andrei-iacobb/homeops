@@ -23,11 +23,6 @@ spec:
                   secretKeyRef:
                     name: huntarr-secret
                     key: TZ
-              BASE_URL:
-                valueFrom:
-                  secretKeyRef:
-                    name: huntarr-secret
-                    key: BASE_URL
             probes:
               liveness: &probes
                 enabled: true
