@@ -1,0 +1,12 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: iacob-uk-production
+spec:
+  secretName: iacob-uk-production-tls
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: "iacob.uk"
+  dnsNames: ["iacob.uk", "*.iacob.uk"]
