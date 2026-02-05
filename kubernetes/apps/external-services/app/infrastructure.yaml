@@ -89,8 +89,8 @@ metadata:
     kubernetes.io/service-name: router
 addressType: IPv4
 ports:
-  - name: http
-    appProtocol: http
+  - name: https
+    appProtocol: https
     protocol: TCP
     port: 80
 endpoints:
