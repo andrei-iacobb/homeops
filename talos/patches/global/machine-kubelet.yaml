@@ -9,6 +9,7 @@ machine:
           - rshared
           - rw
     extraConfig:
+      maxPods: 200
       serializeImagePulls: false
     nodeIP:
       validSubnets:

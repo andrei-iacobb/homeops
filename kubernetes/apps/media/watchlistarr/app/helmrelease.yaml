@@ -15,7 +15,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/nylonee/watchlistarr
+              repository: docker.io/nylonee/watchlistarr
               tag: latest
             env:
               SONARR_API_KEY:
