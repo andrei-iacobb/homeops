@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: ollama/ollama
-              tag: latest
+              tag: 0.15.6
             probes:
               liveness: &probes
                 enabled: true

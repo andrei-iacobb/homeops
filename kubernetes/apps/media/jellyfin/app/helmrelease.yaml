@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/jellyfin
-              tag: latest
+              tag: 10.11.6
             env:
               PUID:
                 valueFrom:

@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: dpage/pgadmin4
-              tag: latest
+              tag: 9.12.0
             env:
               PGADMIN_DEFAULT_EMAIL:
                 valueFrom:

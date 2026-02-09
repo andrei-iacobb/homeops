@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/calibre-web
-              tag: latest
+              tag: 0.6.26
             env:
               PUID:
                 valueFrom:

@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: tannermiddleton/recommendarr
-              tag: latest
+              tag: v1.4.4
             env:
               PUID:
                 valueFrom:

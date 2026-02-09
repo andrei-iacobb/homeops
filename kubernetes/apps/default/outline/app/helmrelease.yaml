@@ -20,7 +20,7 @@ spec:
           app:
             image:
               repository: outlinewiki/outline
-              tag: latest
+              tag: 1.4.0
             env:
               DATABASE_URL:
                 valueFrom:

@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: vaultwarden/server
-              tag: latest
+              tag: 1.35.2
             env:
               DATABASE_URL:
                 valueFrom:

@@ -20,7 +20,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/plex
-              tag: latest
+              tag: 1.42.2
             env:
               PUID:
                 valueFrom:

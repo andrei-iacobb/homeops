@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.io/agregarr/agregarr
-              tag: latest
+              tag: v2.3.0
             env:
               TZ: Europe/London
             probes:

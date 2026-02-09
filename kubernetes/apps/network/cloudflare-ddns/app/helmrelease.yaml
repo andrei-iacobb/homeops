@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.io/favonia/cloudflare-ddns
-              tag: latest
+              tag: 1.15.1
             env:
               DOMAINS: "plex.iacob.co.uk"
               PROXIED: "false"
