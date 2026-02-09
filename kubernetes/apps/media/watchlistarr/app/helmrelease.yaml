@@ -1,0 +1,75 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: watchlistarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: watchlistarr
+  interval: 1h
+  values:
+    controllers:
+      watchlistarr:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/nylonee/watchlistarr
+              tag: latest
+            env:
+              SONARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: watchlistarr-secret
+                    key: SONARR_API_KEY
+              SONARR_BASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: watchlistarr-secret
+                    key: SONARR_BASE_URL
+              RADARR_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: watchlistarr-secret
+                    key: RADARR_API_KEY
+              RADARR_BASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: watchlistarr-secret
+                    key: RADARR_BASE_URL
+              PLEX_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: watchlistarr-secret
+                    key: PLEX_TOKEN
+              REFRESH_INTERVAL_SECONDS: "60"
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        enabled: false
