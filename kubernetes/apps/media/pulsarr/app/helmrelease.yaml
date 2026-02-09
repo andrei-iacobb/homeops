@@ -24,8 +24,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/health
+                  tcpSocket:
                     port: 3003
                   initialDelaySeconds: 30
                   periodSeconds: 10
