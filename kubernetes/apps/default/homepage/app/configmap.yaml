@@ -201,6 +201,10 @@ data:
           icon: mdi-message-text
           href: https://echo.iacob.uk
           description: Echo service
+      - Vikunja:
+          icon: vikunja.svg
+          href: https://tasks.iacob.uk
+          description: Task management
       - Authentik:
           icon: authentik.svg
           href: https://authentik.iacob.uk
@@ -338,6 +342,10 @@ data:
           icon: agregarr.svg
           href: https://agregarr.iacob.uk
           description: Plex collections
+      - Wizarr:
+          icon: wizarr.svg
+          href: https://wizarr.iacob.uk
+          description: User invitations
       - Tautulli:
           icon: tautulli.svg
           href: https://tautulli.iacob.uk
@@ -382,3 +390,7 @@ data:
           icon: paperless.svg
           href: https://paperless.iacob.uk
           description: Document management
+      - Stirling PDF:
+          icon: stirling-pdf.svg
+          href: https://pdf.iacob.uk
+          description: PDF toolkit

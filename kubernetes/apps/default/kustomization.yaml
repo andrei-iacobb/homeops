@@ -20,3 +20,5 @@ resources:
   - ./immich/ks.yaml
   - ./outline/ks.yaml
   - ./website/ks.yaml
+  - ./stirling-pdf/ks.yaml
+  - ./vikunja/ks.yaml

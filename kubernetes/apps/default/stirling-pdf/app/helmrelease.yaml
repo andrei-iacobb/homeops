@@ -1,0 +1,82 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: stirling-pdf
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: stirling-pdf
+  interval: 1h
+  values:
+    controllers:
+      stirling-pdf:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: docker.io/stirlingtools/stirling-pdf
+              tag: latest
+            env:
+              TZ: Europe/London
+              DOCKER_ENABLE_SECURITY: "false"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/info/status
+                    port: 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      configs:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 1Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /configs
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        hostnames: ["pdf.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080

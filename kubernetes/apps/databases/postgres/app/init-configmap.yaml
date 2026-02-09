@@ -12,6 +12,7 @@ data:
     CREATE DATABASE IF NOT EXISTS gitea;
     CREATE DATABASE IF NOT EXISTS paperless;
     CREATE DATABASE IF NOT EXISTS authentik;
+    CREATE DATABASE IF NOT EXISTS vikunja;
     
     -- Create users with passwords from secrets (these will be created via env vars)
     -- The passwords are set via environment variables in the init script below
@@ -29,6 +30,7 @@ data:
         SELECT 'CREATE DATABASE gitea' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gitea')\gexec
         SELECT 'CREATE DATABASE paperless' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'paperless')\gexec
         SELECT 'CREATE DATABASE authentik' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'authentik')\gexec
+        SELECT 'CREATE DATABASE vikunja' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vikunja')\gexec
         
         -- Create users if they don't exist
         DO \$\$
@@ -51,6 +53,9 @@ data:
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authentik') THEN
                 CREATE USER authentik WITH PASSWORD '${AUTHENTIK_DB_PASSWORD}';
             END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'vikunja') THEN
+                CREATE USER vikunja WITH PASSWORD '${VIKUNJA_DB_PASSWORD}';
+            END IF;
         END
         \$\$;
         
@@ -61,13 +66,15 @@ data:
         GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea;
         GRANT ALL PRIVILEGES ON DATABASE paperless TO paperless;
         GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
-        
+        GRANT ALL PRIVILEGES ON DATABASE vikunja TO vikunja;
+
         ALTER DATABASE immich OWNER TO immich;
         ALTER DATABASE vaultwarden OWNER TO vaultwarden;
         ALTER DATABASE outline OWNER TO outline;
         ALTER DATABASE gitea OWNER TO gitea;
         ALTER DATABASE paperless OWNER TO paperless;
         ALTER DATABASE authentik OWNER TO authentik;
+        ALTER DATABASE vikunja OWNER TO vikunja;
         
         -- Connect to immich database and create required extensions
         \c immich
@@ -91,4 +98,7 @@ data:
 
         \c authentik
         GRANT ALL ON SCHEMA public TO authentik;
+
+        \c vikunja
+        GRANT ALL ON SCHEMA public TO vikunja;
     EOSQL

@@ -1,0 +1,110 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vikunja
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: vikunja
+  interval: 1h
+  values:
+    controllers:
+      vikunja:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: docker.io/vikunja/vikunja
+              tag: latest
+            env:
+              TZ: Europe/London
+              VIKUNJA_SERVICE_PUBLICURL:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_SERVICE_PUBLICURL
+              VIKUNJA_SERVICE_JWTSECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_SERVICE_JWTSECRET
+              VIKUNJA_DATABASE_TYPE: postgres
+              VIKUNJA_DATABASE_HOST:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_DATABASE_HOST
+              VIKUNJA_DATABASE_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_DATABASE_USER
+              VIKUNJA_DATABASE_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_DATABASE_PASSWORD
+              VIKUNJA_DATABASE_DATABASE:
+                valueFrom:
+                  secretKeyRef:
+                    name: vikunja-secret
+                    key: VIKUNJA_DATABASE_DATABASE
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: 3456
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: 3456
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 1Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /app/vikunja/files
+    route:
+      app:
+        hostnames: ["tasks.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3456
