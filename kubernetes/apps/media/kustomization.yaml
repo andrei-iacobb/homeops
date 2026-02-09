@@ -27,5 +27,5 @@ resources:
   - ./huntarr/ks.yaml
   - ./agregarr/ks.yaml
   - ./tautulli/ks.yaml
-  - ./watchlistarr/ks.yaml
+  - ./pulsarr/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet
