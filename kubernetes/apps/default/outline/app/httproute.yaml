@@ -9,7 +9,7 @@ spec:
       namespace: network
       sectionName: https
   hostnames:
-    - outline.iacob.uk
+    - notes.iacob.uk
   rules:
     - backendRefs:
         - name: outline

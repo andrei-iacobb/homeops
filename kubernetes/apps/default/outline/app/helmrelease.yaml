@@ -121,7 +121,7 @@ spec:
           - path: /var/lib/outline/data
     route:
       app:
-        hostnames: ["outline.iacob.uk"]
+        hostnames: ["notes.iacob.uk"]
         parentRefs:
           - name: envoy-internal
             namespace: network
