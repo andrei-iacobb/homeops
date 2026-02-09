@@ -176,9 +176,9 @@ data:
           icon: gitea.svg
           href: https://git.iacob.co.uk
           description: Git service
-      - Outline:
+      - Notes:
           icon: outline.svg
-          href: https://outline.iacob.uk
+          href: https://notes.iacob.uk
           description: Team wiki
       - n8n:
           icon: n8n.svg
@@ -201,6 +201,10 @@ data:
           icon: mdi-message-text
           href: https://echo.iacob.uk
           description: Echo service
+      - Authentik:
+          icon: authentik.svg
+          href: https://authentik.iacob.uk
+          description: Identity provider
       - Website:
           icon: mdi-web
           href: https://andrei.iacob.co.uk
@@ -326,10 +330,14 @@ data:
           icon: recommendarr.svg
           href: https://recommendarr.iacob.uk
           description: Media recommendations
-      - Lidify:
-          icon: lidify.svg
-          href: https://lidify.iacob.uk
-          description: Audiobook manager
+      - Pulsarr:
+          icon: pulsarr.svg
+          href: https://pulsarr.iacob.uk
+          description: Watchlist sync
+      - Agregarr:
+          icon: agregarr.svg
+          href: https://agregarr.iacob.uk
+          description: Plex collections
       - Tautulli:
           icon: tautulli.svg
           href: https://tautulli.iacob.uk
