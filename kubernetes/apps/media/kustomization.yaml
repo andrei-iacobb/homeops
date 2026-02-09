@@ -25,5 +25,6 @@ resources:
   - ./recyclarr/ks.yaml
   - ./recommendarr/ks.yaml
   - ./huntarr/ks.yaml
+  - ./agregarr/ks.yaml
   - ./tautulli/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet
