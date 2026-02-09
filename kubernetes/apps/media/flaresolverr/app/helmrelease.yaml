@@ -34,10 +34,11 @@ spec:
                   failureThreshold: 3
               readiness: *probes
             securityContext:
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
               readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
+                add: ["SYS_ADMIN"]
             resources:
               requests:
                 cpu: 10m
@@ -51,7 +52,7 @@ spec:
         runAsUser: 0
         runAsGroup: 0
         seccompProfile:
-          type: RuntimeDefault
+          type: Unconfined
     service:
       app:
         ports:
