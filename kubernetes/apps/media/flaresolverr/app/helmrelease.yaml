@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/flaresolverr/flaresolverr
-              tag: v3.3.21
+              repository: ghcr.io/svaningelgem/flaresolverr
+              tag: latest
             env:
               TZ: Europe/London
               LOG_LEVEL: info
