@@ -37,17 +37,10 @@ spec:
             probes:
               liveness:
                 enabled: true
-                type: TCP
-                spec:
-                  initialDelaySeconds: 30
-                  periodSeconds: 30
-                  failureThreshold: 5
               readiness:
                 enabled: true
-                type: TCP
               startup:
                 enabled: true
-                type: TCP
                 spec:
                   failureThreshold: 30
                   periodSeconds: 10
