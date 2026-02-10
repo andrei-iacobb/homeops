@@ -13,6 +13,15 @@ spec:
       sabnzbd:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
