@@ -59,20 +59,47 @@ data:
       border-radius: 16px !important;
     }
 
-    /* Search bar styling */
+    /* Search bar styling — match card style */
     #page_container input[type="text"],
     #page_container input[type="search"] {
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      background: rgba(15, 23, 42, 0.5) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(15, 23, 42, 0.82) !important;
       border: 1px solid rgba(148, 163, 184, 0.2) !important;
-      border-radius: 12px !important;
+      border-radius: 16px !important;
       color: #e2e8f0 !important;
     }
     #page_container input[type="text"]:focus,
     #page_container input[type="search"]:focus {
-      border-color: rgba(99, 102, 241, 0.5) !important;
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      border-color: rgba(148, 163, 184, 0.4) !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
+
+    /* Search widget container */
+    #page_container form,
+    #page_container .search-wrapper,
+    #page_container [class*="search"] {
+      background: transparent !important;
+    }
+
+    /* Remove any blue focus rings globally */
+    #page_container *:focus {
+      outline-color: rgba(148, 163, 184, 0.3) !important;
+    }
+
+    /* Darken grey/muted icons */
+    #page_container .service img,
+    #page_container .service svg {
+      filter: brightness(1.3) contrast(1.1);
+    }
+    #page_container .service .text-theme-500,
+    #page_container .service .text-gray-500,
+    #page_container .service [class*="text-theme"],
+    #page_container .text-gray-400,
+    #page_container .text-slate-400,
+    #page_container .text-zinc-400 {
+      color: #cbd5e1 !important;
     }
 
     /* Section headers */
