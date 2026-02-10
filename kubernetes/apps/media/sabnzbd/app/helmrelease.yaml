@@ -11,78 +11,64 @@ spec:
   values:
     controllers:
       sabnzbd:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/sabnzbd
-              tag: 4.5.5
+              repository: ghcr.io/home-operations/sabnzbd
+              tag: 4.5.5@sha256:485440a3e9209a3515c01e1c73d6088726491a292302a721d4cb9e7c6375c768
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: sabnzbd-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: sabnzbd-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: sabnzbd-secret
-                    key: TZ
-              HOST_WHITELIST: sabnzbd,sabnzbd.iacob.uk,localhost,127.0.0.1,0.0.0.0,10.0.0.2/32,192.168.1.0/24,*
+              TZ: Europe/London
+              SABNZBD__PORT: &port 80
+              SABNZBD__HOST_WHITELIST_ENTRIES: >-
+                sabnzbd,
+                sabnzbd.media,
+                sabnzbd.media.svc,
+                sabnzbd.media.svc.cluster,
+                sabnzbd.media.svc.cluster.local,
+                sabnzbd.iacob.uk
+            envFrom:
+              - secretRef:
+                  name: sabnzbd-secret
             probes:
               liveness: &probes
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 8080
-                  initialDelaySeconds: 60
+                  httpGet:
+                    path: /api?mode=version
+                    port: *port
+                  initialDelaySeconds: 0
                   periodSeconds: 10
-                  timeoutSeconds: 5
-                  failureThreshold: 6
+                  timeoutSeconds: 1
+                  failureThreshold: 3
               readiness: *probes
             securityContext:
-              allowPrivilegeEscalation: true
-              readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 500m
-                memory: 512Mi
+                cpu: 100m
+                memory: 1Gi
               limits:
-                cpu: 4000m
                 memory: 8Gi
-            lifecycle:
-              postStart:
-                exec:
-                  command:
-                    - /bin/sh
-                    - -c
-                    - |
-                      sleep 10
-                      while [ ! -f /config/sabnzbd.ini ]; do sleep 2; done
-                      sed -i 's/^host_whitelist_enabled = .*/host_whitelist_enabled = 0/' /config/sabnzbd.ini 2>/dev/null || echo "host_whitelist_enabled = 0" >> /config/sabnzbd.ini
-                      sed -i 's/^host_whitelist = .*/host_whitelist = sabnzbd,sabnzbd.iacob.uk,localhost,127.0.0.1,0.0.0.0,10.0.0.2\/32,192.168.1.0\/24,*/' /config/sabnzbd.ini 2>/dev/null || (grep -q "^\[misc\]" /config/sabnzbd.ini && sed -i '/^\[misc\]/a host_whitelist = sabnzbd,sabnzbd.iacob.uk,localhost,127.0.0.1,0.0.0.0,10.0.0.2/32,192.168.1.0/24,*' /config/sabnzbd.ini || echo "host_whitelist = sabnzbd,sabnzbd.iacob.uk,localhost,127.0.0.1,0.0.0.0,10.0.0.2/32,192.168.1.0/24,*" >> /config/sabnzbd.ini)
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
+        controller: sabnzbd
         ports:
           http:
-            port: 8080
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -91,16 +77,13 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      tmp:
+        type: emptyDir
       downloads:
         type: persistentVolumeClaim
         existingClaim: sabnzbd-downloads
         globalMounts:
           - path: /downloads
-      incomplete:
-        type: persistentVolumeClaim
-        existingClaim: sabnzbd-incomplete
-        globalMounts:
-          - path: /incomplete
     route:
       app:
         hostnames: ["sabnzbd.iacob.uk"]
@@ -111,4 +94,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 8080
+                port: *port
