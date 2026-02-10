@@ -1,4 +1,5 @@
 ---
+# TODO: fix host IO — SABnzbd downloads saturate node root disk, starving etcd and causing envoy restarts
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
