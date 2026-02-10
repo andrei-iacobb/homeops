@@ -24,7 +24,7 @@ spec:
                     name: vaultwarden-secret
                     key: DATABASE_URL
               DOMAIN: https://vault.iacob.co.uk
-              SIGNUPS_ALLOWED: "true"
+              SIGNUPS_ALLOWED: "false"
               ADMIN_TOKEN:
                 valueFrom:
                   secretKeyRef:
