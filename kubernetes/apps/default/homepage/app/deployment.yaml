@@ -41,16 +41,9 @@ spec:
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: home.iacob.uk,iacob.uk
-            - name: PUID
-              valueFrom:
-                secretKeyRef:
-                  name: homepage-secret
-                  key: PUID
-            - name: PGID
-              valueFrom:
-                secretKeyRef:
-                  name: homepage-secret
-                  key: PGID
+          envFrom:
+            - secretRef:
+                name: homepage-secret
           ports:
             - name: http
               containerPort: 3000

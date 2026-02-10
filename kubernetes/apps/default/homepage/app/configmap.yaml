@@ -283,17 +283,14 @@ data:
           icon: mdi-server
           href: https://ilo1.iacob.uk
           description: HP DL360 G9 iLO
-          siteMonitor: https://ilo1.iacob.uk
       - iLO DL380:
           icon: mdi-server
           href: https://ilo2.iacob.uk
           description: HP DL380 G9 iLO
-          siteMonitor: https://ilo2.iacob.uk
       - Router:
           icon: mdi-router-wireless
           href: https://router.iacob.uk
           description: Network router
-          siteMonitor: https://router.iacob.uk
       - HP Switch:
           icon: mdi-switch
           href: https://switch.iacob.uk
