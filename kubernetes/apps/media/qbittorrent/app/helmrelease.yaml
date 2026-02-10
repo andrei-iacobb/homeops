@@ -11,72 +11,92 @@ spec:
   values:
     controllers:
       qbittorrent:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/qbittorrent
-              tag: 5.1.4
+              repository: ghcr.io/home-operations/qbittorrent
+              tag: 5.1.4@sha256:56ecd30a7f5e1357daf5eea2a6935134d329b7b268a3a9b9c67041b65fb87fc6
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: qbittorrent-secret
-                    key: TZ
-              WEBUI_PORT: "8080"
+              TZ: Europe/London
+              QBT_WEBUI_PORT: &port 8080
+              QBT_TORRENTING_PORT: &torrentPort 6881
+            envFrom:
+              - secretRef:
+                  name: qbittorrent-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 8080
-                  initialDelaySeconds: 60
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  initialDelaySeconds: 15
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 6
-              readiness: *probes
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v2/app/version
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 100m
                 memory: 256Mi
               limits:
-                cpu: 2000m
                 memory: 4Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         ports:
           http:
-            port: 8080
+            port: *port
           torrent-tcp:
-            port: 6881
+            port: *torrentPort
             protocol: TCP
           torrent-udp:
-            port: 6881
+            port: *torrentPort
             protocol: UDP
     persistence:
       config:
@@ -86,6 +106,8 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      tmp:
+        type: emptyDir
       downloads:
         type: persistentVolumeClaim
         existingClaim: qbittorrent-downloads
@@ -101,4 +123,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 8080
+                port: *port

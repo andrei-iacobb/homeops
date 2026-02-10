@@ -15,53 +15,66 @@ spec:
     # - Throttle transcoder: Disabled
     controllers:
       plex:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/plex
-              tag: 1.42.2
+              repository: ghcr.io/home-operations/plex
+              tag: 1.43.0.10467@sha256:fa62165df48d04e9a418805951e903f831dec0e0601f4dc4245f9948d7fd719b
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: plex-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: plex-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: plex-secret
-                    key: TZ
-              VERSION: docker
-              PLEX_CLAIM:
-                valueFrom:
-                  secretKeyRef:
-                    name: plex-secret
-                    key: PLEX_CLAIM
+              TZ: Europe/London
+              PLEX_NO_AUTH_NETWORKS: 10.67.0.0/16
+            envFrom:
+              - secretRef:
+                  name: plex-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
                   httpGet:
                     path: /identity
-                    port: 32400
-                  initialDelaySeconds: 60
+                    port: &port 32400
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /identity
+                    port: *port
+                  initialDelaySeconds: 15
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 3
-              readiness: *probes
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /identity
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER", "KILL"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 1000m
@@ -71,17 +84,18 @@ spec:
                 memory: 8Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         ports:
           http:
-            port: 32400
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -90,6 +104,18 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      logs:
+        type: emptyDir
+        globalMounts:
+          - path: /config/Library/Application Support/Plex Media Server/Logs
+      tmp:
+        type: emptyDir
+      transcode:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 2Gi
+        globalMounts:
+          - path: /transcode
       movies:
         type: persistentVolumeClaim
         existingClaim: plex-movies
@@ -105,13 +131,6 @@ spec:
         existingClaim: plex-music
         globalMounts:
           - path: /data/music
-      # RAM-backed transcode dir - set Plex Settings → Transcoder → Transcoder temp directory to /transcode
-      transcode:
-        type: emptyDir
-        medium: Memory
-        sizeLimit: 2Gi
-        globalMounts:
-          - path: /transcode
     route:
       app:
         hostnames: ["plex.iacob.uk"]
@@ -122,4 +141,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 32400
+                port: *port
