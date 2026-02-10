@@ -29,10 +29,10 @@ data:
 
     /* Glassmorphism service cards */
     #page_container .service {
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      background: rgba(15, 23, 42, 0.6) !important;
-      border: 1px solid rgba(148, 163, 184, 0.15) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(15, 23, 42, 0.82) !important;
+      border: 1px solid rgba(148, 163, 184, 0.2) !important;
       border-radius: 16px !important;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
@@ -43,19 +43,19 @@ data:
 
     /* Glassmorphism widget cards */
     #page_container .widget {
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      background: rgba(15, 23, 42, 0.5) !important;
-      border: 1px solid rgba(148, 163, 184, 0.1) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(15, 23, 42, 0.78) !important;
+      border: 1px solid rgba(148, 163, 184, 0.15) !important;
       border-radius: 16px !important;
     }
 
     /* Information widgets (top bar) */
     #information-widgets {
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      background: rgba(15, 23, 42, 0.4) !important;
-      border: 1px solid rgba(148, 163, 184, 0.1) !important;
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(15, 23, 42, 0.75) !important;
+      border: 1px solid rgba(148, 163, 184, 0.15) !important;
       border-radius: 16px !important;
     }
 
@@ -155,9 +155,9 @@ data:
     cardBlur: md
     background:
       image: https://picsum.photos/2560/1440?random=1
-      brightness: 30
-      saturate: 50
-      opacity: 50
+      brightness: 20
+      saturate: 40
+      opacity: 40
     layout:
       Infrastructure:
         style: row
