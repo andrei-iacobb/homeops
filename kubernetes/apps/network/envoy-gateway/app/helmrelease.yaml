@@ -11,6 +11,14 @@ spec:
   values:
     global:
       imageRegistry: mirror.gcr.io
+    deployment:
+      envoyGateway:
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
     config:
       envoyGateway:
         provider:
@@ -20,3 +28,35 @@ spec:
               type: GatewayNamespace
         extensionApis:
           enableBackend: true
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: envoy-gateway
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: envoy-gateway
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: envoy-gateway
+                        livenessProbe:
+                          httpGet:
+                            path: /healthz
+                            port: 8081
+                          initialDelaySeconds: 30
+                          periodSeconds: 30
+                          timeoutSeconds: 5
+                          failureThreshold: 6
+                        readinessProbe:
+                          httpGet:
+                            path: /readyz
+                            port: 8081
+                          initialDelaySeconds: 10
+                          periodSeconds: 15
+                          timeoutSeconds: 5
+                          failureThreshold: 5
