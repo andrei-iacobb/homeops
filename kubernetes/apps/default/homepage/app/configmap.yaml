@@ -7,8 +7,137 @@ metadata:
   labels:
     app.kubernetes.io/name: homepage
 data:
-  custom.css: ""
-  custom.js: ""
+  custom.css: |
+    /* Background rotation layers */
+    .bg-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-size: cover;
+      background-position: center;
+      z-index: -1;
+      transition: opacity 2s ease-in-out;
+    }
+    .bg-layer.active {
+      opacity: 1;
+    }
+    .bg-layer.inactive {
+      opacity: 0;
+    }
+
+    /* Glassmorphism service cards */
+    #page_container .service {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid rgba(148, 163, 184, 0.15) !important;
+      border-radius: 16px !important;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    #page_container .service:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(148, 163, 184, 0.2);
+    }
+
+    /* Glassmorphism widget cards */
+    #page_container .widget {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background: rgba(15, 23, 42, 0.5) !important;
+      border: 1px solid rgba(148, 163, 184, 0.1) !important;
+      border-radius: 16px !important;
+    }
+
+    /* Information widgets (top bar) */
+    #information-widgets {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      background: rgba(15, 23, 42, 0.4) !important;
+      border: 1px solid rgba(148, 163, 184, 0.1) !important;
+      border-radius: 16px !important;
+    }
+
+    /* Search bar styling */
+    #page_container input[type="text"],
+    #page_container input[type="search"] {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.5) !important;
+      border: 1px solid rgba(148, 163, 184, 0.2) !important;
+      border-radius: 12px !important;
+      color: #e2e8f0 !important;
+    }
+    #page_container input[type="text"]:focus,
+    #page_container input[type="search"]:focus {
+      border-color: rgba(99, 102, 241, 0.5) !important;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Section headers */
+    #page_container h2 {
+      color: #e2e8f0 !important;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.5);
+    }
+  custom.js: |
+    // Rotating nature backgrounds with crossfade
+    (function () {
+      const layer1 = document.createElement("div");
+      const layer2 = document.createElement("div");
+      layer1.className = "bg-layer active";
+      layer2.className = "bg-layer inactive";
+      document.body.prepend(layer2);
+      document.body.prepend(layer1);
+
+      let current = layer1;
+      let next = layer2;
+
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(url);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      async function swap() {
+        try {
+          const url = "https://picsum.photos/2560/1440?random=" + Date.now();
+          const loaded = await loadImage(url);
+          next.style.backgroundImage = "url(" + loaded + ")";
+          next.className = "bg-layer active";
+          current.className = "bg-layer inactive";
+          const temp = current;
+          current = next;
+          next = temp;
+        } catch (e) {
+          // silently retry next cycle
+        }
+      }
+
+      // Load initial background
+      swap();
+      // Rotate every 30 seconds
+      setInterval(swap, 30000);
+    })();
   docker.yaml: ""
   proxmox.yaml: |
     # pve:
@@ -19,43 +148,64 @@ data:
     mode: disabled
   settings.yaml: |
     title: Home
-    headerStyle: boxed
+    theme: dark
+    color: slate
+    headerStyle: clean
+    statusStyle: dot
+    cardBlur: md
+    background:
+      image: https://picsum.photos/2560/1440?random=1
+      brightness: 30
+      saturate: 50
+      opacity: 50
     layout:
       Infrastructure:
         style: row
         columns: 3
+        icon: mdi-server-network
       Network:
         style: row
         columns: 2
+        icon: mdi-lan
       Social:
         style: row
         columns: 4
+        icon: mdi-account-group
       Base:
         style: row
         columns: 3
+        icon: mdi-apps
       Media:
         style: row
         columns: 4
+        icon: mdi-filmstrip
       AI:
         style: row
         columns: 2
+        icon: mdi-robot
       Monitoring:
         style: row
         columns: 2
+        icon: mdi-chart-line
       Databases:
         style: row
         columns: 2
+        icon: mdi-database
       Tools:
         style: row
         columns: 3
+        icon: mdi-wrench
   widgets.yaml: |
     - greeting:
-        text: Home
+        text: Welcome Home
     - datetime:
         text_size: xl
         locale: en-GB
+        dateStyle: long
+        timeStyle: short
     - search:
         provider: google
+        target: _blank
   bookmarks.yaml: |
     - Developer:
         - Github:
@@ -228,10 +378,7 @@ data:
           icon: plex.svg
           href: https://plex.iacob.uk
           description: Media server
-          widget:
-            type: plex
-            url: https://plex.iacob.uk
-            key: ${HOMEPAGE_PLEX_TOKEN}
+          siteMonitor: https://plex.iacob.uk
       - Sonarr:
           icon: sonarr.svg
           href: https://sonarr.iacob.uk
@@ -240,7 +387,6 @@ data:
             type: sonarr
             url: https://sonarr.iacob.uk
             key: ${HOMEPAGE_SONARR_KEY}
-            enableQueue: true
       - Radarr:
           icon: radarr.svg
           href: https://radarr.iacob.uk
@@ -249,7 +395,6 @@ data:
             type: radarr
             url: https://radarr.iacob.uk
             key: ${HOMEPAGE_RADARR_KEY}
-            enableQueue: true
       - Lidarr:
           icon: lidarr.svg
           href: https://lidarr.iacob.uk
