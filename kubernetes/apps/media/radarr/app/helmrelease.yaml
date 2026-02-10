@@ -11,66 +11,85 @@ spec:
   values:
     controllers:
       radarr:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/radarr
-              tag: 6.0.4
+              repository: ghcr.io/home-operations/radarr
+              tag: 6.1.1.10317@sha256:5e08c0eefd2770d1d29395c4f84fe5bf7dfc3a986598021306a5d8ac017a3989
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: radarr-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: radarr-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: radarr-secret
-                    key: TZ
+              TZ: Europe/London
+              RADARR__PORT: &port 7878
+            envFrom:
+              - secretRef:
+                  name: radarr-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 7878
-                  initialDelaySeconds: 60
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 15
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 6
-              readiness: *probes
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 10m
               limits:
-                cpu: 2000m
-                memory: 2Gi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         ports:
           http:
-            port: 7878
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -79,6 +98,8 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      tmp:
+        type: emptyDir
       downloads:
         type: persistentVolumeClaim
         existingClaim: radarr-downloads
@@ -114,4 +135,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 7878
+                port: *port

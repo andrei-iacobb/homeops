@@ -11,66 +11,84 @@ spec:
   values:
     controllers:
       bazarr:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/bazarr
-              tag: 1.5.5
+              repository: ghcr.io/home-operations/bazarr
+              tag: 1.5.5@sha256:0949a30fb6e6703a63aaa9775760b8af820f7871f6a9aa9207e2ea00fd855e2c
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: bazarr-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: bazarr-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: bazarr-secret
-                    key: TZ
+              TZ: Europe/London
+            envFrom:
+              - secretRef:
+                  name: bazarr-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 6767
-                  initialDelaySeconds: 60
+                  httpGet:
+                    path: /health
+                    port: &port 6767
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 15
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 6
-              readiness: *probes
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 10m
               limits:
-                cpu: 2000m
-                memory: 2Gi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         ports:
           http:
-            port: 6767
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -79,6 +97,8 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      tmp:
+        type: emptyDir
       movies:
         type: persistentVolumeClaim
         existingClaim: bazarr-movies
@@ -109,4 +129,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 6767
+                port: *port
