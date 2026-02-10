@@ -39,8 +39,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/v2/app/version
+                  tcpSocket:
                     port: *port
                   initialDelaySeconds: 30
                   periodSeconds: 30
@@ -50,8 +49,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/v2/app/version
+                  tcpSocket:
                     port: *port
                   initialDelaySeconds: 15
                   periodSeconds: 10
@@ -61,8 +59,7 @@ spec:
                 enabled: true
                 custom: true
                 spec:
-                  httpGet:
-                    path: /api/v2/app/version
+                  tcpSocket:
                     port: *port
                   initialDelaySeconds: 5
                   periodSeconds: 5
