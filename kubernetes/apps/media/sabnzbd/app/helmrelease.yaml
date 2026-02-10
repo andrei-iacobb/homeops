@@ -29,7 +29,7 @@ spec:
               tag: 4.5.5@sha256:485440a3e9209a3515c01e1c73d6088726491a292302a721d4cb9e7c6375c768
             env:
               TZ: Europe/London
-              SABNZBD__PORT: &port 80
+              SABNZBD__PORT: &port 8080
               SABNZBD__HOST_WHITELIST_ENTRIES: >-
                 sabnzbd,
                 sabnzbd.media,
