@@ -59,28 +59,36 @@ data:
       border-radius: 16px !important;
     }
 
-    /* Search bar styling — match card style */
+    /* Search bar input — transparent, no background */
     #page_container input[type="text"],
     #page_container input[type="search"] {
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      background: rgba(15, 23, 42, 0.82) !important;
-      border: 1px solid rgba(148, 163, 184, 0.2) !important;
-      border-radius: 16px !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
       color: #e2e8f0 !important;
+      padding: 0.75rem 1rem !important;
     }
     #page_container input[type="text"]:focus,
     #page_container input[type="search"]:focus {
-      border-color: rgba(148, 163, 184, 0.4) !important;
+      border: none !important;
       box-shadow: none !important;
       outline: none !important;
     }
 
-    /* Search widget container */
+    /* Search widget container — glassmorphism pill */
     #page_container form,
     #page_container .search-wrapper,
     #page_container [class*="search"] {
       background: transparent !important;
+    }
+    #information-widgets form,
+    #information-widgets [class*="search"] {
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(15, 23, 42, 0.45) !important;
+      border: 1px solid rgba(148, 163, 184, 0.15) !important;
+      border-radius: 16px !important;
+      padding: 0.15rem 0.5rem !important;
     }
 
     /* Remove any blue focus rings globally */
