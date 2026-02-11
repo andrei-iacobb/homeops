@@ -110,6 +110,7 @@ spec:
           - path: /config
       tmp:
         type: emptyDir
+        sizeLimit: 128Gi
       logs:
         type: emptyDir
         globalMounts:
