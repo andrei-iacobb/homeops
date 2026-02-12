@@ -62,4 +62,4 @@ spec:
         size: 20Gi
         accessMode: ReadWriteOnce
         globalMounts:
-          - path: /qdrant/storage
+          - path: /qdrant
