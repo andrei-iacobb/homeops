@@ -10,8 +10,8 @@ spec:
     substitute:
       APP: sonarr
       APP_PVC: sonarr
-      MOVER_UID: "1000"
-      MOVER_GID: "1000"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
       VOLSYNC_SCHEDULE: "25 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
