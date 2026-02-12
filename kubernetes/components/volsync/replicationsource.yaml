@@ -2,14 +2,14 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
-  name: alertmanager-db
+  name: "${APP}"
 spec:
-  sourcePVC: "alertmanager-prometheus-kube-prometheus-alertmanager-db-alertmanager-prometheus-kube-prometheus-alertmanager-0"
+  sourcePVC: "${APP_PVC}"
   trigger:
-    schedule: "5 2/6 * * *"
+    schedule: "${VOLSYNC_SCHEDULE}"
   restic:
     pruneIntervalDays: 7
-    repository: alertmanager-db-volsync-secret
+    repository: "${APP}-volsync-secret"
     retain:
       hourly: 6
       daily: 7
@@ -17,7 +17,7 @@ spec:
       monthly: 3
     copyMethod: Direct
     moverSecurityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
+      runAsUser: ${MOVER_UID}
+      runAsGroup: ${MOVER_GID}
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 2Gi

@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/minio/app
   postBuild:
+    substitute:
+      APP: minio
+      APP_PVC: minio
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+      VOLSYNC_SCHEDULE: "15 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

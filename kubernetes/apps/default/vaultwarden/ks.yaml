@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/default/vaultwarden/app
   postBuild:
+    substitute:
+      APP: vaultwarden
+      APP_PVC: vaultwarden
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+      VOLSYNC_SCHEDULE: "25 1/6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

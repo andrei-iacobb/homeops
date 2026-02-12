@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/plex/app
   postBuild:
+    substitute:
+      APP: plex
+      APP_PVC: plex
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+      VOLSYNC_SCHEDULE: "0 1/6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

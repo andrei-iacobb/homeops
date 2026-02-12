@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/postgres/app
   postBuild:
+    substitute:
+      APP: postgres
+      APP_PVC: postgres
+      MOVER_UID: "999"
+      MOVER_GID: "999"
+      VOLSYNC_SCHEDULE: "0 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

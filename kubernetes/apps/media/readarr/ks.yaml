@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/readarr/app
   postBuild:
+    substitute:
+      APP: readarr
+      APP_PVC: readarr
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+      VOLSYNC_SCHEDULE: "40 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

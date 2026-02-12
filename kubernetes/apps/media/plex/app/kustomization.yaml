@@ -1,6 +1,8 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+components:
+  - ../../../../components/volsync
 resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
@@ -8,6 +10,3 @@ resources:
   - ./secret.sops.yaml
   - ./pvc-media.yaml
   - ./service-loadbalancer.yaml
-  - ./volsync-nfs-backup-pv-pvc.yaml
-  - ./restic-config-plex.sops.yaml
-  - ./volsync-replicationsource-plex.yaml

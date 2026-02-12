@@ -7,6 +7,16 @@ metadata:
 spec:
   interval: 10m
   path: ./kubernetes/apps/monitoring/prometheus/app
+  postBuild:
+    substitute:
+      APP: prometheus-db
+      APP_PVC: "prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+      VOLSYNC_SCHEDULE: "0 2/6 * * *"
+    substituteFrom:
+      - name: volsync-secret
+        kind: Secret
   prune: true
   targetNamespace: monitoring
   sourceRef:

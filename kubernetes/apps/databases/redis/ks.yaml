@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/redis/app
   postBuild:
+    substitute:
+      APP: redis
+      APP_PVC: redis
+      MOVER_UID: "999"
+      MOVER_GID: "999"
+      VOLSYNC_SCHEDULE: "10 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:
