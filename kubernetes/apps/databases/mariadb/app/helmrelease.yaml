@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: mariadb
-              tag: "11"
+              tag: "12"
             env:
               MYSQL_ROOT_PASSWORD:
                 valueFrom:
