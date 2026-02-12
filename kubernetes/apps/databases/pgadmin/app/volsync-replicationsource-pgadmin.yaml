@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: pgadmin
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "20 */6 * * *"   # every 6h, staggered +20min
   restic:
     moverSecurityContext:
       runAsUser: 0

@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: openwebui
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "55 1/6 * * *"   # every 6h, staggered +115min
   restic:
     moverSecurityContext:
       runAsUser: 1000

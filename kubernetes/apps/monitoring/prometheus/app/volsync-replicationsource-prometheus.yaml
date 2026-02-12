@@ -9,7 +9,7 @@ metadata:
 spec:
   sourcePVC: prometheus-prometheus-kube-prometheus-prometheus-db-prometheus-prometheus-kube-prometheus-prometheus-0
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "0 2/6 * * *"   # every 6h, staggered +120min
   restic:
     moverSecurityContext:
       runAsUser: 1000

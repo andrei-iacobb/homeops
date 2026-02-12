@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: sonarr
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "25 */6 * * *"   # every 6h, staggered +25min
   restic:
     moverSecurityContext:
       runAsUser: 1000

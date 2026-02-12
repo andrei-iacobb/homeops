@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: vaultwarden
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "25 1/6 * * *"   # every 6h, staggered +85min
   restic:
     moverSecurityContext:
       runAsUser: 1000

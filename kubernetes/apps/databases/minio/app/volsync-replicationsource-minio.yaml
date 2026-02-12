@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: minio
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "15 */6 * * *"   # every 6h, staggered +15min
   restic:
     moverSecurityContext:
       runAsUser: 1000

@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: gitea
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "30 1/6 * * *"   # every 6h, staggered +90min
   restic:
     moverSecurityContext:
       runAsUser: 0

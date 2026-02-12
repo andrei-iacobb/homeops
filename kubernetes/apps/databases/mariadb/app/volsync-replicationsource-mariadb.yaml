@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: mariadb
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "5 */6 * * *"   # every 6h, staggered +5min
   restic:
     moverSecurityContext:
       runAsUser: 999

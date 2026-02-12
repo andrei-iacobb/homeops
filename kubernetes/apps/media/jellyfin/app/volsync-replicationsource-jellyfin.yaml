@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: jellyfin-config
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "5 1/6 * * *"   # every 6h, staggered +65min
   restic:
     moverSecurityContext:
       runAsUser: 1000

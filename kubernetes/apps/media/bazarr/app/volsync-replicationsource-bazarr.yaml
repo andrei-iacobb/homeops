@@ -8,7 +8,7 @@ metadata:
 spec:
   sourcePVC: bazarr
   trigger:
-    schedule: "0 */6 * * *"   # every 6 hours
+    schedule: "10 1/6 * * *"   # every 6h, staggered +70min
   restic:
     moverSecurityContext:
       runAsUser: 1000
