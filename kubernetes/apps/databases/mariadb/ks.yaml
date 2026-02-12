@@ -7,16 +7,8 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/mariadb/app
   postBuild:
-    substitute:
-      APP: mariadb
-      APP_PVC: mariadb
-      MOVER_UID: "999"
-      MOVER_GID: "999"
-      VOLSYNC_SCHEDULE: "5 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
-        kind: Secret
-      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

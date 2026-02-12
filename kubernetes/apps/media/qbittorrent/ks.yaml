@@ -7,16 +7,8 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/qbittorrent/app
   postBuild:
-    substitute:
-      APP: qbittorrent
-      APP_PVC: qbittorrent
-      MOVER_UID: "0"
-      MOVER_GID: "0"
-      VOLSYNC_SCHEDULE: "55 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
-        kind: Secret
-      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

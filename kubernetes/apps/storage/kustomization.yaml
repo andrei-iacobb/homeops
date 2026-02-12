@@ -12,4 +12,5 @@ resources:
   - ./nfs-csi/ks.yaml
   - ./nfs-csi-immich/ks.yaml
   - ./nfs-csi/storageclasses/ks.yaml
-  - ./volsync/ks.yaml
+  # TODO: Re-enable volsync when backup permission issues are resolved
+  # - ./volsync/ks.yaml

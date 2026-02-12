@@ -7,16 +7,6 @@ metadata:
 spec:
   interval: 10m
   path: ./kubernetes/apps/monitoring/grafana/app
-  postBuild:
-    substitute:
-      APP: grafana
-      APP_PVC: prometheus-grafana
-      MOVER_UID: "472"
-      MOVER_GID: "472"
-      VOLSYNC_SCHEDULE: "10 2/6 * * *"
-    substituteFrom:
-      - name: volsync-secret
-        kind: Secret
   prune: true
   targetNamespace: monitoring
   sourceRef:

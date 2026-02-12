@@ -7,16 +7,8 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/default/outline/app
   postBuild:
-    substitute:
-      APP: outline
-      APP_PVC: outline
-      MOVER_UID: "1000"
-      MOVER_GID: "1000"
-      VOLSYNC_SCHEDULE: "35 1/6 * * *"
     substituteFrom:
       - name: cluster-secrets
-        kind: Secret
-      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

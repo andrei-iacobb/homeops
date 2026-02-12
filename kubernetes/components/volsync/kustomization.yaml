@@ -1,4 +1,9 @@
 ---
+# TODO: Re-enable volsync backups. Disabled due to mover permission errors
+# (VolSync drops ALL capabilities, so even root can't read restricted files)
+# causing endless retry loops and IO storms on the single-node cluster.
+# Fix: either patch VolSync to allow DAC_READ_SEARCH capability, or fix
+# file permissions on source PVCs before re-enabling.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

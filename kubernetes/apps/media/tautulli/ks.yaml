@@ -6,16 +6,6 @@ metadata:
 spec:
   interval: 1h
   path: ./kubernetes/apps/media/tautulli/app
-  postBuild:
-    substitute:
-      APP: tautulli
-      APP_PVC: tautulli
-      MOVER_UID: "1000"
-      MOVER_GID: "1000"
-      VOLSYNC_SCHEDULE: "20 1/6 * * *"
-    substituteFrom:
-      - name: volsync-secret
-        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

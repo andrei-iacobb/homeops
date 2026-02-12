@@ -7,16 +7,8 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/qdrant/app
   postBuild:
-    substitute:
-      APP: qdrant
-      APP_PVC: qdrant
-      MOVER_UID: "1000"
-      MOVER_GID: "1000"
-      VOLSYNC_SCHEDULE: "25 */6 * * *"
     substituteFrom:
       - name: cluster-secrets
-        kind: Secret
-      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:
