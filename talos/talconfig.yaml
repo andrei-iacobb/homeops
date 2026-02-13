@@ -26,8 +26,14 @@ nodes:
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
     controlPlane: true
     networkInterfaces:
-      # Main LAN - default route for API, ping, etc.
+      # ens18: 10G p2p to TrueNAS (first device in Proxmox) - no default route
       - interface: "ens18"
+        dhcp: false
+        addresses:
+          - "10.10.10.2/24"
+        mtu: 9000
+      # ens19: Main LAN (second device) - default route for API, ping
+      - interface: "ens19"
         dhcp: false
         addresses:
           - "192.168.1.185/24"
@@ -35,13 +41,6 @@ nodes:
           - gateway: "192.168.1.254"
             network: 0.0.0.0/0
         mtu: 1500
-      # ens19: dedicated 10G p2p NFS link to TrueNAS - no default route.
-      # TrueNAS p2p IP: 10.0.0.1. Update NFS server in nfs-csi helmrelease to 10.0.0.1 when ready.
-      - interface: "ens19"
-        dhcp: false
-        addresses:
-          - "10.0.0.2/30"
-        mtu: 9000
 
 # Global patches
 patches:
