@@ -3,6 +3,11 @@
 # Run when cluster is reachable: ./scripts/scale-down-all.sh
 set -euo pipefail
 
+if ! kubectl cluster-info &>/dev/null; then
+  echo "Error: Cannot reach cluster. Ensure KUBECONFIG is set and the cluster is up."
+  exit 1
+fi
+
 echo "Scaling down all workloads..."
 for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
   for kind in deployment statefulset; do
