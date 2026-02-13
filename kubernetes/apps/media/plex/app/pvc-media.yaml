@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 10.10.10.3
+    server: 10.10.10.1
     path: /mnt/plex/media/movies
 ---
 apiVersion: v1
@@ -39,7 +39,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 10.10.10.3
+    server: 10.10.10.1
     path: /mnt/plex/media/tv
 ---
 apiVersion: v1
@@ -67,7 +67,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 10.10.10.3
+    server: 10.10.10.1
     path: /mnt/plex/media/music
 ---
 apiVersion: v1
