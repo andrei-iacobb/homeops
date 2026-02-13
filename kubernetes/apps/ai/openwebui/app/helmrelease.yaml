@@ -19,6 +19,8 @@ spec:
               tag: main
             env:
               OLLAMA_BASE_URL: http://ollama:11434
+              HOME: /app/backend/data
+              USER: openwebui
               WEBUI_SECRET_KEY:
                 valueFrom:
                   secretKeyRef:
