@@ -38,7 +38,7 @@ nodes:
       - interface: "ens19"
         dhcp: false
         addresses:
-          - "10.10.10.2/30"
+          - "10.10.10.2/31"
         mtu: 9000
 
 # Global patches
