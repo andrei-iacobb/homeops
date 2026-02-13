@@ -1,11 +1,7 @@
 ---
-# TODO: Rebuild monitoring stack properly:
-# - Disable Grafana sidecar, use static dashboard provisioning (DavidIlie pattern)
-#   OR migrate to Grafana Operator (onedr0p pattern)
-# - Sidecar (kiwigrid/k8s-sidecar) OOMs at 128Mi default, causes kernel memory
-#   reclaim storms that take down the entire single-node cluster for hours
-# - Audit dashboards: adguard, truenas, proxmox, ilo - which are still useful?
-# - Consider standalone Grafana instead of bundled kube-prometheus-stack
+# Grafana sidecar disabled in prometheus helmrelease (OOM caused cluster outages).
+# Re-enable prometheus when ready; custom dashboards (adguard, truenas, ilo, proxmox)
+# can be imported manually in Grafana UI or added via grafana.dashboards.default.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

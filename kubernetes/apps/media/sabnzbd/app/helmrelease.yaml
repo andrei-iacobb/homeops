@@ -109,8 +109,10 @@ spec:
         globalMounts:
           - path: /config
       tmp:
+        # Limit to 20Gi to avoid saturating node root disk (etcd shares same disk).
+        # SABnzbd unpacks here; 128Gi caused IO starvation and envoy restarts.
         type: emptyDir
-        sizeLimit: 128Gi
+        sizeLimit: 20Gi
       logs:
         type: emptyDir
         globalMounts:

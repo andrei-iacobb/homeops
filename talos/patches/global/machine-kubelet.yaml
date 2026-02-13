@@ -11,6 +11,9 @@ machine:
     extraConfig:
       maxPods: 200
       serializeImagePulls: false
+      # Lower thresholds so image GC runs before disk pressure evictions (single-node)
+      imageGCHighThresholdPercent: 80
+      imageGCLowThresholdPercent: 75
     nodeIP:
       validSubnets:
         - 192.168.1.0/24

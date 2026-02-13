@@ -105,19 +105,13 @@ spec:
         enabled: true
         storageClassName: openebs-hostpath
         size: 10Gi
+      # Disable sidecar: kiwigrid/k8s-sidecar OOMs at 128Mi, causes kernel memory
+      # reclaim storms that take down single-node cluster. Use static dashboards instead.
       sidecar:
         dashboards:
-          enabled: true
-          label: grafana_dashboard
-          labelValue: "1"
-          folder: /var/lib/grafana/dashboards/default
-          searchNamespace: ALL
-        resources:
-          requests:
-            cpu: 10m
-            memory: 128Mi
-          limits:
-            memory: 512Mi
+          enabled: false
+        datasources:
+          enabled: false
       resources:
         requests:
           cpu: 100m
