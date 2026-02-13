@@ -26,6 +26,7 @@ nodes:
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
     controlPlane: true
     networkInterfaces:
+      # Main LAN - has default route (must be first)
       - deviceSelector:
           hardwareAddr: "bc:24:11:34:c3:21"
         dhcp: false
@@ -35,6 +36,13 @@ nodes:
           - gateway: "192.168.1.254"
             network: 0.0.0.0/0
         mtu: 1500
+      # 10G p2p NFS link - NO default route (explicit config prevents wrong routing).
+      # Adjust interface name (ens19/enp0s4) and IP to match your PVE/TrueNAS p2p setup.
+      - interface: "ens19"
+        dhcp: false
+        addresses:
+          - "10.0.0.2/30"
+        mtu: 9000
 
 # Global patches
 patches:
