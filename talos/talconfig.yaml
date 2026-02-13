@@ -4,10 +4,10 @@ clusterName: kubernetes
 talosVersion: "${talosVersion}"
 kubernetesVersion: "${kubernetesVersion}"
 
-endpoint: https://192.168.1.185:6443
+endpoint: https://192.168.1.85:6443
 additionalApiServerCertSans: &sans
   - "127.0.0.1"
-  - "192.168.1.185"
+  - "192.168.1.85"
 additionalMachineCertSans: *sans
 
 clusterPodNets: ["10.67.0.0/16"]
@@ -19,24 +19,17 @@ cniConfig:
 
 nodes:
   - hostname: "home-cluster"
-    ipAddress: "192.168.1.185"
+    ipAddress: "192.168.1.85"
     installDisk: "/dev/vda"
     machineSpec:
       secureboot: false
     talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
     controlPlane: true
     networkInterfaces:
-      # ens18: 10G p2p to TrueNAS (first device in Proxmox) - no default route
       - interface: "ens18"
         dhcp: false
         addresses:
-          - "10.10.10.2/24"
-        mtu: 9000
-      # ens19: Main LAN (second device) - default route for API, ping
-      - interface: "ens19"
-        dhcp: false
-        addresses:
-          - "192.168.1.185/24"
+          - "192.168.1.85/24"
         routes:
           - gateway: "192.168.1.254"
             network: 0.0.0.0/0
@@ -54,4 +47,5 @@ patches:
 controlPlane:
   patches:
     - "@./patches/controller/cluster.yaml"
+
 
