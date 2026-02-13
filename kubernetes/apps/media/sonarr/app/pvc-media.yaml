@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 192.168.1.1
+    server: 10.10.10.3
     path: /mnt/plex/media/tv
 ---
 apiVersion: v1
@@ -39,7 +39,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 192.168.1.1
+    server: 10.10.10.3
     path: /mnt/plex/media/movies
 ---
 apiVersion: v1
@@ -67,7 +67,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 192.168.1.1
+    server: 10.10.10.3
     path: /mnt/plex/media/music
 ---
 apiVersion: v1
@@ -95,7 +95,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 192.168.1.1
+    server: 10.10.10.3
     path: /mnt/plex/media/books
 ---
 apiVersion: v1
@@ -123,7 +123,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   nfs:
-    server: 192.168.1.1
+    server: 10.10.10.3
     path: /mnt/plex/media/downloads
 ---
 apiVersion: v1

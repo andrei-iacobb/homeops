@@ -1,4 +1,6 @@
 machine:
   time:
-    # Disabled to allow bootstrap when NTP unreachable; re-enable once network sorted, TODO fix later
-    disabled: true
+    disabled: false
+    servers:
+      - time.cloudflare.com
+      - time.google.com

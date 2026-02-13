@@ -13,7 +13,7 @@ spec:
   interval: 1h
   values:
     nfs:
-      server: 192.168.1.1
+      server: 10.10.10.3
       path: /mnt/SSD/immich
     storageClass:
       create: false
