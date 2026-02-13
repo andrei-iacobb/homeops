@@ -13,7 +13,7 @@ spec:
   interval: 1h
   values:
     nfs:
-      server: 10.10.10.1
+      server: 10.10.10.3
       path: /mnt/plex/media
     storageClass:
       create: false
