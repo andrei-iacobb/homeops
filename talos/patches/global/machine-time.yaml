@@ -1,7 +1,4 @@
 machine:
   time:
-    disabled: false
-    # Use local gateway/router for NTP - outbound UDP to internet was timing out
-    servers:
-      - 192.168.1.254
-      - 192.168.1.1
+    # Disabled to allow bootstrap when NTP unreachable; re-enable once network sorted, TODO fix later
+    disabled: true
