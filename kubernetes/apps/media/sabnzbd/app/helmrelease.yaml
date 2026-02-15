@@ -109,10 +109,13 @@ spec:
         globalMounts:
           - path: /config
       tmp:
-        # Limit to 20Gi to avoid saturating node root disk (etcd shares same disk).
-        # SABnzbd unpacks here; 128Gi caused IO starvation and envoy restarts.
-        type: emptyDir
-        sizeLimit: 20Gi
+        # Use NFS downloads volume for temp/incomplete files so unpacking
+        # doesn't saturate the node SSD (etcd shares the same disk).
+        type: persistentVolumeClaim
+        existingClaim: sabnzbd-downloads
+        globalMounts:
+          - path: /tmp
+            subPath: incomplete
       logs:
         type: emptyDir
         globalMounts:
