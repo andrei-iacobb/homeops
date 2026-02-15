@@ -33,7 +33,7 @@ spec:
               tag: 1.43.0.10467@sha256:fa62165df48d04e9a418805951e903f831dec0e0601f4dc4245f9948d7fd719b
             env:
               TZ: Europe/London
-              PLEX_NO_AUTH_NETWORKS: 10.67.0.0/16
+              PLEX_NO_AUTH_NETWORKS: 10.67.0.0/16,192.168.1.0/24
             envFrom:
               - secretRef:
                   name: plex-secret
