@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.n8n.io/n8nio/n8n
-              tag: 2.7.3
+              tag: 2.9.0
             env:
               N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
               N8N_HOST: n8n.iacob.uk
