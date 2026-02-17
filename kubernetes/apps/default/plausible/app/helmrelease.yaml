@@ -1,0 +1,176 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plausible
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: plausible
+  interval: 1h
+  timeout: 15m
+  values:
+    controllers:
+      postgres:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: postgres
+              tag: 16-alpine
+            env:
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: plausible-secret
+                    key: PLAUSIBLE_POSTGRES_PASSWORD
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
+      clickhouse:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: clickhouse/clickhouse-server
+              tag: 24.12-alpine
+            env:
+              CLICKHOUSE_SKIP_USER_SETUP: "1"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: 2000m
+                memory: 4Gi
+      plausible:
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/plausible/community-edition
+              tag: v3.2.0
+            command:
+              - sh
+              - -c
+              - /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run
+            env:
+              TMPDIR: /var/lib/plausible/tmp
+              HTTP_PORT: "8000"
+              BASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: plausible-secret
+                    key: BASE_URL
+              SECRET_KEY_BASE:
+                valueFrom:
+                  secretKeyRef:
+                    name: plausible-secret
+                    key: SECRET_KEY_BASE
+              DATABASE_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: plausible-secret
+                    key: DATABASE_URL
+              CLICKHOUSE_DATABASE_URL: http://127.0.0.1:8123/plausible_events_db
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: &port 8000
+                  initialDelaySeconds: 90
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 6
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/health
+                    port: *port
+                  periodSeconds: 10
+                  failureThreshold: 60
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+    service:
+      app:
+        controller: plausible
+        ports:
+          http:
+            port: *port
+    persistence:
+      postgres-data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          postgres:
+            app:
+              - path: /var/lib/postgresql/data
+      clickhouse-data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          clickhouse:
+            app:
+              - path: /var/lib/clickhouse
+      clickhouse-logs:
+        type: emptyDir
+        advancedMounts:
+          clickhouse:
+            app:
+              - path: /var/log/clickhouse-server
+      plausible-data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          plausible:
+            app:
+              - path: /var/lib/plausible
+    route:
+      app:
+        hostnames: ["plausible.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

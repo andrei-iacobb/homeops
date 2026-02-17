@@ -546,6 +546,10 @@ data:
           icon: prometheus.svg
           href: https://prometheus.iacob.uk
           description: Metrics
+      - Plausible:
+          icon: plausible.svg
+          href: https://plausible.iacob.co.uk
+          description: Web analytics
     - Databases:
       - pgAdmin:
           icon: pgadmin.svg
