@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: huntarr/huntarr
-              tag: 9.2.3
+              tag: 9.3.0
             env:
               TZ:
                 valueFrom:
