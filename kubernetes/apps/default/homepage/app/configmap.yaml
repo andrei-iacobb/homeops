@@ -396,6 +396,10 @@ data:
           icon: mdi-web
           href: https://andrei.iacob.co.uk
           description: Personal website
+      - NeatPlan:
+          icon: mdi-clipboard-list
+          href: https://neatplan.app
+          description: Cleaning operations app
     - Media:
       - Jellyfin:
           icon: jellyfin.svg
