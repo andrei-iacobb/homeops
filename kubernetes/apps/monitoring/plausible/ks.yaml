@@ -5,7 +5,7 @@ metadata:
   name: plausible
 spec:
   interval: 1h
-  path: ./kubernetes/apps/default/plausible/app
+  path: ./kubernetes/apps/monitoring/plausible/app
   postBuild:
     substituteFrom:
       - name: cluster-secrets
@@ -15,5 +15,5 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: default
+  targetNamespace: monitoring
   wait: false
