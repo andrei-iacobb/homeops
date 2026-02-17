@@ -28,6 +28,7 @@ spec:
               readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
+                add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
             resources:
               requests:
                 cpu: 200m
