@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: neatplan
-          image: ghcr.io/andrei-iacobb/neatplan:c4de5cb
+          image: ghcr.io/andrei-iacobb/neatplan:e32c995
           imagePullPolicy: Always
           envFrom:
             - secretRef:
