@@ -21,6 +21,9 @@ spec:
             env:
               CLICKHOUSE_SKIP_USER_SETUP: "1"
             securityContext:
+              runAsNonRoot: false
+              runAsUser: 0
+              runAsGroup: 0
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
               capabilities:
