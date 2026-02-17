@@ -4,6 +4,7 @@
 # can be imported manually in Grafana UI or added via grafana.dashboards.default.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: monitoring
 resources:
   - namespace.yaml
   - plausible/ks.yaml
