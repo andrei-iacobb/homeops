@@ -18,7 +18,7 @@ spec:
               repository: docker.io/favonia/cloudflare-ddns
               tag: 1.15.1
             env:
-              DOMAINS: "plex.iacob.co.uk,wg.iacob.uk"
+              DOMAINS: "plex.iacob.co.uk,wg.iacob.co.uk"
               PROXIED: "false"
               IP6_PROVIDER: "none"
               UPDATE_CRON: "@every 5m"
