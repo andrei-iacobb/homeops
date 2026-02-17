@@ -7,6 +7,9 @@ metadata:
     external-dns.alpha.kubernetes.io/ttl: "300"
 spec:
   endpoints:
+    - dnsName: "neatplan.app"
+      recordType: CNAME
+      targets: ["23a328b3-0b31-4340-b92f-de050b161c20.cfargotunnel.com"]
     - dnsName: "${SECRET_DOMAIN}"
       recordType: CNAME
       targets: ["23a328b3-0b31-4340-b92f-de050b161c20.cfargotunnel.com"]
