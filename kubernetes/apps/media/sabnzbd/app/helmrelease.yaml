@@ -21,6 +21,7 @@ spec:
   values:
     controllers:
       sabnzbd:
+        replicas: 0  # Disabled - scale up and remove when re-enabling
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
