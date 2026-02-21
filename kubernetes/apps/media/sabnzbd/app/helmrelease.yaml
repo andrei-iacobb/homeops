@@ -1,7 +1,6 @@
 ---
-# Aligned with DavidIlie: Helm repo 3.7.3, emptyDir tmp, NFS share for completed, port 80.
+# tmp on NFS (not emptyDir) - emptyDir saturates node SSD where etcd lives, causing IO pressure stalls.
 # Configure SAB Complete folder to /share in Config > Folders.
-# Ingress: kept Envoy/HTTPRoute (k8s-gateway watches HTTPRoute for iacob.uk DNS).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -97,7 +96,11 @@ spec:
       config:
         existingClaim: sabnzbd
       tmp:
-        type: emptyDir
+        type: persistentVolumeClaim
+        existingClaim: sabnzbd-downloads
+        globalMounts:
+          - path: /tmp
+            subPath: incomplete
       share:
         type: nfs
         server: 10.10.10.3
