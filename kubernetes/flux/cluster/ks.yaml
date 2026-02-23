@@ -5,6 +5,8 @@ metadata:
   name: cluster-apps
   namespace: flux-system
 spec:
+  # TEMPORARY: suspend to reduce etcd/API load - unsuspend after control plane stabilizes
+  suspend: true
   decryption:
     provider: sops
   deletionPolicy: WaitForTermination
