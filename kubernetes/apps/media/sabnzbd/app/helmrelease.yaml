@@ -79,8 +79,6 @@ spec:
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
     defaultPodOptions:
-      labels:
-        app.kubernetes.io/component: sabnzbd
       securityContext:
         runAsNonRoot: true
         runAsUser: 568
