@@ -17,7 +17,7 @@ spec:
         namespace: media
   dependsOn:
     - name: openebs
-      namespace: flux-system
+      namespace: openebs
   values:
     controllers:
       sabnzbd:
