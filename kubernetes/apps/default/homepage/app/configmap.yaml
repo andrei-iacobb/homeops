@@ -217,7 +217,7 @@ data:
         icon: mdi-filmstrip
       AI:
         style: row
-        columns: 2
+        columns: 3
         icon: mdi-robot
       Monitoring:
         style: row
@@ -541,6 +541,11 @@ data:
           icon: openwebui.svg
           href: https://openwebui.iacob.co.uk
           description: AI chat interface
+      - OpenClaw:
+          icon: mdi-robot-outline
+          href: https://openclaw.iacob.uk
+          description: AI agent platform
+          siteMonitor: https://openclaw.iacob.uk
     - Monitoring:
       - Grafana:
           icon: grafana.svg
