@@ -12,5 +12,5 @@ spec:
     - sabnzbd.iacob.uk
   rules:
     - backendRefs:
-        - name: sabnzbd
+        - name: sabnzbd-ingress
           port: 80
