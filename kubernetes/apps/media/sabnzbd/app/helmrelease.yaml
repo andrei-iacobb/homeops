@@ -108,14 +108,3 @@ spec:
         path: /mnt/plex/media/downloads
         globalMounts:
           - path: /share
-    route:
-      app:
-        hostnames: ["sabnzbd.iacob.uk"]
-        parentRefs:
-          - name: envoy-internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: *port

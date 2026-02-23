@@ -7,3 +7,4 @@ resources:
   - ./secret.sops.yaml
   - ./claim.yaml
   - ./pvc-downloads.yaml
+  - ./httproute.yaml
