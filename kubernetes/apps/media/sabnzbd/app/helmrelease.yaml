@@ -1,27 +1,20 @@
 ---
-# tmp on NFS (not emptyDir) - emptyDir saturates node SSD where etcd lives, causing IO pressure stalls.
-# Configure SAB Complete folder to /share in Config > Folders.
+# Based on onedr0p/home-ops and DavidIlie/home-cluster
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: sabnzbd
 spec:
+  chartRef:
+    kind: OCIRepository
+    name: sabnzbd
   interval: 1h
-  chart:
-    spec:
-      chart: app-template
-      version: 3.7.3
-      sourceRef:
-        kind: HelmRepository
-        name: bjw-s
-        namespace: media
   dependsOn:
     - name: openebs
       namespace: openebs
   values:
     controllers:
       sabnzbd:
-        replicas: 1
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
