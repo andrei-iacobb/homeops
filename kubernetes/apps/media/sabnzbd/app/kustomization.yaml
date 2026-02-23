@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./service-ingress.yaml
   - ./httproute.yaml
   - ./claim.yaml
   - ./pvc-downloads.yaml
