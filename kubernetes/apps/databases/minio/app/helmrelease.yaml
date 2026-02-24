@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: minio/minio
-              tag: RELEASE.2025-10-15T17-29-55Z
+              tag: RELEASE.2025-07-23T15-54-02Z
             args:
               - server
               - /data
