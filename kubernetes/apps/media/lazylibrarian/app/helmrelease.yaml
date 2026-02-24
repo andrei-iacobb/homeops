@@ -80,11 +80,11 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
-      downloads:
+      share:
         type: persistentVolumeClaim
         existingClaim: lazylibrarian-downloads
         globalMounts:
-          - path: /downloads
+          - path: /share
       books:
         type: persistentVolumeClaim
         existingClaim: lazylibrarian-books

@@ -79,11 +79,11 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
-      downloads:
+      share:
         type: persistentVolumeClaim
         existingClaim: lidarr-downloads
         globalMounts:
-          - path: /downloads
+          - path: /share
       music:
         type: persistentVolumeClaim
         existingClaim: lidarr-music

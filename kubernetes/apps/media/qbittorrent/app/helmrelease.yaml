@@ -84,11 +84,11 @@ spec:
           - path: /config
       tmp:
         type: emptyDir
-      downloads:
+      share:
         type: persistentVolumeClaim
         existingClaim: qbittorrent-downloads
         globalMounts:
-          - path: /downloads
+          - path: /share
     route:
       app:
         hostnames: ["qbittorrent.iacob.uk"]

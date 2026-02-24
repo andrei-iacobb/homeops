@@ -18,7 +18,7 @@ spec:
             image:
               repository: busybox
               tag: latest
-            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /downloads /movies /tv /music /books 2>/dev/null || true"]
+            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true"]
             securityContext:
               runAsUser: 0
               runAsNonRoot: false
@@ -100,11 +100,11 @@ spec:
           - path: /config
       tmp:
         type: emptyDir
-      downloads:
+      share:
         type: persistentVolumeClaim
         existingClaim: radarr-downloads
         globalMounts:
-          - path: /downloads
+          - path: /share
       movies:
         type: persistentVolumeClaim
         existingClaim: radarr-movies
