@@ -1,0 +1,353 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: frigate
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: frigate
+  interval: 1h
+  values:
+    controllers:
+      frigate:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/blakeblackshear/frigate
+              tag: "0.15.1"
+            env:
+              TZ: Europe/London
+              FRIGATE_MQTT_HOST: mosquitto.databases.svc.cluster.local
+              FRIGATE_MQTT_PORT: "1883"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: &port 5000
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/version
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 60
+            securityContext:
+              privileged: true
+            resources:
+              requests:
+                cpu: 500m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+          rtsp:
+            port: 8554
+          webrtc-tcp:
+            port: 8555
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      config-file:
+        type: configMap
+        name: frigate-config
+        globalMounts:
+          - path: /config/config.yml
+            subPath: config.yml
+      cache:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 512Mi
+        globalMounts:
+          - path: /tmp/cache
+      media:
+        type: persistentVolumeClaim
+        existingClaim: frigate-recordings
+        globalMounts:
+          - path: /media
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 256Mi
+        globalMounts:
+          - path: /dev/shm
+    route:
+      app:
+        hostnames: ["frigate.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    configMaps:
+      config:
+        data:
+          config.yml: |
+            mqtt:
+              host: mosquitto.databases.svc.cluster.local
+              port: 1883
+
+            go2rtc:
+              streams:
+                # Ring cameras via ring-mqtt RTSP bridge
+                # Device IDs are placeholders — update after ring-mqtt discovers your cameras
+                # Check ring-mqtt web UI at ring-mqtt.iacob.uk for actual device IDs
+                # Format: rtsp://ring-mqtt.<namespace>.svc.cluster.local:8554/<device_id>_live
+                front_door: rtsp://ring-mqtt.media.svc.cluster.local:8554/front_door_live
+                dining_room: rtsp://ring-mqtt.media.svc.cluster.local:8554/dining_room_live
+                melis: rtsp://ring-mqtt.media.svc.cluster.local:8554/melis_live
+                garden: rtsp://ring-mqtt.media.svc.cluster.local:8554/garden_live
+                hallway: rtsp://ring-mqtt.media.svc.cluster.local:8554/hallway_live
+                driveway: rtsp://ring-mqtt.media.svc.cluster.local:8554/driveway_live
+                living: rtsp://ring-mqtt.media.svc.cluster.local:8554/living_live
+
+            cameras:
+              front_door:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/front_door
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+                    - dog
+                    - cat
+                    - car
+
+              dining_room:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/dining_room
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+
+              melis:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/melis
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+
+              garden:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/garden
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+                    - dog
+                    - cat
+
+              hallway:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/hallway
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+
+              driveway:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/driveway
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+                    - dog
+                    - cat
+                    - car
+
+              living:
+                enabled: true
+                ffmpeg:
+                  inputs:
+                    - path: rtsp://127.0.0.1:8554/living
+                      roles: ["detect", "record"]
+                detect:
+                  enabled: true
+                  width: 1280
+                  height: 720
+                  fps: 5
+                record:
+                  enabled: true
+                  retain:
+                    days: 7
+                    mode: motion
+                  events:
+                    retain:
+                      default: 14
+                snapshots:
+                  enabled: true
+                  retain:
+                    default: 14
+                objects:
+                  track:
+                    - person
+
+            detectors:
+              cpu:
+                type: cpu
+                num_threads: 4
+
+            # Ollama Generative AI for event descriptions
+            # Requires a vision model (e.g., llava) — pull one via Ollama first
+            # genai:
+            #   enabled: true
+            #   provider: ollama
+            #   base_url: http://ollama.ai.svc.cluster.local:11434
+            #   model: llava

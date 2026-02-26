@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: frigate-recordings-pv
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/sexy-pool/frigate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frigate-recordings
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: frigate-recordings-pv
+  resources:
+    requests:
+      storage: 500Gi
