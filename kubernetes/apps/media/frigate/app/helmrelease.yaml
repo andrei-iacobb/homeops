@@ -87,7 +87,7 @@ spec:
           - path: /config
       config-file:
         type: configMap
-        name: frigate-config
+        name: frigate
         globalMounts:
           - path: /config/config.yml
             subPath: config.yml
