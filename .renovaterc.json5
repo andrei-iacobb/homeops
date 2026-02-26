@@ -46,6 +46,15 @@
       minimumGroupSize: 3,
     },
     {
+      description: "Auto-merge personal container images",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/andrei-iacobb/**"],
+      automerge: true,
+      automergeType: "branch",
+      matchUpdateTypes: ["digest"],
+      ignoreTests: true,
+    },
+    {
       description: "Auto-merge GitHub Actions",
       matchManagers: ["github-actions"],
       automerge: true,
