@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: mosquitto
+      namespace: databases
     - name: ring-mqtt
   interval: 1h
   path: ./kubernetes/apps/media/frigate/app
