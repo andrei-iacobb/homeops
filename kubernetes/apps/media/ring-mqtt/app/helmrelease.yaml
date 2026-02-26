@@ -13,6 +13,38 @@ spec:
       ring-mqtt:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-config:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - sh
+              - -c
+              - |
+                if [ ! -f /data/config.json ]; then
+                  cat > /data/config.json <<CONF
+                {
+                  "mqtt_url": "mqtt://mosquitto.databases.svc.cluster.local:1883",
+                  "mqtt_options": "",
+                  "livestream_user": "",
+                  "livestream_pass": "",
+                  "disarm_code": "",
+                  "enable_cameras": true,
+                  "enable_modes": true,
+                  "enable_panic": true,
+                  "snapshot_mode": "all",
+                  "hass_topic": "homeassistant/status",
+                  "ring_topic": "ring",
+                  "location_ids": []
+                }
+                CONF
+                  echo "Created default config.json"
+                else
+                  echo "config.json already exists"
+                fi
+            securityContext:
+              runAsUser: 0
         containers:
           app:
             image:
@@ -26,11 +58,6 @@ spec:
               SNAPSHOTMODE: "all"
               ENABLEMODES: "true"
               ENABLEPANIC: "true"
-              RINGTOKEN:
-                valueFrom:
-                  secretKeyRef:
-                    name: ring-mqtt-secret
-                    key: RING_REFRESH_TOKEN
             probes:
               liveness:
                 enabled: true

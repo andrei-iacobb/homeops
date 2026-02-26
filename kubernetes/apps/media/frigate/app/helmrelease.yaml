@@ -13,6 +13,17 @@ spec:
       frigate:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          init-config:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - sh
+              - -c
+              - cp /config-template/config.yml /config/config.yml
+            securityContext:
+              runAsUser: 0
         containers:
           app:
             image:
@@ -20,8 +31,6 @@ spec:
               tag: "0.15.1"
             env:
               TZ: Europe/London
-              FRIGATE_MQTT_HOST: mosquitto.databases.svc.cluster.local
-              FRIGATE_MQTT_PORT: "1883"
             probes:
               liveness:
                 enabled: true
@@ -85,11 +94,11 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
-      config-file:
+      config-template:
         type: configMap
         name: frigate
         globalMounts:
-          - path: /config/config.yml
+          - path: /config-template/config.yml
             subPath: config.yml
       cache:
         type: emptyDir
@@ -158,9 +167,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -188,9 +194,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -215,9 +218,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -242,9 +242,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -271,9 +268,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -298,9 +292,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
@@ -328,9 +319,6 @@ spec:
                   retain:
                     days: 7
                     mode: motion
-                  events:
-                    retain:
-                      default: 14
                 snapshots:
                   enabled: true
                   retain:
