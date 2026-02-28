@@ -9,7 +9,6 @@ components:
 resources:
   - ./namespace.yaml
   - ./postgres/ks.yaml
-  - ./mariadb/ks.yaml
   - ./redis/ks.yaml
   - ./minio/ks.yaml
   - ./pgadmin/ks.yaml

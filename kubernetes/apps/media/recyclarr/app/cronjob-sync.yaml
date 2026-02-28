@@ -22,7 +22,7 @@ spec:
             runAsGroup: 0
           containers:
             - name: recyclarr
-              image: ghcr.io/recyclarr/recyclarr:latest
+              image: ghcr.io/recyclarr/recyclarr:8.3.2
               command: ["recyclarr", "sync"]
               envFrom:
                 - secretRef:
