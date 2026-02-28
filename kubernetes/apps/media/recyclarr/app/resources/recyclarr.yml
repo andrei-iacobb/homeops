@@ -159,14 +159,10 @@ radarr:
         qualities:
           - name: Bluray-1080p
           - name: WEB 1080p
-            qualities:
-              - name: WEBDL-1080p
-              - name: WEBRip-1080p
+            qualities: ["WEBDL-1080p", "WEBRip-1080p"]
           - name: Bluray-720p
           - name: WEB 720p
-            qualities:
-              - name: WEBDL-720p
-              - name: WEBRip-720p
+            qualities: ["WEBDL-720p", "WEBRip-720p"]
 
     custom_format_groups:
       add:
