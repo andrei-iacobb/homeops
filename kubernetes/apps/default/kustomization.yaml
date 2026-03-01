@@ -24,3 +24,4 @@ resources:
   - ./stirling-pdf/ks.yaml
   - ./vikunja/ks.yaml
   - ./informate/ks.yaml
+  - ./searxng/ks.yaml

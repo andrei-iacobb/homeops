@@ -1,0 +1,19 @@
+use_default_settings:
+  engines:
+    keep_only:
+      - google news
+      - bing news
+      - duckduckgo news
+
+server:
+  secret_key: "970208ffac991567e71114cb2c0bf3da836d57b0982624190f056aa8772b07dc"
+  base_url: "https://searxng.iacob.uk/"
+  limiter: false
+  image_proxy: false
+  method: GET
+
+search:
+  formats:
+    - html
+    - json
+  default_lang: en
