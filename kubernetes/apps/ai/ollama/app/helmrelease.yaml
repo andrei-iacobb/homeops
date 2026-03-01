@@ -11,7 +11,7 @@ spec:
   values:
     controllers:
       ollama:
-        strategy: RollingUpdate
+        strategy: Recreate
         containers:
           app:
             image:
@@ -60,4 +60,4 @@ spec:
         size: 100Gi
         accessMode: ReadWriteOnce
         globalMounts:
-          - path: /root/.ollama
+          - path: /home/ubuntu/.ollama
