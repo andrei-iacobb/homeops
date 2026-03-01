@@ -61,6 +61,11 @@ spec:
                   secretKeyRef:
                     name: postgres-secret
                     key: VIKUNJA_DB_PASSWORD
+              INFORMATE_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: INFORMATE_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true

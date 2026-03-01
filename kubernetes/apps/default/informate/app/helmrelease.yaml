@@ -1,0 +1,117 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: informate
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: informate
+  interval: 1h
+  values:
+    controllers:
+      backend:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/andrei-iacobb/informate-backend
+              tag: latest
+            env:
+              OLLAMA_URL: http://ollama.ai.svc.cluster.local:11434
+              OLLAMA_MODEL: llama3.1:70b
+              DATABASE_URL: jdbc:postgresql://postgres.databases.svc.cluster.local:5432/informate
+              POSTGRES_USER:
+                valueFrom:
+                  secretKeyRef:
+                    name: informate-secret
+                    key: POSTGRES_USER
+              POSTGRES_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: informate-secret
+                    key: POSTGRES_PASSWORD
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/auth/validate
+                    port: 8080
+                  initialDelaySeconds: 60
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 500m
+                memory: 512Mi
+              limits:
+                cpu: 2000m
+                memory: 2Gi
+      frontend:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/andrei-iacobb/informate-frontend
+              tag: latest
+            probes:
+              liveness: &frontend-probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 80
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *frontend-probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 500m
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+    service:
+      backend:
+        controller: backend
+        ports:
+          http:
+            port: 8080
+      frontend:
+        controller: frontend
+        ports:
+          http:
+            port: 80
+    persistence:
+      images:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          backend:
+            app:
+              - path: /app/SiteImages
