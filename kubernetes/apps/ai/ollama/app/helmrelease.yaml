@@ -41,7 +41,7 @@ spec:
                 memory: 8Gi
               limits:
                 cpu: 8000m
-                memory: 48Gi
+                memory: 96Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
