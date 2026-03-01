@@ -32,7 +32,7 @@ spec:
                     name: informate-secret
                     key: POSTGRES_PASSWORD
               QDRANT_URL: http://qdrant.default.svc.cluster.local:6333
-              SEARXNG_URL: ""
+              SEARXNG_URL: http://searxng.default.svc.cluster.local:8080
               EMBEDDING_MODEL: nomic-embed-text
             probes:
               liveness: &probes
