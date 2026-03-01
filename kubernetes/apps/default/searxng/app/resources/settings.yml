@@ -1,9 +1,33 @@
 use_default_settings:
   engines:
     keep_only:
+      # Major search engine news
       - google news
       - bing news
       - duckduckgo news
+      - brave.news
+      - qwant news
+      - yahoo news
+      - startpage news
+      - mojeek news
+      - yep news
+      - presearch news
+      # Wire services & publishers
+      - reuters
+      - wikinews
+      # Tech & community news
+      - hacker news
+      - lobste.rs
+      - lemmy communities
+      - lemmy posts
+      - reddit
+      # Academic & science
+      - arxiv
+      - google scholar
+      - semantic scholar
+      # Social & real-time
+      - mastodon hashtags
+      - mastodon users
 
 server:
   secret_key: "970208ffac991567e71114cb2c0bf3da836d57b0982624190f056aa8772b07dc"
@@ -17,3 +41,30 @@ search:
     - html
     - json
   default_lang: en
+
+engines:
+  # Enable disabled-by-default engines
+  - name: mojeek news
+    disabled: false
+  - name: yep news
+    disabled: false
+  - name: presearch news
+    disabled: false
+  - name: hacker news
+    disabled: false
+  - name: lobste.rs
+    disabled: false
+  - name: lemmy communities
+    disabled: false
+  - name: lemmy posts
+    disabled: false
+  - name: reddit
+    disabled: false
+  - name: mastodon hashtags
+    disabled: false
+  - name: mastodon users
+    disabled: false
+  - name: arxiv
+    disabled: false
+  - name: semantic scholar
+    disabled: false
