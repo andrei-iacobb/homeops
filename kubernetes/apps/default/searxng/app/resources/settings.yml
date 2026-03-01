@@ -1,33 +1,4 @@
-use_default_settings:
-  engines:
-    keep_only:
-      # Major search engine news
-      - google news
-      - bing news
-      - duckduckgo news
-      - brave.news
-      - qwant news
-      - yahoo news
-      - startpage news
-      - mojeek news
-      - yep news
-      - presearch news
-      # Wire services & publishers
-      - reuters
-      - wikinews
-      # Tech & community news
-      - hacker news
-      - lobste.rs
-      - lemmy communities
-      - lemmy posts
-      - reddit
-      # Academic & science
-      - arxiv
-      - google scholar
-      - semantic scholar
-      # Social & real-time
-      - mastodon hashtags
-      - mastodon users
+use_default_settings: true
 
 server:
   secret_key: "970208ffac991567e71114cb2c0bf3da836d57b0982624190f056aa8772b07dc"
@@ -43,13 +14,35 @@ search:
   default_lang: en
 
 engines:
-  # Enable disabled-by-default engines
+  # === NEWS ENGINES (enable all) ===
+  - name: google news
+    disabled: false
+  - name: bing news
+    disabled: false
+  - name: duckduckgo news
+    disabled: false
+  - name: brave.news
+    disabled: false
+  - name: qwant news
+    disabled: false
+  - name: yahoo news
+    disabled: false
+  - name: startpage news
+    disabled: false
   - name: mojeek news
     disabled: false
   - name: yep news
     disabled: false
   - name: presearch news
     disabled: false
+  - name: reuters
+    disabled: false
+  - name: wikinews
+    disabled: false
+  - name: naver news
+    disabled: false
+
+  # === TECH & COMMUNITY ===
   - name: hacker news
     disabled: false
   - name: lobste.rs
@@ -60,11 +53,51 @@ engines:
     disabled: false
   - name: reddit
     disabled: false
+
+  # === ACADEMIC & SCIENCE ===
+  - name: arxiv
+    disabled: false
+  - name: google scholar
+    disabled: false
+  - name: semantic scholar
+    disabled: false
+  - name: crossref
+    disabled: false
+  - name: pubmed
+    disabled: false
+
+  # === SOCIAL & REAL-TIME ===
   - name: mastodon hashtags
     disabled: false
   - name: mastodon users
     disabled: false
-  - name: arxiv
+
+  # === GENERAL SEARCH (for broader article context) ===
+  - name: google
     disabled: false
-  - name: semantic scholar
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false
+  - name: brave
+    disabled: false
+  - name: qwant
+    disabled: false
+  - name: mojeek
+    disabled: false
+  - name: startpage
+    disabled: false
+  - name: yahoo
+    disabled: false
+  - name: yep
+    disabled: false
+  - name: presearch
+    disabled: false
+
+  # === KNOWLEDGE & REFERENCE ===
+  - name: wikipedia
+    disabled: false
+  - name: wikidata
+    disabled: false
+  - name: currency
     disabled: false
