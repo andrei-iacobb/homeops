@@ -113,8 +113,6 @@ spec:
         type: emptyDir
       transcode:
         type: emptyDir
-        medium: Memory
-        sizeLimit: 2Gi
         globalMounts:
           - path: /transcode
       movies:

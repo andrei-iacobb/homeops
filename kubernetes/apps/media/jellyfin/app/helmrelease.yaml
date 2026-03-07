@@ -97,6 +97,10 @@ spec:
         existingClaim: jellyfin-tv
         globalMounts:
           - path: /data/tv
+      transcode:
+        type: emptyDir
+        globalMounts:
+          - path: /config/transcodes
       music:
         type: persistentVolumeClaim
         existingClaim: jellyfin-music
