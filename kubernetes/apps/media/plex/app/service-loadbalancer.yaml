@@ -8,6 +8,7 @@ metadata:
     lbipam.cilium.io/ips: "192.168.1.9"
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     app.kubernetes.io/name: plex
     app.kubernetes.io/instance: plex
@@ -16,4 +17,19 @@ spec:
       protocol: TCP
       port: 32400
       targetPort: 32400
-  externalTrafficPolicy: Cluster
+    - name: gdm1
+      protocol: UDP
+      port: 32410
+      targetPort: 32410
+    - name: gdm2
+      protocol: UDP
+      port: 32412
+      targetPort: 32412
+    - name: gdm3
+      protocol: UDP
+      port: 32413
+      targetPort: 32413
+    - name: gdm4
+      protocol: UDP
+      port: 32414
+      targetPort: 32414

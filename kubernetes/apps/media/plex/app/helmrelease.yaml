@@ -9,23 +9,10 @@ spec:
     name: plex
   interval: 1h
   values:
-    # Performance: CPU transcoding, RAM transcode dir. In Plex UI: Settings → Transcoder →
-    # - Transcoder temp directory: /transcode
-    # - Transcoder quality: Prefer higher speed encoding (faster start, less buffering)
-    # - Throttle transcoder: Disabled
     controllers:
       plex:
         annotations:
           reloader.stakater.com/auto: "true"
-        initContainers:
-          init-chown:
-            image:
-              repository: busybox
-              tag: latest
-            command: ["sh", "-c", "chown -R 568:568 /config"]
-            securityContext:
-              runAsUser: 0
-              runAsNonRoot: false
         containers:
           app:
             image:
@@ -78,10 +65,9 @@ spec:
               capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 1000m
+                cpu: 100m
                 memory: 2Gi
               limits:
-                cpu: 8000m
                 memory: 16Gi
     defaultPodOptions:
       securityContext:
