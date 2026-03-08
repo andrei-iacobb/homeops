@@ -25,3 +25,4 @@ resources:
   - ./vikunja/ks.yaml
   - ./informate/ks.yaml
   - ./searxng/ks.yaml
+  - ./zipline/ks.yaml

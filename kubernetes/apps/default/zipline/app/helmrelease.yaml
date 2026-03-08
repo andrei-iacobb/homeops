@@ -1,0 +1,93 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zipline
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: zipline
+  interval: 1h
+  values:
+    controllers:
+      zipline:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/diced/zipline
+              tag: v4
+            env:
+              CORE_PORT: &port 3000
+              DATASOURCE_TYPE: local
+              DATASOURCE_LOCAL_DIRECTORY: /zipline/uploads
+            envFrom:
+              - secretRef:
+                  name: zipline-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthcheck
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 4
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthcheck
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      uploads:
+        existingClaim: zipline-uploads
+        globalMounts:
+          - path: /zipline/uploads
+      public:
+        type: emptyDir
+        globalMounts:
+          - path: /zipline/public
+      themes:
+        type: emptyDir
+        globalMounts:
+          - path: /zipline/themes
+    route:
+      app:
+        hostnames: ["share.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
