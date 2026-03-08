@@ -140,11 +140,8 @@ spec:
     xForwardedFor:
       trustedCIDRs:
         - "10.67.0.0/16"
-  http1:
-    maxRequestBodyBytes: 10737418240
   http2:
     onInvalidMessage: TerminateStream
-    maxRequestBodyBytes: 10737418240
   http3: {}
   targetSelectors:
     - group: gateway.networking.k8s.io
