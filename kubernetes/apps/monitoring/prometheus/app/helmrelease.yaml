@@ -92,6 +92,12 @@ spec:
         enabled: true
         storageClassName: openebs-hostpath
         size: 10Gi
+      initChownData:
+        enabled: false
+      securityContext:
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
       sidecar:
         dashboards:
           enabled: true
