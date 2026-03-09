@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/default/gitea/app
   postBuild:
+    substitute:
+      APP: gitea
+      APP_PVC: gitea
+      VOLSYNC_SCHEDULE: "30 3 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

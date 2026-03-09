@@ -1,7 +1,4 @@
 ---
-# Grafana sidecar disabled in prometheus helmrelease (OOM caused cluster outages).
-# Re-enable prometheus when ready; custom dashboards (adguard, truenas, ilo, proxmox)
-# can be imported manually in Grafana UI or added via grafana.dashboards.default.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
@@ -12,9 +9,9 @@ components:
 resources:
   - namespace.yaml
   - plausible/ks.yaml
-  # - prometheus/ks.yaml
-  # - grafana/ks.yaml
-  # - exporters/ks.yaml
+  - prometheus/ks.yaml
+  - grafana/ks.yaml
+  - exporters/ks.yaml
   # - graphite-exporter/ks.yaml
   # - loki/ks.yaml
   # - promtail/ks.yaml

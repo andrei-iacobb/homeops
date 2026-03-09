@@ -19,5 +19,6 @@ spec:
     moverSecurityContext:
       runAsUser: ${MOVER_UID}
       runAsGroup: ${MOVER_GID}
+      fsGroup: ${MOVER_GID}
     cacheStorageClassName: openebs-hostpath
     cacheCapacity: 2Gi

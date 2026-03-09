@@ -18,7 +18,7 @@ spec:
     prometheus:
       enabled: true
       prometheusSpec:
-        retention: 30d
+        retention: 14d
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -40,23 +40,11 @@ spec:
                   - 192.168.1.67:9586
                 labels:
                   instance: wireguard-vpn
-          - job_name: volsync
-            scheme: https
-            metrics_path: /metrics
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            tls_config:
-              insecure_skip_verify: true
-            static_configs:
-              - targets:
-                  - volsync-metrics.volsync-system.svc.cluster.local:8443
-                labels:
-                  component: volsync
         resources:
           requests:
             cpu: 500m
             memory: 2Gi
           limits:
-            cpu: 2000m
             memory: 4Gi
     alertmanager:
       enabled: true
@@ -74,7 +62,6 @@ spec:
             cpu: 100m
             memory: 256Mi
           limits:
-            cpu: 500m
             memory: 512Mi
     kubeApiServer:
       enabled: true
@@ -117,7 +104,6 @@ spec:
           cpu: 100m
           memory: 256Mi
         limits:
-          cpu: 1000m
           memory: 1Gi
     prometheusOperator:
       enabled: true
@@ -126,5 +112,4 @@ spec:
           cpu: 100m
           memory: 128Mi
         limits:
-          cpu: 500m
           memory: 512Mi
