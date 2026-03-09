@@ -65,7 +65,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_replication_up",
+              "expr": "max by (host) (truenas_replication_up)",
               "legendFormat": "TrueNAS API",
               "refId": "A"
             }
@@ -114,7 +114,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_pool_free_percent",
+              "expr": "max by (pool) (truenas_pool_free_percent)",
               "legendFormat": "{{pool}}",
               "refId": "A"
             }
@@ -175,7 +175,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_pool_free_percent",
+              "expr": "max by (pool) (truenas_pool_free_percent)",
               "legendFormat": "{{pool}}",
               "refId": "A"
             }
@@ -221,13 +221,13 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_pool_size_bytes",
+              "expr": "max by (pool) (truenas_pool_size_bytes)",
               "legendFormat": "{{pool}} total",
               "refId": "A"
             },
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_pool_allocated_bytes",
+              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
               "legendFormat": "{{pool}} used",
               "refId": "B"
             }
@@ -288,7 +288,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "truenas_pool_allocated_bytes",
+              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
               "legendFormat": "{{pool}}",
               "refId": "A"
             }
