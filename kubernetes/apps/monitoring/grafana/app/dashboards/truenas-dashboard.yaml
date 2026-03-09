@@ -295,7 +295,7 @@ data:
           ],
           "title": "Pool Allocated Over Time",
           "type": "timeseries"
-        },
+        }
       ],
       "refresh": "30s",
       "schemaVersion": 38,
