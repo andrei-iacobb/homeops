@@ -7,3 +7,6 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./secret.sops.yaml
+  - ./httproute-events.yaml
+  - ./httproute-script.yaml
+  - ./httproute-manual.yaml
