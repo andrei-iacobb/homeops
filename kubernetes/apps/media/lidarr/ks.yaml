@@ -6,18 +6,6 @@ metadata:
 spec:
   interval: 1h
   path: ./kubernetes/apps/media/lidarr/app
-  postBuild:
-    substitute:
-      APP: lidarr
-      APP_PVC: lidarr
-      VOLSYNC_SCHEDULE: "35 2 * * *"
-      MOVER_UID: "0"
-      MOVER_GID: "0"
-    substituteFrom:
-      - name: cluster-secrets
-        kind: Secret
-      - name: volsync-secret
-        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
