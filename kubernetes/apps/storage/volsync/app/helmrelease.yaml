@@ -10,7 +10,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: backube
-      version: "0.14.x"
+      version: "0.15.x"
   interval: 1h
   timeout: 10m
   install:
