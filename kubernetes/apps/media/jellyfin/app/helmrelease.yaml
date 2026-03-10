@@ -13,6 +13,15 @@ spec:
       jellyfin:
         annotations:
           reloader.stakater.com/auto: "true"
+        initContainers:
+          fix-marker:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "rm -f /config/.jellyfin-config && touch /config/.jellyfin-data"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
