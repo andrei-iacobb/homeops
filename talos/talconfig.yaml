@@ -31,7 +31,7 @@ nodes:
         addresses:
           - "192.168.1.85/24"
         routes:
-          - gateway: "192.168.1.254"
+          - gateway: "192.168.1.1"
             network: 0.0.0.0/0
         mtu: 1500
       # ens19: 10G p2p NFS link to TrueNAS (10.10.10.3)

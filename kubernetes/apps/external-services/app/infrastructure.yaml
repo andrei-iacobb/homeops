@@ -8,7 +8,7 @@ metadata:
 spec:
   endpoints:
     - ip:
-        address: 192.168.1.1
+        address: 192.168.1.67
         port: 443
   tls:
     insecureSkipVerify: true
@@ -144,7 +144,7 @@ ports:
     port: 80
 endpoints:
   - addresses:
-      - "192.168.1.254"
+      - "192.168.1.1"
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
