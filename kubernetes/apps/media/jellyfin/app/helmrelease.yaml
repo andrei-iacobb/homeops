@@ -11,28 +11,15 @@ spec:
   values:
     controllers:
       jellyfin:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/jellyfin
+              repository: docker.io/jellyfin/jellyfin
               tag: 10.11.6
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: jellyfin-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: jellyfin-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: jellyfin-secret
-                    key: TZ
+              TZ: Europe/London
             probes:
               liveness: &probes
                 enabled: true
@@ -40,18 +27,16 @@ spec:
                 spec:
                   httpGet:
                     path: /health
-                    port: 8096
+                    port: &port 8096
                   initialDelaySeconds: 60
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 200m
@@ -71,7 +56,7 @@ spec:
       app:
         ports:
           http:
-            port: 8096
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -121,4 +106,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 8096
+                port: *port

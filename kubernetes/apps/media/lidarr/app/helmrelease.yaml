@@ -11,66 +11,85 @@ spec:
   values:
     controllers:
       lidarr:
-        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /share /music 2>/dev/null || true"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/lidarr
-              tag: 8.1.2135
+              repository: ghcr.io/home-operations/lidarr
+              tag: 3.1.2.4902@sha256:dab0e07502a34436fc50c3e789388f0a29f8cbf681fb7a02ed703ad7c368a22c
             env:
-              PUID:
-                valueFrom:
-                  secretKeyRef:
-                    name: lidarr-secret
-                    key: PUID
-              PGID:
-                valueFrom:
-                  secretKeyRef:
-                    name: lidarr-secret
-                    key: PGID
-              TZ:
-                valueFrom:
-                  secretKeyRef:
-                    name: lidarr-secret
-                    key: TZ
+              TZ: Europe/London
+              LIDARR__PORT: &port 8686
+            envFrom:
+              - secretRef:
+                  name: lidarr-secret
             probes:
-              liveness: &probes
+              liveness:
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 8686
-                  initialDelaySeconds: 60
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 15
                   periodSeconds: 10
                   timeoutSeconds: 5
-                  failureThreshold: 6
-              readiness: *probes
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
-                cpu: 100m
-                memory: 256Mi
+                cpu: 10m
               limits:
-                cpu: 2000m
                 memory: 2Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 1000
-        seccompProfile:
-          type: Unconfined
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
     service:
       app:
         ports:
           http:
-            port: 8686
+            port: *port
     persistence:
       config:
         type: persistentVolumeClaim
@@ -79,6 +98,8 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /config
+      tmp:
+        type: emptyDir
       share:
         type: persistentVolumeClaim
         existingClaim: lidarr-downloads
@@ -99,4 +120,4 @@ spec:
         rules:
           - backendRefs:
               - identifier: app
-                port: 8686
+                port: *port
