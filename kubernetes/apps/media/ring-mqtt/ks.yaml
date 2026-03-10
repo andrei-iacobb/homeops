@@ -10,8 +10,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/ring-mqtt/app
   postBuild:
+    substitute:
+      APP: ring-mqtt
+      APP_PVC: ring-mqtt
+      VOLSYNC_SCHEDULE: "25 3 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

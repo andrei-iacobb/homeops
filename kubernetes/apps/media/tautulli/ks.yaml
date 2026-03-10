@@ -6,6 +6,18 @@ metadata:
 spec:
   interval: 1h
   path: ./kubernetes/apps/media/tautulli/app
+  postBuild:
+    substitute:
+      APP: tautulli
+      APP_PVC: tautulli
+      VOLSYNC_SCHEDULE: "40 3 * * *"
+      MOVER_UID: "568"
+      MOVER_GID: "568"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

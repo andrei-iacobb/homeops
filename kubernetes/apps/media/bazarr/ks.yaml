@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/bazarr/app
   postBuild:
+    substitute:
+      APP: bazarr
+      APP_PVC: bazarr
+      VOLSYNC_SCHEDULE: "5 2 * * *"
+      MOVER_UID: "568"
+      MOVER_GID: "568"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

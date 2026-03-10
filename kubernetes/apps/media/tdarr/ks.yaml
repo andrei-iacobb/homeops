@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/tdarr/app
   postBuild:
+    substitute:
+      APP: tdarr
+      APP_PVC: tdarr-server
+      VOLSYNC_SCHEDULE: "45 3 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

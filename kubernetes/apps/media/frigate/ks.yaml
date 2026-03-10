@@ -11,8 +11,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/frigate/app
   postBuild:
+    substitute:
+      APP: frigate
+      APP_PVC: frigate
+      VOLSYNC_SCHEDULE: "15 2 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

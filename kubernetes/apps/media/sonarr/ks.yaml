@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/sonarr/app
   postBuild:
+    substitute:
+      APP: sonarr
+      APP_PVC: sonarr
+      VOLSYNC_SCHEDULE: "35 3 * * *"
+      MOVER_UID: "568"
+      MOVER_GID: "568"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/pgadmin/app
   postBuild:
+    substitute:
+      APP: pgadmin
+      APP_PVC: pgadmin
+      VOLSYNC_SCHEDULE: "15 2 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

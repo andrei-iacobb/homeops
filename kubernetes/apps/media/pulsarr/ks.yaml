@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/pulsarr/app
   postBuild:
+    substitute:
+      APP: pulsarr
+      APP_PVC: pulsarr
+      VOLSYNC_SCHEDULE: "55 2 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

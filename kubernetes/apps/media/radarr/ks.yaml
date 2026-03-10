@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/media/radarr/app
   postBuild:
+    substitute:
+      APP: radarr
+      APP_PVC: radarr
+      VOLSYNC_SCHEDULE: "5 3 * * *"
+      MOVER_UID: "568"
+      MOVER_GID: "568"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

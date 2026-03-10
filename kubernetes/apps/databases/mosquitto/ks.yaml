@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/databases/mosquitto/app
   postBuild:
+    substitute:
+      APP: mosquitto
+      APP_PVC: mosquitto
+      VOLSYNC_SCHEDULE: "0 2 * * *"
+      MOVER_UID: "1883"
+      MOVER_GID: "1883"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:

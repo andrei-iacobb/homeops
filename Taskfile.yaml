@@ -33,6 +33,30 @@ tasks:
       - test -f {{.KUBECONFIG}}
       - which flux
 
+  volsync:backup-all:
+    desc: Trigger all VolSync backups simultaneously
+    cmd: |
+      kubectl get replicationsource -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' | \
+      while read ns name; do
+        echo "Triggering backup: $ns/$name"
+        kubectl annotate replicationsource -n "$ns" "$name" volsync.backube/trigger="$(date +%s)" --overwrite
+      done
+    preconditions:
+      - test -f {{.KUBECONFIG}}
+      - which kubectl
+
+  volsync:status:
+    desc: Show status of all VolSync ReplicationSources
+    cmd: |
+      echo "=== VolSync Backup Status ==="
+      kubectl get replicationsource -A -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,PVC:.spec.sourcePVC,LAST_SYNC:.status.lastSyncTime,SCHEDULE:.spec.trigger.schedule'
+      echo ""
+      echo "=== Active Mover Pods ==="
+      kubectl get pods -A -l volsync.backube/replicationsource --no-headers 2>/dev/null || echo "No active mover pods"
+    preconditions:
+      - test -f {{.KUBECONFIG}}
+      - which kubectl
+
   monitoring:build-truenas-exporter:
     desc: Build and push TrueNAS API exporter image
     dir: '{{.ROOT_DIR}}/kubernetes/apps/monitoring/exporters/truenas'

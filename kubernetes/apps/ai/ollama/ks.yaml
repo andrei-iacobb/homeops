@@ -7,8 +7,16 @@ spec:
   interval: 1h
   path: ./kubernetes/apps/ai/ollama/app
   postBuild:
+    substitute:
+      APP: ollama
+      APP_PVC: ollama
+      VOLSYNC_SCHEDULE: "0 5 * * 0"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
         kind: Secret
   prune: true
   sourceRef:
