@@ -1,0 +1,54 @@
+---
+# Ollama: only allow from OpenWebUI (ai namespace) and Informate (default namespace)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ollama-ingress
+  namespace: ai
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  ingress:
+    # OpenWebUI (same namespace)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP
+    # Informate (default namespace)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "11434"
+              protocol: TCP
+    # Kubelet health probes
+    - fromEntities:
+        - host
+---
+# OpenWebUI: allow from envoy gateway (network namespace) and health probes
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openwebui-ingress
+  namespace: ai
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: open-webui
+  ingress:
+    # Envoy Gateway ingress
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Kubelet health probes
+    - fromEntities:
+        - host

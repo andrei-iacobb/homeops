@@ -1,0 +1,152 @@
+---
+# Postgres: only allow connections from known client apps
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: postgres-ingress
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  ingress:
+    # Default namespace apps (immich, vaultwarden, outline, gitea, paperless, authentik, vikunja, informate)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # pgAdmin (same namespace)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Kubelet health probes
+    - fromEntities:
+        - host
+---
+# Redis: only allow connections from known client apps
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: redis-ingress
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  ingress:
+    # Default namespace apps (immich, outline, paperless)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Media namespace (lidify)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Same namespace
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Kubelet health probes
+    - fromEntities:
+        - host
+---
+# Qdrant: only allow from informate (default namespace)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: qdrant-ingress
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: qdrant
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "6333"
+              protocol: TCP
+            - port: "6334"
+              protocol: TCP
+    - fromEntities:
+        - host
+---
+# MinIO: allow from storage namespace (volsync) and databases (internal)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: minio-ingress
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: minio
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: storage
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9001"
+              protocol: TCP
+    - fromEntities:
+        - host
+---
+# Mosquitto: allow from media namespace (ring-mqtt, frigate) and default (home assistant bridge)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mosquitto-ingress
+  namespace: databases
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: mosquitto
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+      toPorts:
+        - ports:
+            - port: "1883"
+              protocol: TCP
+    # Allow from external (Home Assistant on Proxmox)
+    - fromCIDR:
+        - 192.168.1.0/24
+      toPorts:
+        - ports:
+            - port: "1883"
+              protocol: TCP
+    - fromEntities:
+        - host

@@ -1,0 +1,33 @@
+---
+# Default namespace: allow ingress from envoy gateway, intra-namespace, and health probes
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-ingress
+  namespace: default
+spec:
+  endpointSelector: {}
+  ingress:
+    # Envoy Gateway ingress (HTTPRoutes - both internal and external)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+    # Intra-namespace (apps may query each other, e.g. informate→searxng)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+    # Media namespace (arr apps may call back to overseerr/pulsarr)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+    # AI namespace (openwebui may query default namespace services)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+    # Monitoring namespace (prometheus scraping)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+    # Kubelet health probes
+    - fromEntities:
+        - host

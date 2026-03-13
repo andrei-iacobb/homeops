@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./network-policies.yaml
   - ./plex/ks.yaml
   - ./jellyfin/ks.yaml
   - ./sonarr/ks.yaml

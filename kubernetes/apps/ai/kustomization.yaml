@@ -8,5 +8,6 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./network-policies.yaml
   - ./ollama/ks.yaml
   - ./openwebui/ks.yaml

@@ -1,0 +1,33 @@
+---
+# Media namespace: allow ingress from envoy gateway, intra-namespace, and health probes
+# Media apps communicate with each other (arr suite) and are accessed via envoy gateway
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-ingress
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingress:
+    # Envoy Gateway ingress (HTTPRoutes)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+    # Intra-namespace (arr apps talking to each other, prowlarr↔sonarr/radarr, etc.)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+    # Default namespace (overseerr/homepage may query arr APIs)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+    # Monitoring namespace (prometheus scraping, if ServiceMonitors added later)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+    # Plex/Jellyfin direct access from LAN clients
+    - fromCIDR:
+        - 192.168.1.0/24
+    # Kubelet health probes
+    - fromEntities:
+        - host
