@@ -21,6 +21,11 @@ spec:
               tag: master-94d019ff-1773519359
             env:
               TZ: Europe/London
+              SHOW_MUSIC: "true"
+              SHOW_DEVICES: "true"
+              SHOW_LOCATIONS: "true"
+              RECOMMEND_ENABLED: "false"
+              PLAUSIBLE_ENABLED: "false"
             envFrom:
               - secretRef:
                   name: plexo-secret
