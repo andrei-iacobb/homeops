@@ -11,7 +11,6 @@ spec:
   cors:
     allowOrigins:
       - "https://*.iacob.uk"
-      - "http://localhost:*"
     allowMethods:
       - GET
       - OPTIONS
