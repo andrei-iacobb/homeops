@@ -52,6 +52,9 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 6
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
           resources:
             requests:
               cpu: 100m
@@ -59,3 +62,7 @@ spec:
             limits:
               cpu: 1000m
               memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: replicarr-data
