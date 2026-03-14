@@ -402,7 +402,7 @@ data:
           description: Cleaning operations app
       - Sharerr:
           icon: mdi-share-variant
-          href: https://sharerr.iacob.co.uk/admin
+          href: https://sharerr.iacob.uk/admin
           description: Invite-only media sharing
     - Media:
       - Jellyfin:
