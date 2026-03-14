@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/davidilie/plexo
-              tag: master-ef770bb1-1773513023
+              tag: master-94d019ff-1773519359
             env:
               TZ: Europe/London
             envFrom:
