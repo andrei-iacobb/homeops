@@ -8,11 +8,11 @@ metadata:
     app.kubernetes.io/name: sharerr
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: envoy-internal
       namespace: network
       sectionName: https
   hostnames:
-    - sharerr.iacob.co.uk
+    - sharerr.iacob.uk
   rules:
     - matches:
         - path:
