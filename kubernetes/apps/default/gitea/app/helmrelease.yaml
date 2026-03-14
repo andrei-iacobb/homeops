@@ -47,7 +47,7 @@ spec:
           app:
             image:
               repository: gitea/gitea
-              tag: 1.25.4
+              tag: 1.25.5
             env:
               USER_UID:
                 valueFrom:
