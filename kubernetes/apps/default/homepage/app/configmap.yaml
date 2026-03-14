@@ -404,6 +404,10 @@ data:
           icon: mdi-share-variant
           href: https://sharerr.iacob.uk/admin
           description: Invite-only media sharing
+      - Replicarr:
+          icon: mdi-quality-low
+          href: https://replicarr.iacob.uk
+          description: Low-quality media replication
     - Media:
       - Jellyfin:
           icon: jellyfin.svg

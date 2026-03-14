@@ -28,3 +28,4 @@ resources:
   - ./searxng/ks.yaml
   - ./zipline/ks.yaml
   - ./sharerr/ks.yaml
+  - ./replicarr/ks.yaml

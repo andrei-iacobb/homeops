@@ -34,4 +34,6 @@ resources:
   - ./ring-mqtt/ks.yaml
   - ./frigate/ks.yaml
   - ./plexo/ks.yaml
+  - ./sonarr-lowq/ks.yaml
+  - ./radarr-lowq/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet

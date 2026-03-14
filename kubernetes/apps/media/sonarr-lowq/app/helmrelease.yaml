@@ -1,0 +1,128 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sonarr-lowq
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: sonarr-lowq
+  interval: 1h
+  values:
+    controllers:
+      sonarr-lowq:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          init-chown:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true"]
+            securityContext:
+              runAsUser: 0
+              runAsNonRoot: false
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-operations/sonarr
+              tag: 4.0.16.2946@sha256:22651c750eedb091f6d76ade95dbecae0eeafe2b55432c3b8d8b042e8745f344
+            env:
+              TZ: Europe/London
+              SONARR__PORT: &port 8990
+            envFrom:
+              - secretRef:
+                  name: sonarr-lowq-secret
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ping
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 1Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [1000, 10000]
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 1Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+      tmp:
+        type: emptyDir
+      share:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-lowq-downloads
+        globalMounts:
+          - path: /share
+      movies:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-lowq-movies
+        globalMounts:
+          - path: /movies
+      tv:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-lowq-tv
+        globalMounts:
+          - path: /tv
+      music:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-lowq-music
+        globalMounts:
+          - path: /music
+      books:
+        type: persistentVolumeClaim
+        existingClaim: sonarr-lowq-books
+        globalMounts:
+          - path: /books

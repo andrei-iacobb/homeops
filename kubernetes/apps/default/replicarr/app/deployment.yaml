@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicarr
+  namespace: default
+  labels:
+    app.kubernetes.io/name: replicarr
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/controller: replicarr
+      app.kubernetes.io/instance: replicarr
+      app.kubernetes.io/name: replicarr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/controller: replicarr
+        app.kubernetes.io/instance: replicarr
+        app.kubernetes.io/name: replicarr
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      containers:
+        - name: replicarr
+          image: ghcr.io/andrei-iacobb/replicarr:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: replicarr-secret
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi

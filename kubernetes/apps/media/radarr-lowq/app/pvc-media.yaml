@@ -1,0 +1,140 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-lowq-tv-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/plex/media/tv
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-lowq-tv
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: radarr-lowq-tv-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-lowq-movies-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/plex/media/movies
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-lowq-movies
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: radarr-lowq-movies-pv
+  resources:
+    requests:
+      storage: 1Ti
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-lowq-music-pv
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/plex/media/music
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-lowq-music
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: radarr-lowq-music-pv
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-lowq-books-pv
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/plex/media/books
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-lowq-books
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: radarr-lowq-books-pv
+  resources:
+    requests:
+      storage: 200Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-lowq-downloads-pv
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 10.10.10.3
+    path: /mnt/plex/media/downloads
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: radarr-lowq-downloads
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: radarr-lowq-downloads-pv
+  resources:
+    requests:
+      storage: 2Ti
