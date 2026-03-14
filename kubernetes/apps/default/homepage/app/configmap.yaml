@@ -400,6 +400,10 @@ data:
           icon: mdi-clipboard-list
           href: https://neatplan.app
           description: Cleaning operations app
+      - Sharerr:
+          icon: mdi-share-variant
+          href: https://sharerr.iacob.co.uk/admin
+          description: Invite-only media sharing
     - Media:
       - Jellyfin:
           icon: jellyfin.svg

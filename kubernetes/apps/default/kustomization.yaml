@@ -27,3 +27,4 @@ resources:
   - ./informate/ks.yaml
   - ./searxng/ks.yaml
   - ./zipline/ks.yaml
+  - ./sharerr/ks.yaml
