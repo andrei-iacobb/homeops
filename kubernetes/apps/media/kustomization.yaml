@@ -33,4 +33,5 @@ resources:
   - ./wizarr/ks.yaml
   - ./ring-mqtt/ks.yaml
   - ./frigate/ks.yaml
+  - ./plexo/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet
