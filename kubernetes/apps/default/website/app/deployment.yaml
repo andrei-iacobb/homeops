@@ -29,7 +29,7 @@ spec:
         runAsGroup: 1001
       containers:
         - name: website
-          image: ghcr.io/andrei-iacobb/website:latest@sha256:561507e124d438e5cc1c2475b9191c80aadc8f6996b7f9ce52b9d39c98573dda
+          image: ghcr.io/andrei-iacobb/website:latest@sha256:68a844a6315c151deacef0d27f92153a3c0e10a631b41d5a9dced4ca656453ab
           imagePullPolicy: Always
           ports:
             - name: http
