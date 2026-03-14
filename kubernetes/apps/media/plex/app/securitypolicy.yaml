@@ -10,10 +10,8 @@ spec:
       name: plex
   cors:
     allowOrigins:
-      - type: Exact
-        value: "https://sharerr.iacob.uk"
-      - type: Exact
-        value: "http://localhost:3939"
+      - "https://*.iacob.uk"
+      - "http://localhost:*"
     allowMethods:
       - GET
       - OPTIONS
