@@ -536,6 +536,10 @@ data:
           icon: tautulli.svg
           href: https://tautulli.iacob.uk
           description: Plex analytics
+      - Plexo:
+          icon: mdi-television-classic
+          href: https://plexo.iacob.co.uk
+          description: Personal media dashboard
     - AI:
       - Ollama:
           icon: ollama.svg
