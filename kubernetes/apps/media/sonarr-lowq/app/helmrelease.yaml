@@ -14,11 +14,29 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          init-chown:
+          init-config:
             image:
               repository: busybox
               tag: latest
-            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true"]
+            command:
+              - sh
+              - -c
+              - |
+                chown -R 568:568 /config
+                chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true
+                if [ -f /config/config.xml ]; then
+                  if ! grep -q '<ApiKey>' /config/config.xml; then
+                    sed -i 's|</Config>|  <ApiKey>'"$SONARR_APIKEY"'</ApiKey>\n</Config>|' /config/config.xml
+                  fi
+                  sed -i 's|<AuthenticationMethod>.*</AuthenticationMethod>|<AuthenticationMethod>None</AuthenticationMethod>|' /config/config.xml
+                  sed -i 's|<AuthenticationRequired>.*</AuthenticationRequired>|<AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>|' /config/config.xml
+                fi
+            env:
+              - name: SONARR_APIKEY
+                valueFrom:
+                  secretKeyRef:
+                    name: sonarr-lowq-secret
+                    key: SONARR_APIKEY
             securityContext:
               runAsUser: 0
               runAsNonRoot: false
@@ -29,10 +47,7 @@ spec:
               tag: 4.0.16.2946@sha256:22651c750eedb091f6d76ade95dbecae0eeafe2b55432c3b8d8b042e8745f344
             env:
               TZ: Europe/London
-              SONARR__PORT: &port 8990
-            envFrom:
-              - secretRef:
-                  name: sonarr-lowq-secret
+              SONARR__PORT: &port 8989
             probes:
               liveness:
                 enabled: true

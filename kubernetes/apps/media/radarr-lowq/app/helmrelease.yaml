@@ -14,11 +14,29 @@ spec:
         annotations:
           reloader.stakater.com/auto: "true"
         initContainers:
-          init-chown:
+          init-config:
             image:
               repository: busybox
               tag: latest
-            command: ["sh", "-c", "chown -R 568:568 /config && chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true"]
+            command:
+              - sh
+              - -c
+              - |
+                chown -R 568:568 /config
+                chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true
+                if [ -f /config/config.xml ]; then
+                  if ! grep -q '<ApiKey>' /config/config.xml; then
+                    sed -i 's|</Config>|  <ApiKey>'"$RADARR_APIKEY"'</ApiKey>\n</Config>|' /config/config.xml
+                  fi
+                  sed -i 's|<AuthenticationMethod>.*</AuthenticationMethod>|<AuthenticationMethod>None</AuthenticationMethod>|' /config/config.xml
+                  sed -i 's|<AuthenticationRequired>.*</AuthenticationRequired>|<AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>|' /config/config.xml
+                fi
+            env:
+              - name: RADARR_APIKEY
+                valueFrom:
+                  secretKeyRef:
+                    name: radarr-lowq-secret
+                    key: RADARR_APIKEY
             securityContext:
               runAsUser: 0
               runAsNonRoot: false
@@ -29,10 +47,7 @@ spec:
               tag: 6.1.1.10317@sha256:5e08c0eefd2770d1d29395c4f84fe5bf7dfc3a986598021306a5d8ac017a3989
             env:
               TZ: Europe/London
-              RADARR__PORT: &port 7879
-            envFrom:
-              - secretRef:
-                  name: radarr-lowq-secret
+              RADARR__PORT: &port 7878
             probes:
               liveness:
                 enabled: true
