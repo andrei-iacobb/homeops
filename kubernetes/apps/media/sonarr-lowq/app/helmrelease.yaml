@@ -23,7 +23,7 @@ spec:
               - -c
               - |
                 chown -R 568:568 /config
-                chown -R 568:568 /share /movies /tv /music /books 2>/dev/null || true
+                chown -R 568:568 /share /tv 2>/dev/null || true
                 if [ -f /config/config.xml ]; then
                   if ! grep -q '<ApiKey>' /config/config.xml; then
                     sed -i 's|</Config>|  <ApiKey>'"$SONARR_APIKEY"'</ApiKey>\n</Config>|' /config/config.xml
@@ -121,23 +121,8 @@ spec:
         existingClaim: sonarr-lowq-downloads
         globalMounts:
           - path: /share
-      movies:
-        type: persistentVolumeClaim
-        existingClaim: sonarr-lowq-movies
-        globalMounts:
-          - path: /movies
       tv:
         type: persistentVolumeClaim
         existingClaim: sonarr-lowq-tv
         globalMounts:
           - path: /tv
-      music:
-        type: persistentVolumeClaim
-        existingClaim: sonarr-lowq-music
-        globalMounts:
-          - path: /music
-      books:
-        type: persistentVolumeClaim
-        existingClaim: sonarr-lowq-books
-        globalMounts:
-          - path: /books

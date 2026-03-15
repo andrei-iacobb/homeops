@@ -12,7 +12,7 @@ spec:
   storageClassName: ""
   nfs:
     server: 10.10.10.3
-    path: /mnt/plex/media/tv
+    path: /mnt/plex/media/tv-lowq
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -26,90 +26,6 @@ spec:
   resources:
     requests:
       storage: 1Ti
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarr-lowq-movies-pv
-spec:
-  capacity:
-    storage: 1Ti
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
-  nfs:
-    server: 10.10.10.3
-    path: /mnt/plex/media/movies
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sonarr-lowq-movies
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
-  volumeName: sonarr-lowq-movies-pv
-  resources:
-    requests:
-      storage: 1Ti
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarr-lowq-music-pv
-spec:
-  capacity:
-    storage: 500Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
-  nfs:
-    server: 10.10.10.3
-    path: /mnt/plex/media/music
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sonarr-lowq-music
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
-  volumeName: sonarr-lowq-music-pv
-  resources:
-    requests:
-      storage: 500Gi
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarr-lowq-books-pv
-spec:
-  capacity:
-    storage: 200Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
-  nfs:
-    server: 10.10.10.3
-    path: /mnt/plex/media/books
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sonarr-lowq-books
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
-  volumeName: sonarr-lowq-books-pv
-  resources:
-    requests:
-      storage: 200Gi
 ---
 apiVersion: v1
 kind: PersistentVolume
