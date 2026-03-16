@@ -18,6 +18,14 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
+    # Monitoring namespace apps (plausible)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
     # pgAdmin (same namespace)
     - fromEndpoints:
         - matchLabels:
