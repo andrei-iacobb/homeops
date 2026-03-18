@@ -65,6 +65,9 @@ spec:
             - matchers:
                 - severity="info"
               receiver: "null"
+            - matchers:
+                - alertname="InfoInhibitor"
+              receiver: "null"
         receivers:
           - name: "null"
           - name: "n8n-webhook"
