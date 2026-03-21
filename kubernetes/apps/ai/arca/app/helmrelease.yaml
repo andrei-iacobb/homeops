@@ -48,12 +48,17 @@ spec:
                   failureThreshold: 3
               readiness: *probes
             securityContext:
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
               readOnlyRootFilesystem: false
               # Running as root because claude CLI writes to ~/.claude/
               runAsNonRoot: false
               runAsUser: 0
               runAsGroup: 0
+              # bwrap needs SYS_ADMIN to create user/pid/ipc namespaces
+              capabilities:
+                add: ["SYS_ADMIN"]
+              seccompProfile:
+                type: Unconfined
             resources:
               requests:
                 cpu: 50m
