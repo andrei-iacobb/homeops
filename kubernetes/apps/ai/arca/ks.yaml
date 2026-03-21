@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: arca
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/ai/arca/app
+  postBuild:
+    substitute:
+      APP: arca
+      APP_PVC: arca-data
+      VOLSYNC_SCHEDULE: "0 4 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: ai
+  wait: false

@@ -1,0 +1,112 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: arca
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: arca
+    namespace: ai
+  interval: 1h
+  values:
+    controllers:
+      arca:
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/andreiiacob/arca
+              tag: latest
+            envFrom:
+              - secretRef:
+                  name: arca-secret
+            env:
+              TZ: Europe/London
+              NODE_ENV: production
+              DATA_DIR: /data
+              CLAUDE_BIN: /usr/local/bin/claude
+              BWRAP_BIN: /usr/bin/bwrap
+              SANDBOX_MODE: "true"
+              CLAUDE_AUTH_PATH: /root/.claude.json
+              HOME: /root
+              NEXTAUTH_URL: "https://arca.iacob.uk"
+              MAX_UPLOAD_BYTES: "52428800"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 3000
+                  initialDelaySeconds: 10
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              # Running as root because claude CLI writes to ~/.claude/
+              runAsNonRoot: false
+              runAsUser: 0
+              runAsGroup: 0
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 1Gi
+
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        hostnames: ["arca.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+
+    persistence:
+      # Persistent chat data & uploaded files
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
+
+      # Claude auth credentials — mounted from secret
+      claude-auth:
+        type: secret
+        name: arca-secret
+        globalMounts:
+          - path: /root/.claude.json
+            subPath: claude.json
+            readOnly: true
+
+      # Claude CLI needs a writable cache dir
+      claude-cache:
+        type: emptyDir
+        globalMounts:
+          - path: /root/.claude

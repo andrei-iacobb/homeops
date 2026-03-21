@@ -30,6 +30,49 @@ spec:
     - fromEntities:
         - host
 ---
+# Arca: strict ingress + egress — only Anthropic API allowed out, nothing else
+# Sub-agents spawned by claude are trapped in the bwrap sandbox + this policy
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: arca
+  namespace: ai
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: arca
+  ingress:
+    # Web UI access via Envoy Gateway
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    # Kubelet health probes
+    - fromEntities:
+        - host
+  egress:
+    # CoreDNS — needed to resolve api.anthropic.com
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:app.kubernetes.io/name: coredns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    # Anthropic API — the only external destination allowed
+    - toFQDNs:
+        - matchName: "api.anthropic.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
 # OpenWebUI: allow from envoy gateway (network namespace) and health probes
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
