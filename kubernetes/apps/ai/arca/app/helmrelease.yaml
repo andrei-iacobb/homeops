@@ -111,9 +111,6 @@ spec:
           - path: /root/.claude.json
             subPath: claude.json
             readOnly: true
-
-      # Claude CLI needs a writable cache dir
-      claude-cache:
-        type: emptyDir
-        globalMounts:
-          - path: /root/.claude
+          - path: /root/.claude/.credentials.json
+            subPath: credentials.json
+            readOnly: true
