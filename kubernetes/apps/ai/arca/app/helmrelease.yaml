@@ -34,6 +34,8 @@ spec:
               HOME: /root
               NEXTAUTH_URL: "https://arca.iacob.uk"
               MAX_UPLOAD_BYTES: "52428800"
+              # Unset API key so claude CLI uses OAuth (.credentials.json) instead
+              ANTHROPIC_API_KEY: ""
             probes:
               liveness: &probes
                 enabled: true
