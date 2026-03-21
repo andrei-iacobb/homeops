@@ -54,7 +54,7 @@ spec:
     - fromEntities:
         - host
   egress:
-    # CoreDNS — needed to resolve api.anthropic.com
+    # CoreDNS — Cilium must proxy DNS to learn IPs for FQDN rules below
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -65,6 +65,9 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
     # Anthropic API
     - toFQDNs:
         - matchName: "api.anthropic.com"
