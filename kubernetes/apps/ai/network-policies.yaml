@@ -68,19 +68,9 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # Anthropic API
-    - toFQDNs:
-        - matchName: "api.anthropic.com"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-    # Google OAuth — needed for next-auth token exchange and user info
-    - toFQDNs:
-        - matchName: "accounts.google.com"
-        - matchName: "oauth2.googleapis.com"
-        - matchName: "openidconnect.googleapis.com"
-        - matchName: "www.googleapis.com"
+    # External HTTPS — Anthropic API + Google OAuth
+    - toEntities:
+        - world
       toPorts:
         - ports:
             - port: "443"
