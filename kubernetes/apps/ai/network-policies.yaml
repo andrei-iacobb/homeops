@@ -65,9 +65,19 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-    # Anthropic API — the only external destination allowed
+    # Anthropic API
     - toFQDNs:
         - matchName: "api.anthropic.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # Google OAuth — needed for next-auth token exchange and user info
+    - toFQDNs:
+        - matchName: "accounts.google.com"
+        - matchName: "oauth2.googleapis.com"
+        - matchName: "openidconnect.googleapis.com"
+        - matchName: "www.googleapis.com"
       toPorts:
         - ports:
             - port: "443"
