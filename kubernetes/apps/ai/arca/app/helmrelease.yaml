@@ -18,7 +18,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/andreiiacob/arca
+              repository: ghcr.io/andrei-iacobb/arca
               tag: latest
             envFrom:
               - secretRef:
