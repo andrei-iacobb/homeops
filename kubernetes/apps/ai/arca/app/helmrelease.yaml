@@ -63,6 +63,8 @@ spec:
                 memory: 1Gi
 
     defaultPodOptions:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
