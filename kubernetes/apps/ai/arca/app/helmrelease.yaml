@@ -30,8 +30,8 @@ spec:
               CLAUDE_BIN: /usr/local/bin/claude
               BWRAP_BIN: /usr/bin/bwrap
               SANDBOX_MODE: "true"
-              CLAUDE_AUTH_PATH: /root/.claude.json
-              HOME: /root
+              CLAUDE_AUTH_PATH: /home/node/.claude.json
+              HOME: /home/node
               NEXTAUTH_URL: "https://arca.iacob.uk"
               MAX_UPLOAD_BYTES: "52428800"
               # Unset API key so claude CLI uses OAuth (.credentials.json) instead
@@ -51,17 +51,15 @@ spec:
                   failureThreshold: 3
               readiness: *probes
             securityContext:
-              allowPrivilegeEscalation: true
+              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              # Running as root because claude CLI writes to ~/.claude/
-              runAsNonRoot: false
-              runAsUser: 0
-              runAsGroup: 0
-              # bwrap needs SYS_ADMIN to create user/pid/ipc namespaces
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
               capabilities:
-                add: ["SYS_ADMIN"]
+                drop: ["ALL"]
               seccompProfile:
-                type: Unconfined
+                type: Unconfined   # keep — bwrap needs clone/unshare
             resources:
               requests:
                 cpu: 50m
@@ -74,9 +72,9 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull-secret
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
 
     service:
       app:
@@ -111,9 +109,9 @@ spec:
         type: secret
         name: arca-secret
         globalMounts:
-          - path: /root/.claude.json
+          - path: /home/node/.claude.json
             subPath: claude.json
             readOnly: true
-          - path: /root/.claude/.credentials.json
+          - path: /home/node/.claude/.credentials.json
             subPath: credentials.json
             readOnly: true

@@ -54,7 +54,7 @@ spec:
     - fromEntities:
         - host
   egress:
-    # CoreDNS — Cilium must proxy DNS to learn IPs for FQDN rules below
+    # CoreDNS — Cilium must proxy DNS to resolve FQDN rules
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -68,9 +68,41 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
-    # External HTTPS — Anthropic API + Google OAuth
-    - toEntities:
-        - world
+
+    # Claude API + Google OAuth (server-side token exchange)
+    - toFQDNs:
+        - matchName: "platform.claude.com"
+        - matchName: "claude.ai"
+        - matchName: "accounts.google.com"
+        - matchName: "oauth2.googleapis.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+    # Python packages (pip install inside Claude sandbox)
+    - toFQDNs:
+        - matchName: "pypi.org"
+        - matchName: "files.pythonhosted.org"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+    # Node packages (npm install)
+    - toFQDNs:
+        - matchName: "registry.npmjs.org"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+    # GitHub (curl/wget downloads, pip from git, etc.)
+    - toFQDNs:
+        - matchName: "github.com"
+        - matchName: "raw.githubusercontent.com"
+        - matchName: "codeload.github.com"
+        - matchName: "objects.githubusercontent.com"
       toPorts:
         - ports:
             - port: "443"
