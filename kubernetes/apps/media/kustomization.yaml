@@ -36,4 +36,8 @@ resources:
   - ./plexo/ks.yaml
   - ./sonarr-lowq/ks.yaml
   - ./radarr-lowq/ks.yaml
+  - ./ersatztv/ks.yaml
+  - ./scrypted/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet
+  # TODO: netbootxyz — requires VLAN router setup first
+  # - ./netbootxyz/ks.yaml

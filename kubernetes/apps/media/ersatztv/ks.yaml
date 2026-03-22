@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ersatztv
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/media/ersatztv/app
+  postBuild:
+    substitute:
+      APP: ersatztv
+      APP_PVC: ersatztv
+      VOLSYNC_SCHEDULE: "25 3 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: media
+  wait: false
