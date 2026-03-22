@@ -29,3 +29,4 @@ resources:
   - ./zipline/ks.yaml
   - ./sharerr/ks.yaml
   - ./replicarr/ks.yaml
+  - ./shlink/ks.yaml
