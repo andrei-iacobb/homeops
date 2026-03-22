@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: scrutiny
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/monitoring/scrutiny/app
+  postBuild:
+    substitute:
+      APP: scrutiny
+      APP_PVC: scrutiny
+      VOLSYNC_SCHEDULE: "20 3 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: monitoring
+  wait: false
