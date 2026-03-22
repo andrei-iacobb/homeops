@@ -544,6 +544,16 @@ data:
           icon: mdi-television-classic
           href: https://plexo.iacob.co.uk
           description: Personal media dashboard
+      - ErsatzTV:
+          icon: mdi-television-play
+          href: https://ersatztv.iacob.uk
+          description: Fake live TV channels
+          siteMonitor: https://ersatztv.iacob.uk
+      - Scrypted:
+          icon: mdi-camera-wireless
+          href: https://scrypted.iacob.uk
+          description: Camera management hub
+          siteMonitor: https://scrypted.iacob.uk
     - AI:
       - Ollama:
           icon: ollama.svg
@@ -567,6 +577,20 @@ data:
           icon: prometheus.svg
           href: https://prometheus.iacob.uk
           description: Metrics
+      - Uptime Kuma:
+          icon: uptime-kuma.svg
+          href: https://uptime.iacob.uk
+          description: Uptime monitoring
+          siteMonitor: https://uptime.iacob.uk
+          widget:
+            type: uptimekuma
+            url: https://uptime.iacob.uk
+            slug: default
+      - Scrutiny:
+          icon: scrutiny.svg
+          href: https://scrutiny.iacob.uk
+          description: SMART disk monitoring
+          siteMonitor: https://scrutiny.iacob.uk
       - Plausible:
           icon: plausible.svg
           href: https://plausible.iacob.co.uk
@@ -597,3 +621,7 @@ data:
           icon: stirling-pdf.svg
           href: https://pdf.iacob.uk
           description: PDF toolkit
+      - Shlink:
+          icon: shlink.svg
+          href: https://shlink.iacob.uk
+          description: URL shortener (admin)
