@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./certificate.yaml
   - ./certificate-iacob-uk.yaml
+  - ./certificate-iacobapp-dev.yaml
   - ./envoy.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
