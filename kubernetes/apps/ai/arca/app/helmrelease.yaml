@@ -32,7 +32,7 @@ spec:
               SANDBOX_MODE: "true"
               CLAUDE_AUTH_PATH: /home/node/.claude.json
               HOME: /home/node
-              NEXTAUTH_URL: "https://arca.iacob.uk"
+              NEXTAUTH_URL: "https://arca.iacob.co.uk"
               MAX_UPLOAD_BYTES: "52428800"
               # Unset API key so claude CLI uses OAuth (.credentials.json) instead
               ANTHROPIC_API_KEY: ""
@@ -83,10 +83,20 @@ spec:
             port: *port
 
     route:
-      app:
+      internal:
         hostnames: ["arca.iacob.uk"]
         parentRefs:
           - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      external:
+        hostnames: ["arca.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
             namespace: network
             sectionName: https
         rules:
