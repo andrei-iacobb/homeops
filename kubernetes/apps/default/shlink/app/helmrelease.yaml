@@ -20,7 +20,7 @@ spec:
               tag: stable
             env:
               TZ: Europe/London
-              DEFAULT_DOMAIN: s.iacob.co.uk
+              DEFAULT_DOMAIN: s.iacobapp.dev
               IS_HTTPS_ENABLED: "true"
               DB_DRIVER: postgres
             envFrom:
@@ -107,7 +107,7 @@ spec:
             port: *webport
     route:
       api:
-        hostnames: ["s.iacob.co.uk"]
+        hostnames: ["s.iacobapp.dev"]
         parentRefs:
           - name: envoy-external
             namespace: network
