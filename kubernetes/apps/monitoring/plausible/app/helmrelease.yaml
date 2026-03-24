@@ -33,7 +33,6 @@ spec:
               requests:
                 memory: 512Mi
               limits:
-                cpu: 2000m
                 memory: 4Gi
       plausible:
         strategy: Recreate
@@ -104,7 +103,6 @@ spec:
               requests:
                 memory: 256Mi
               limits:
-                cpu: 2000m
                 memory: 2Gi
     defaultPodOptions:
       securityContext:
