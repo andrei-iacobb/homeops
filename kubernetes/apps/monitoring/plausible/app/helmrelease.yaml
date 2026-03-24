@@ -68,6 +68,12 @@ spec:
                     name: plausible-secret
                     key: DATABASE_URL
               CLICKHOUSE_DATABASE_URL: http://plausible-clickhouse:8123/plausible_events_db
+              MAXMIND_LICENSE_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: plausible-secret
+                    key: MAXMIND_LICENSE_KEY
+              MAXMIND_EDITION: GeoLite2-City
             probes:
               liveness: &probes
                 enabled: true
