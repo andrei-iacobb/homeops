@@ -47,5 +47,5 @@ spec:
       enabled: false
     resultsCache:
       enabled: false
-    lokiCanary:
+    test:
       enabled: false
