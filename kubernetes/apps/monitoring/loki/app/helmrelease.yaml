@@ -37,3 +37,9 @@ spec:
         enabled: true
         storageClass: openebs-hostpath
         size: 50Gi
+    backend:
+      replicas: 0
+    write:
+      replicas: 0
+    read:
+      replicas: 0
