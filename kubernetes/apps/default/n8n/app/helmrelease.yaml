@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.n8n.io/n8nio/n8n
-              tag: 2.12.3
+              tag: 2.12.0
             env:
               N8N_PUBLIC_API_DISABLED: "false"
               N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
