@@ -6,3 +6,5 @@ resources:
   - ./ocirepository.yaml
   - ./secret.sops.yaml
   - ./httproute.yaml
+components:
+  - ../../../../components/volsync

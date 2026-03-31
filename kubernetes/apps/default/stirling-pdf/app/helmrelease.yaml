@@ -23,6 +23,17 @@ spec:
               SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE: "false"
               SYSTEM_DATASOURCE_TYPE: h2
             probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/v1/info/status
+                    port: 8080
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 15
               liveness: &probes
                 enabled: true
                 custom: true
@@ -30,7 +41,6 @@ spec:
                   httpGet:
                     path: /api/v1/info/status
                     port: 8080
-                  initialDelaySeconds: 30
                   periodSeconds: 10
                   timeoutSeconds: 5
                   failureThreshold: 3
