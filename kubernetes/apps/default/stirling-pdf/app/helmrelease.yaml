@@ -20,6 +20,7 @@ spec:
             env:
               TZ: Europe/London
               DOCKER_ENABLE_SECURITY: "false"
+              SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE: "false"
             probes:
               liveness: &probes
                 enabled: true
