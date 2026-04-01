@@ -20,8 +20,6 @@ spec:
             env:
               TZ: Europe/London
               DOCKER_ENABLE_SECURITY: "false"
-              SYSTEM_DATASOURCE_ENABLECUSTOMDATABASE: "false"
-              SYSTEM_DATASOURCE_TYPE: h2
             probes:
               startup:
                 enabled: true
