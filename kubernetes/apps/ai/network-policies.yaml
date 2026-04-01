@@ -54,7 +54,7 @@ spec:
     - fromEntities:
         - host
   egress:
-    # CoreDNS — Cilium must proxy DNS to resolve FQDN rules
+    # DNS
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
@@ -65,44 +65,13 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-          rules:
-            dns:
-              - matchPattern: "*"
 
-    # Claude API + Google OAuth (server-side token exchange)
-    - toFQDNs:
-        - matchName: "platform.claude.com"
-        - matchName: "claude.ai"
-        - matchName: "accounts.google.com"
-        - matchName: "oauth2.googleapis.com"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-
-    # Python packages (pip install inside Claude sandbox)
-    - toFQDNs:
-        - matchName: "pypi.org"
-        - matchName: "files.pythonhosted.org"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-
-    # Node packages (npm install)
-    - toFQDNs:
-        - matchName: "registry.npmjs.org"
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
-
-    # GitHub (curl/wget downloads, pip from git, etc.)
-    - toFQDNs:
-        - matchName: "github.com"
-        - matchName: "raw.githubusercontent.com"
-        - matchName: "codeload.github.com"
-        - matchName: "objects.githubusercontent.com"
+    # HTTPS egress to any destination (Google OAuth, Anthropic API, npm, pip, GitHub)
+    # FQDN-based rules are unreliable because Node.js resolves DNS via getaddrinfo,
+    # bypassing Cilium's DNS proxy — so Cilium never learns the IPs to allow.
+    # Sandboxing of Claude subprocesses is handled by bwrap, not network policy.
+    - toEntities:
+        - world
       toPorts:
         - ports:
             - port: "443"
