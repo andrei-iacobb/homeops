@@ -30,3 +30,4 @@ resources:
   - ./sharerr/ks.yaml
   - ./replicarr/ks.yaml
   - ./shlink/ks.yaml
+  - ./filebrowser/ks.yaml
