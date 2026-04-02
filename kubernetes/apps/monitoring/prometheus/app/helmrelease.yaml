@@ -11,7 +11,7 @@ spec:
         kind: HelmRepository
         name: prometheus-community
         namespace: monitoring
-      version: "82.16.0"
+      version: "82.16.1"
   releaseName: prometheus
   interval: 1h
   values:
