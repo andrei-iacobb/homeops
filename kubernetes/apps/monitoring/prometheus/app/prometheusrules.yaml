@@ -14,23 +14,23 @@ spec:
       rules:
         - alert: NodeDiskRunningFull
           expr: |
-            (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+            (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
           for: 5m
           labels:
             severity: critical
           annotations:
             summary: "Node root disk is {{ $value | humanize }}% free"
-            description: "Root filesystem on {{ $labels.instance }} has less than 15% space remaining."
+            description: "Root filesystem on {{ $labels.instance }} has less than 10% space remaining."
 
         - alert: NodeDiskPressure
           expr: |
-            (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 25
+            (node_filesystem_avail_bytes{mountpoint="/",fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
           for: 10m
           labels:
             severity: warning
           annotations:
             summary: "Node root disk is {{ $value | humanize }}% free"
-            description: "Root filesystem on {{ $labels.instance }} has less than 25% space remaining."
+            description: "Root filesystem on {{ $labels.instance }} has less than 15% space remaining."
 
         - alert: NodeMemoryPressure
           expr: |
