@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: ollama/ollama
-              tag: 0.20.0
+              tag: 0.20.1
             env:
               OLLAMA_CONTEXT_LENGTH: "32768"
               OLLAMA_LOAD_TIMEOUT: "10m"
