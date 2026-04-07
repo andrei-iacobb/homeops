@@ -1,0 +1,158 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: unifi
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: unifi
+  interval: 1h
+  values:
+    controllers:
+      unifi:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/unifi-network-application
+              tag: 9.4.19
+            env:
+              TZ: Europe/London
+              PUID: "1000"
+              PGID: "1000"
+              MEM_LIMIT: "1024"
+              MEM_STARTUP: "1024"
+              MONGO_HOST: 127.0.0.1
+              MONGO_PORT: "27017"
+              MONGO_DBNAME: unifi
+              MONGO_AUTHSOURCE: unifi
+              MONGO_USER: unifi
+              MONGO_PASS:
+                valueFrom:
+                  secretKeyRef:
+                    name: unifi-secret
+                    key: MONGO_PASS
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 1Gi
+              limits:
+                memory: 2Gi
+          mongo:
+            image:
+              repository: docker.io/mongo
+              tag: "7.0"
+            env:
+              MONGO_INITDB_ROOT_USERNAME: root
+              MONGO_INITDB_ROOT_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: unifi-secret
+                    key: MONGO_ROOT_PASS
+              MONGO_PASS:
+                valueFrom:
+                  secretKeyRef:
+                    name: unifi-secret
+                    key: MONGO_PASS
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+          nginx:
+            image:
+              repository: docker.io/nginx
+              tag: 1.27-alpine
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        controller: unifi
+        ports:
+          http:
+            port: 80
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          unifi:
+            app:
+              - path: /config
+      mongo-data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          unifi:
+            mongo:
+              - path: /data/db
+      mongo-init:
+        type: configMap
+        name: unifi-mongo-init
+        defaultMode: 0755
+        advancedMounts:
+          unifi:
+            mongo:
+              - path: /docker-entrypoint-initdb.d/init-mongo.sh
+                subPath: init-mongo.sh
+                readOnly: true
+      nginx-conf:
+        type: configMap
+        name: unifi-nginx-config
+        advancedMounts:
+          unifi:
+            nginx:
+              - path: /etc/nginx/conf.d/default.conf
+                subPath: default.conf
+                readOnly: true
+      nginx-cache:
+        type: emptyDir
+        advancedMounts:
+          unifi:
+            nginx:
+              - path: /var/cache/nginx
+      nginx-run:
+        type: emptyDir
+        advancedMounts:
+          unifi:
+            nginx:
+              - path: /var/run
+      tmp:
+        type: emptyDir
+    route:
+      app:
+        hostnames: ["ui.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 80
