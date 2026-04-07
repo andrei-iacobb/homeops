@@ -6,3 +6,4 @@ resources:
   - ./ilo.yaml
   - ./infrastructure.yaml
   - ./dns.yaml
+  - ./zigbee.yaml
