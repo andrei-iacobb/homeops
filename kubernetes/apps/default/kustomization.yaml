@@ -31,3 +31,4 @@ resources:
   - ./replicarr/ks.yaml
   - ./shlink/ks.yaml
   - ./filebrowser/ks.yaml
+  - ./unifi/ks.yaml
