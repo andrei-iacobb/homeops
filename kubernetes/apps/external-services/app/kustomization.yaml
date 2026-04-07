@@ -7,3 +7,4 @@ resources:
   - ./infrastructure.yaml
   - ./dns.yaml
   - ./zigbee.yaml
+  - ./s1.yaml

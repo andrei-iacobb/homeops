@@ -1,0 +1,49 @@
+---
+# s1 - External device on LAN
+apiVersion: v1
+kind: Service
+metadata:
+  name: s1
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: s1
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: s1
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: s1
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 3000
+endpoints:
+  - addresses:
+      - "192.168.1.173"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: s1
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - s1.iacob.uk
+  rules:
+    - backendRefs:
+        - name: s1
+          port: 3000
