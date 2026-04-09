@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: code-server-init
+data:
+  10-install-tools.sh: |
+    #!/bin/bash
+    set -e
+    echo "[init] Installing base tools..."
+
+    # Install Node.js 22 if not present
+    if ! command -v node >/dev/null 2>&1; then
+      curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      apt-get install -y nodejs
+    fi
+
+    # Install common dev tools
+    apt-get update
+    apt-get install -y --no-install-recommends \
+      jq \
+      git \
+      openssh-client \
+      python3 \
+      python3-pip \
+      build-essential \
+      ripgrep \
+      fd-find \
+      unzip \
+      less \
+      vim
+
+    # Install Claude Code CLI globally
+    if ! command -v claude >/dev/null 2>&1; then
+      echo "[init] Installing Claude Code CLI..."
+      npm install -g @anthropic-ai/claude-code
+    fi
+
+    # Install kubectl
+    if ! command -v kubectl >/dev/null 2>&1; then
+      curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      chmod +x /usr/local/bin/kubectl
+    fi
+
+    # Install flux CLI
+    if ! command -v flux >/dev/null 2>&1; then
+      curl -fsSL https://fluxcd.io/install.sh | bash
+    fi
+
+    echo "[init] Tool install complete"

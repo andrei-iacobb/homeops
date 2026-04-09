@@ -1,0 +1,118 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: code-server
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: code-server
+  interval: 1h
+  values:
+    controllers:
+      code-server:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/code-server
+              tag: 4.105.1
+            env:
+              TZ: Europe/London
+              PUID: "1000"
+              PGID: "1000"
+              DEFAULT_WORKSPACE: /config/workspace
+              PROXY_DOMAIN: code.iacob.uk
+              PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: code-server-secret
+                    key: PASSWORD
+              SUDO_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: code-server-secret
+                    key: SUDO_PASSWORD
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 8443
+                  initialDelaySeconds: 30
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 60
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 4Gi
+            securityContext:
+              allowPrivilegeEscalation: true
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        supplementalGroups: [1000]
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /config
+            subPath: config
+      workspace:
+        type: persistentVolumeClaim
+        existingClaim: code-server-workspace
+        globalMounts:
+          - path: /config/workspace
+      init-scripts:
+        type: configMap
+        name: code-server-init
+        defaultMode: 0755
+        globalMounts:
+          - path: /custom-cont-init.d/10-install-tools.sh
+            subPath: 10-install-tools.sh
+            readOnly: true
+    route:
+      app:
+        hostnames: ["code.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
