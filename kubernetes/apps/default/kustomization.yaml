@@ -32,3 +32,4 @@ resources:
   - ./shlink/ks.yaml
   - ./filebrowser/ks.yaml
   - ./unifi/ks.yaml
+  - ./code-server/ks.yaml
