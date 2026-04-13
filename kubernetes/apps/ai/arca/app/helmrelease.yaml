@@ -36,7 +36,7 @@ spec:
               MAX_UPLOAD_BYTES: "52428800"
               # Unset API key so claude CLI uses OAuth (.credentials.json) instead
               ANTHROPIC_API_KEY: ""
-              DEPLOY_TIME: "20260413-1840"
+              DEPLOY_TIME: "20260413-1855"
             probes:
               liveness: &probes
                 enabled: true
