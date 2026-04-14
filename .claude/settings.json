@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl *)",
+      "Bash(flux *)",
+      "Bash(task *)",
+      "Bash(git *)",
+      "Bash(sops *)",
+      "Bash(openssl *)",
+      "Bash(helm *)",
+      "Bash(talosctl *)",
+      "Bash(cilium *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(sleep *)"
+    ]
+  }
+}

@@ -1,0 +1,215 @@
+- generic [ref=e2]:
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - link "Home" [ref=e376] [cursor=pointer]:
+        - /url: "#!"
+        - img [ref=e378]
+      - link "Home" [ref=e19] [cursor=pointer]:
+        - /url: "#!"
+        - img [ref=e21]
+      - combobox [ref=e28]:
+        - generic [ref=e29]:
+          - img [ref=e31]
+          - searchbox [ref=e33]
+          - button "Search Servers and Providers" [ref=e34] [cursor=pointer]:
+            - img [ref=e35]
+        - listbox
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e41]: "1"
+        - button "Activity" [ref=e42] [cursor=pointer]:
+          - img [ref=e44]
+      - link "Settings" [ref=e46] [cursor=pointer]:
+        - /url: "#!/settings/web/general"
+        - img [ref=e48]
+      - button "Select Player" [ref=e50] [cursor=pointer]:
+        - img [ref=e52]
+      - button "Account Menu" [ref=e57] [cursor=pointer]:
+        - generic [ref=e60]:
+          - img [ref=e64]
+          - img [ref=e66]
+  - generic [ref=e380]:
+    - generic [ref=e384]:
+      - navigation [ref=e385]:
+        - generic [ref=e387]: andreig36
+        - link "Account" [ref=e389] [cursor=pointer]:
+          - /url: "#!/settings/account"
+          - generic [ref=e392]: Account
+        - link "Online Media Sources" [ref=e394] [cursor=pointer]:
+          - /url: "#!/settings/online-media-sources"
+          - generic [ref=e397]: Online Media Sources
+        - link "Authorised Devices" [ref=e399] [cursor=pointer]:
+          - /url: "#!/settings/devices"
+          - generic [ref=e402]: Authorised Devices
+        - link "Watchlist" [ref=e404] [cursor=pointer]:
+          - /url: "#!/settings/watchlist"
+          - generic [ref=e407]: Watchlist
+        - link "Webhooks" [ref=e409] [cursor=pointer]:
+          - /url: "#!/settings/webhooks"
+          - generic [ref=e412]: Webhooks
+        - link "Streaming Services" [ref=e414] [cursor=pointer]:
+          - /url: "#!/settings/streaming-services"
+          - generic [ref=e417]: Streaming Services
+        - link "Plex Home" [ref=e419] [cursor=pointer]:
+          - /url: "#!/settings/plex-home"
+          - generic [ref=e422]: Plex Home
+        - link "Manage Library Access" [ref=e424] [cursor=pointer]:
+          - /url: "#!/settings/manage-library-access"
+          - generic [ref=e427]: Manage Library Access
+        - link "Privacy" [ref=e429] [cursor=pointer]:
+          - /url: "#!/settings/privacy"
+          - generic [ref=e432]: Privacy
+      - navigation [ref=e433]:
+        - generic [ref=e435]: Plex Web
+        - link "General" [ref=e622] [cursor=pointer]:
+          - /url: "#!/settings/web/general"
+          - generic [ref=e440]: General
+        - link "Quality" [ref=e442] [cursor=pointer]:
+          - /url: "#!/settings/web/quality"
+          - generic [ref=e445]: Quality
+        - link "Debug" [ref=e447] [cursor=pointer]:
+          - /url: "#!/settings/web/debug"
+          - generic [ref=e450]: Debug
+        - link "• Player" [active] [ref=e623] [cursor=pointer]:
+          - /url: "#!/settings/web/player"
+          - generic [ref=e453]:
+            - generic [ref=e454]: •
+            - generic [ref=e455]: Player
+      - button "plex-final-maybe Secure" [ref=e456] [cursor=pointer]:
+        - generic [ref=e457]:
+          - generic [ref=e460]: plex-final-maybe
+          - generic "Secure" [ref=e462]:
+            - img "Secure" [ref=e463]
+      - navigation [ref=e466]:
+        - generic [ref=e468]: Status
+        - link "Dashboard" [ref=e470] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/server-dashboard"
+          - generic [ref=e471]:
+            - generic [ref=e473]: Dashboard
+            - img [ref=e475]
+        - link "Alerts" [ref=e478] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/alerts"
+          - generic [ref=e481]: Alerts
+        - link "Conversions" [ref=e483] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/conversion"
+          - generic [ref=e486]: Conversions
+      - navigation [ref=e488]:
+        - generic [ref=e490]: Settings
+        - link "General" [ref=e492] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/general"
+          - generic [ref=e495]: General
+        - link "Remote Access" [ref=e498] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/remoteAccess"
+          - generic [ref=e501]: Remote Access
+        - link "Metadata Agents" [ref=e504] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/metadata-agents"
+          - generic [ref=e507]: Metadata Agents
+        - link "Agents (Legacy)" [ref=e509] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/agents"
+          - generic [ref=e512]: Agents (Legacy)
+        - link "Library" [ref=e514] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/library"
+          - generic [ref=e517]: Library
+        - link "Network" [ref=e519] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/network"
+          - generic [ref=e522]: Network
+        - link "Transcoder" [ref=e524] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/transcoder"
+          - generic [ref=e527]: Transcoder
+        - link "Languages" [ref=e529] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/languages"
+          - generic [ref=e532]: Languages
+        - link "DLNA" [ref=e534] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/dlna"
+          - generic [ref=e537]: DLNA
+        - link "Scheduled Tasks" [ref=e539] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/butler"
+          - generic [ref=e542]: Scheduled Tasks
+        - link "Extras" [ref=e544] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/extras"
+          - generic [ref=e547]: Extras
+      - navigation [ref=e548]:
+        - generic [ref=e550]: Manage
+        - link "Libraries" [ref=e552] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/libraries"
+          - generic [ref=e555]: Libraries
+        - link "Optimised Versions" [ref=e557] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/versions"
+          - generic [ref=e560]: Optimised Versions
+        - link "Live TV & DVR" [ref=e562] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/dvr"
+          - generic [ref=e565]: Live TV & DVR
+        - link "Troubleshooting" [ref=e567] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/help"
+          - generic [ref=e570]: Troubleshooting
+        - link "Console" [ref=e572] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/console"
+          - generic [ref=e575]: Console
+        - link "Plugins" [ref=e577] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/plugins"
+          - generic [ref=e580]: Plugins
+    - generic [ref=e582]:
+      - heading "Plex Web—Player" [level=2] [ref=e624]
+      - generic [ref=e626]:
+        - button "Hide Advanced" [ref=e628] [cursor=pointer]
+        - generic [ref=e631]:
+          - generic [ref=e632]:
+            - heading "Audio & Subtitles" [level=4] [ref=e633]
+            - generic [ref=e634]:
+              - generic [ref=e635]:
+                - checkbox "Normalise Multi-channel Audio" [checked] [ref=e636]
+                - text: Normalise Multi-channel Audio
+              - paragraph [ref=e637]: Reduce volume to avoid clipping when converting from multi-channel audio formats.
+            - generic [ref=e638]:
+              - generic [ref=e639]: Subtitle Colour
+              - combobox "Subtitle Colour" [ref=e640]:
+                - option "White" [selected]
+                - option "Yellow"
+                - option "Black"
+                - option "Cyan"
+                - option "Blue"
+                - option "Green"
+                - option "Magenta"
+                - option "Red"
+                - option "Grey"
+            - generic [ref=e641]:
+              - generic [ref=e642]: Subtitle Position
+              - combobox "Subtitle Position" [ref=e643]:
+                - option "Top"
+                - option "Middle"
+                - option "Bottom" [selected]
+            - generic [ref=e644]:
+              - generic [ref=e645]: Subtitle Size
+              - combobox "Subtitle Size" [ref=e646]:
+                - option "Tiny"
+                - option "Small"
+                - option "Normal" [selected]
+                - option "Large"
+                - option "Huge"
+            - generic [ref=e647]:
+              - generic [ref=e648]: Burn Subtitles
+              - combobox "Burn Subtitles" [ref=e649]:
+                - option "Automatic" [selected]
+                - option "Only image formats"
+                - option "Always"
+              - paragraph [ref=e650]: Determines if the server should burn in subtitles when converting video depending on the subtitles format. Avoiding burn in improves server performance and is only supported by the HTML5 player.
+            - heading "Extras" [level=4] [ref=e651]
+            - generic [ref=e652]:
+              - generic [ref=e653]: Cinema Trailers to Play Before Films
+              - combobox "Cinema Trailers to Play Before Films" [ref=e654]:
+                - option "None" [selected]
+                - option "1"
+                - option "2"
+                - option "3"
+                - option "4"
+                - option "5"
+            - heading "Chromecast" [level=4] [ref=e655]
+            - generic [ref=e656]:
+              - generic [ref=e657]:
+                - checkbox "Force multi-channel audio support" [ref=e658]
+                - text: Force multi-channel audio support
+              - paragraph [ref=e659]: Forces Chromecast to allow six channel surround sound whether or not the device reports support.
+          - generic [ref=e660]:
+            - button "Save Changes"
+  - region "Notifications (F8)":
+    - list

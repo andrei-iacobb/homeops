@@ -33,3 +33,4 @@ resources:
   - ./filebrowser/ks.yaml
   - ./unifi/ks.yaml
   - ./code-server/ks.yaml
+  - ./sftpgo/ks.yaml

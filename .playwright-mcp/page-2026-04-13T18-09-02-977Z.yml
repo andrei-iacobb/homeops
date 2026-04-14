@@ -1,0 +1,4 @@
+- generic [ref=e2]:
+  - generic "Loading" [ref=e13]
+  - region "Notifications (F8)":
+    - list

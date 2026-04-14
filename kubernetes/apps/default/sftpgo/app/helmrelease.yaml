@@ -1,0 +1,117 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sftpgo
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: sftpgo
+  interval: 1h
+  values:
+    controllers:
+      sftpgo:
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/drakkan/sftpgo
+              tag: v2.6.6
+            env:
+              TZ: Europe/London
+              SFTPGO_HTTPD__BINDINGS__0__PORT: &port 8080
+              SFTPGO_HTTPD__BINDINGS__0__ADDRESS: "0.0.0.0"
+              SFTPGO_WEBDAVD__BINDINGS__0__PORT: &webdav 8090
+              SFTPGO_WEBDAVD__BINDINGS__0__ADDRESS: "0.0.0.0"
+              SFTPGO_WEBDAVD__BINDINGS__0__PREFIX: "/"
+              SFTPGO_SFTPD__BINDINGS__0__PORT: "0"
+              SFTPGO_DATA_PROVIDER__DRIVER: sqlite
+              SFTPGO_DATA_PROVIDER__NAME: /data/sftpgo.db
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *port
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  failureThreshold: 30
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+          webdav:
+            port: *webdav
+    route:
+      app:
+        hostnames: ["drop.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+      webdav:
+        hostnames: ["dav.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *webdav
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 5Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
+      srv:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 50Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /srv/sftpgo

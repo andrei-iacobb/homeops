@@ -1,0 +1,240 @@
+- generic [ref=e2]:
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - link "Home" [ref=e376] [cursor=pointer]:
+        - /url: "#!"
+        - img [ref=e378]
+      - link "Home" [ref=e19] [cursor=pointer]:
+        - /url: "#!"
+        - img [ref=e21]
+      - combobox [ref=e28]:
+        - generic [ref=e29]:
+          - img [ref=e31]
+          - searchbox [ref=e33]
+          - button "Search Servers and Providers" [ref=e34] [cursor=pointer]:
+            - img [ref=e35]
+        - listbox
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e41]: "1"
+        - button "Activity" [ref=e42] [cursor=pointer]:
+          - img [ref=e44]
+      - link "Settings" [active] [ref=e46] [cursor=pointer]:
+        - /url: "#!/settings/web/general"
+        - img [ref=e48]
+      - button "Select Player" [ref=e50] [cursor=pointer]:
+        - img [ref=e52]
+      - button "Account Menu" [ref=e57] [cursor=pointer]:
+        - generic [ref=e60]:
+          - img [ref=e64]
+          - img [ref=e66]
+  - generic [ref=e380]:
+    - generic [ref=e384]:
+      - navigation [ref=e385]:
+        - generic [ref=e387]: andreig36
+        - link "Account" [ref=e389] [cursor=pointer]:
+          - /url: "#!/settings/account"
+          - generic [ref=e392]: Account
+        - link "Online Media Sources" [ref=e394] [cursor=pointer]:
+          - /url: "#!/settings/online-media-sources"
+          - generic [ref=e397]: Online Media Sources
+        - link "Authorised Devices" [ref=e399] [cursor=pointer]:
+          - /url: "#!/settings/devices"
+          - generic [ref=e402]: Authorised Devices
+        - link "Watchlist" [ref=e404] [cursor=pointer]:
+          - /url: "#!/settings/watchlist"
+          - generic [ref=e407]: Watchlist
+        - link "Webhooks" [ref=e409] [cursor=pointer]:
+          - /url: "#!/settings/webhooks"
+          - generic [ref=e412]: Webhooks
+        - link "Streaming Services" [ref=e414] [cursor=pointer]:
+          - /url: "#!/settings/streaming-services"
+          - generic [ref=e417]: Streaming Services
+        - link "Plex Home" [ref=e419] [cursor=pointer]:
+          - /url: "#!/settings/plex-home"
+          - generic [ref=e422]: Plex Home
+        - link "Manage Library Access" [ref=e424] [cursor=pointer]:
+          - /url: "#!/settings/manage-library-access"
+          - generic [ref=e427]: Manage Library Access
+        - link "Privacy" [ref=e429] [cursor=pointer]:
+          - /url: "#!/settings/privacy"
+          - generic [ref=e432]: Privacy
+      - navigation [ref=e433]:
+        - generic [ref=e435]: Plex Web
+        - link "• General" [ref=e437] [cursor=pointer]:
+          - /url: "#!/settings/web/general"
+          - generic [ref=e438]:
+            - generic [ref=e439]: •
+            - generic [ref=e440]: General
+        - link "Quality" [ref=e442] [cursor=pointer]:
+          - /url: "#!/settings/web/quality"
+          - generic [ref=e445]: Quality
+        - link "Debug" [ref=e447] [cursor=pointer]:
+          - /url: "#!/settings/web/debug"
+          - generic [ref=e450]: Debug
+        - link "Player" [ref=e452] [cursor=pointer]:
+          - /url: "#!/settings/web/player"
+          - generic [ref=e455]: Player
+      - button "plex-final-maybe Secure" [ref=e456] [cursor=pointer]:
+        - generic [ref=e457]:
+          - generic [ref=e460]: plex-final-maybe
+          - generic "Secure" [ref=e462]:
+            - img "Secure" [ref=e463]
+      - navigation [ref=e466]:
+        - generic [ref=e468]: Status
+        - link "Dashboard" [ref=e470] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/server-dashboard"
+          - generic [ref=e471]:
+            - generic [ref=e473]: Dashboard
+            - img [ref=e475]
+        - link "Alerts" [ref=e478] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/alerts"
+          - generic [ref=e481]: Alerts
+        - link "Conversions" [ref=e483] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/status/conversion"
+          - generic [ref=e486]: Conversions
+      - navigation [ref=e488]:
+        - generic [ref=e490]: Settings
+        - link "General" [ref=e492] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/general"
+          - generic [ref=e495]: General
+        - link "Remote Access" [ref=e498] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/remoteAccess"
+          - generic [ref=e501]: Remote Access
+        - link "Metadata Agents" [ref=e504] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/metadata-agents"
+          - generic [ref=e507]: Metadata Agents
+        - link "Agents (Legacy)" [ref=e509] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/agents"
+          - generic [ref=e512]: Agents (Legacy)
+        - link "Library" [ref=e514] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/library"
+          - generic [ref=e517]: Library
+        - link "Network" [ref=e519] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/network"
+          - generic [ref=e522]: Network
+        - link "Transcoder" [ref=e524] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/transcoder"
+          - generic [ref=e527]: Transcoder
+        - link "Languages" [ref=e529] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/languages"
+          - generic [ref=e532]: Languages
+        - link "DLNA" [ref=e534] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/dlna"
+          - generic [ref=e537]: DLNA
+        - link "Scheduled Tasks" [ref=e539] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/butler"
+          - generic [ref=e542]: Scheduled Tasks
+        - link "Extras" [ref=e544] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/settings/extras"
+          - generic [ref=e547]: Extras
+      - navigation [ref=e548]:
+        - generic [ref=e550]: Manage
+        - link "Libraries" [ref=e552] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/libraries"
+          - generic [ref=e555]: Libraries
+        - link "Optimised Versions" [ref=e557] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/versions"
+          - generic [ref=e560]: Optimised Versions
+        - link "Live TV & DVR" [ref=e562] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/dvr"
+          - generic [ref=e565]: Live TV & DVR
+        - link "Troubleshooting" [ref=e567] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/help"
+          - generic [ref=e570]: Troubleshooting
+        - link "Console" [ref=e572] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/console"
+          - generic [ref=e575]: Console
+        - link "Plugins" [ref=e577] [cursor=pointer]:
+          - /url: "#!/settings/server/151844f12c48124dba579b272120b00cae4891a3/manage/plugins"
+          - generic [ref=e580]: Plugins
+    - generic [ref=e582]:
+      - heading "Plex Web—General" [level=2] [ref=e583]
+      - generic [ref=e585]:
+        - button "Hide Advanced" [ref=e587] [cursor=pointer]
+        - generic [ref=e590]:
+          - generic [ref=e591]:
+            - heading "Version 4.156.0" [level=4] [ref=e592]
+            - generic [ref=e593]:
+              - generic [ref=e594]: Language
+              - combobox "Language" [ref=e595]:
+                - option "Afrikaans"
+                - option "Burmese"
+                - option "Català"
+                - option "Čeština"
+                - option "Dansk"
+                - option "Deutsch"
+                - option "Eesti"
+                - option "English"
+                - option "English (UK)" [selected]
+                - option "Español"
+                - option "Español (Latinoamérica)"
+                - option "Français"
+                - option "Français Canadien"
+                - option "Hrvatski"
+                - option "Íslenska"
+                - option "Italiano"
+                - option "Lietuvių kalba"
+                - option "Magyar"
+                - option "Nederlands"
+                - option "Norsk"
+                - option "Polski"
+                - option "Português"
+                - option "Português Brasileiro"
+                - option "Română"
+                - option "Slovenčina"
+                - option "Slovenščina"
+                - option "Suomeksi"
+                - option "Svenska"
+                - option "Tiếng Việt"
+                - option "Türkçe"
+                - option "Ελληνικά"
+                - option "български език"
+                - option "русский язык"
+                - option "српски језик"
+                - option "українська"
+                - option "עברית"
+                - option "العربية"
+                - option "فارسی"
+                - option "ไทย"
+                - option "한국어"
+                - option "中文"
+                - option "日本語"
+                - option "臺語"
+              - paragraph [ref=e596]:
+                - text: Help us translate this app into your language
+                - link "here" [ref=e597] [cursor=pointer]:
+                  - /url: https://transifex.com/plex-1/plex-web
+                - text: .
+            - generic [ref=e598]:
+              - generic [ref=e599]:
+                - checkbox "Automatically Sign In" [ref=e600]
+                - text: Automatically Sign In
+              - paragraph [ref=e601]: Do not prompt to select a user or enter a PIN during startup on this device.
+            - generic [ref=e602]:
+              - generic [ref=e603]:
+                - checkbox "Remember selected tab" [checked] [ref=e604]
+                - text: Remember selected tab
+              - paragraph [ref=e605]: Default to the last selected tab for a media source.
+            - generic [ref=e606]:
+              - generic [ref=e607]:
+                - checkbox "Play Theme Music" [ref=e608]
+                - text: Play Theme Music
+              - paragraph [ref=e609]: Automatically play theme music in the background when available.
+            - generic [ref=e610]:
+              - generic [ref=e611]: Time Format
+              - combobox "Time Format" [ref=e612]:
+                - option "12 Hour" [selected]
+                - option "24 Hour"
+            - separator [ref=e613]
+            - generic [ref=e614]:
+              - button "Turn off settings sync" [ref=e615] [cursor=pointer]
+              - paragraph [ref=e616]: Currently all Plex Web settings and customisation are synchronised with other Plex Web instances.
+            - generic [ref=e617]:
+              - button "Reset customisation" [ref=e618] [cursor=pointer]
+              - paragraph [ref=e619]: Reset sidebar navigation and home screen layout to the default state. You’ll be redirected to the Setup screen, where you can choose a server (if you have access to more than one) and other media providers from which to build your navigation and home screen content.
+            - separator [ref=e620]
+          - generic [ref=e621]:
+            - button "Save Changes"
+  - region "Notifications (F8)":
+    - list

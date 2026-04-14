@@ -1,0 +1,661 @@
+direction: down
+
+vars: {
+  d2-config: {
+    theme-id: 200
+    dark-theme-id: 200
+    layout-engine: elk
+    pad: 40
+  }
+}
+
+classes: {
+  header: {
+    style: {
+      font-size: 20
+      bold: true
+    }
+  }
+  subtle: {
+    style: {
+      font-color: "#8b949e"
+      font-size: 13
+    }
+  }
+}
+
+# ================================================================
+# EXTERNAL ACCESS
+# ================================================================
+
+internet: Internet Users {
+  style: {
+    fill: "#1a1e2e"
+    stroke: "#6e7681"
+    border-radius: 20
+    font-color: "#c9d1d9"
+  }
+}
+
+cloudflare: Cloudflare {
+  label: |md
+    ## Cloudflare
+    DNS · CDN · DDoS · WAF · Page Rules
+    Manages *.iacob.co.uk · *.iacobapp.dev · neatplan.app
+  |
+  style: {
+    fill: "#1a1500"
+    stroke: "#f97316"
+    border-radius: 10
+    font-color: "#f0f6fc"
+  }
+}
+
+internet -> cloudflare: HTTPS {
+  style.stroke: "#f97316"
+  style.font-color: "#f97316"
+}
+
+# ================================================================
+# LAN ACCESS
+# ================================================================
+
+lan: LAN Clients {
+  style: {
+    fill: "#1a1e2e"
+    stroke: "#6e7681"
+    border-radius: 20
+    font-color: "#c9d1d9"
+  }
+}
+
+dns: DNS Resolution {
+  adguard: AdGuard Home (HA pair) {
+    style: {
+      fill: "#0a1520"
+      stroke: "#22d3ee"
+      font-color: "#22d3ee"
+    }
+  }
+  k8s-gw: k8s-gateway {
+    label: |md
+      **k8s-gateway**
+      Watches HTTPRoutes
+      Resolves *.iacob.uk
+    |
+    style: {
+      fill: "#0a1520"
+      stroke: "#22d3ee"
+      font-color: "#22d3ee"
+    }
+  }
+  adguard -> k8s-gw: "forwards *.iacob.uk" {
+    style.stroke: "#22d3ee"
+    style.font-color: "#22d3ee"
+  }
+
+  style: {
+    fill: "#0c1219"
+    stroke: "#22d3ee"
+    border-radius: 10
+  }
+}
+
+lan -> dns.adguard: "DNS query (*.iacob.uk)" {
+  style.stroke: "#22d3ee"
+  style.font-color: "#22d3ee"
+}
+
+# ================================================================
+# INGRESS GATEWAYS
+# ================================================================
+
+tunnel: Cloudflare Tunnel {
+  label: |md
+    **Cloudflare Tunnel**
+    Encrypted QUIC · Post-quantum
+    No port forwarding needed
+  |
+  style: {
+    fill: "#1a1500"
+    stroke: "#f97316"
+    border-radius: 10
+    font-color: "#f0f6fc"
+  }
+}
+
+cloudflare -> tunnel: "encrypted tunnel" {
+  style.stroke: "#f97316"
+  style.font-color: "#f97316"
+}
+
+gateways: Envoy Gateways (Gateway API) {
+  external: Envoy External {
+    label: |md
+      **Envoy External Gateway**
+      TLS termination · HTTP/2 + HTTP/3
+      Let's Encrypt wildcard certs
+      Zstd / Brotli / Gzip compression
+      2 replicas
+    |
+    style: {
+      fill: "#1a0f00"
+      stroke: "#f97316"
+      font-color: "#f0f6fc"
+      border-radius: 10
+    }
+  }
+  internal: Envoy Internal {
+    label: |md
+      **Envoy Internal Gateway**
+      LAN-only access · *.iacob.uk
+      Gateway API HTTPRoutes
+      Also proxies infrastructure (Proxmox, TrueNAS, iLO)
+      2 replicas
+    |
+    style: {
+      fill: "#0a1025"
+      stroke: "#60a5fa"
+      font-color: "#f0f6fc"
+      border-radius: 10
+    }
+  }
+
+  style: {
+    fill: "#0c1219"
+    stroke: "#30363d"
+    border-radius: 12
+  }
+}
+
+tunnel -> gateways.external {
+  style.stroke: "#f97316"
+}
+
+dns.k8s-gw -> gateways.internal: "resolves to internal gateway" {
+  style.stroke: "#60a5fa"
+  style.font-color: "#60a5fa"
+}
+
+# DDNS special case
+ddns: Direct DNS (DDNS) {
+  label: |md
+    **DDNS (no tunnel)**
+    plex.iacob.co.uk → public IP
+    wg.iacob.co.uk → public IP
+    Port-forwarded directly
+  |
+  style: {
+    fill: "#1a1800"
+    stroke: "#facc15"
+    border-radius: 10
+    font-color: "#facc15"
+  }
+}
+
+cloudflare -> ddns: "A record → home IP" {
+  style.stroke: "#facc15"
+  style.font-color: "#facc15"
+  style.stroke-dash: 5
+}
+
+# ================================================================
+# KUBERNETES CLUSTER
+# ================================================================
+
+cluster: Kubernetes Cluster (Talos Linux v1.12.1 · Cilium CNI · Single Node VM) {
+
+  # PUBLIC SERVICES
+  public: Public Services (12 routes via tunnel) {
+    label: |md
+      ### Public Services
+      12 routes via Cloudflare Tunnel
+    |
+
+    iacob-co-uk: "*.iacob.co.uk" {
+      portfolio: Portfolio (andrei.iacob.co.uk)
+      gitea: Gitea (git.iacob.co.uk)
+      vault: Vaultwarden (vault.iacob.co.uk)
+      plausible: Plausible Analytics
+      openwebui: Open WebUI
+      informate: Informate
+      plexo: Plexo
+      echo: Echo
+
+      style: {
+        fill: "#1a100a"
+        stroke: "#f97316"
+        border-radius: 8
+      }
+    }
+
+    other: Other Domains {
+      neatplan: neatplan.app
+      shlink: "s.iacobapp.dev (Shlink)"
+
+      style: {
+        fill: "#1a100a"
+        stroke: "#f97316"
+        border-radius: 8
+      }
+    }
+
+    style: {
+      fill: "#12100a"
+      stroke: "#f97316"
+      border-radius: 10
+    }
+  }
+
+  gateways.external -> public: "routes by hostname" {
+    style.stroke: "#f97316"
+    style.font-color: "#f97316"
+  }
+
+  # INTERNAL SERVICES
+  internal: Internal Services (37+ routes · *.iacob.uk · LAN only) {
+
+    media: Media {
+      label: |md
+        **Media** (22 services)
+        Plex · Jellyfin · ErsatzTV · Tautulli · Overseerr
+        Sonarr · Radarr · Readarr · Lidarr · Prowlarr · Bazarr
+        qBittorrent · SABnzbd · FlareSolverr
+        Tdarr · Recyclarr · Wizarr · Huntarr
+        Frigate · Scrypted · Calibre Web · Ring MQTT
+      |
+      style: {
+        fill: "#1a0a15"
+        stroke: "#f472b6"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    productivity: Productivity {
+      label: |md
+        **Productivity** (12 services)
+        Homepage · Authentik · Outline · Paperless
+        Immich · Vikunja · n8n · Stirling PDF
+        IT-Tools · SearXNG · Zipline · SpeedTest
+      |
+      style: {
+        fill: "#0a1025"
+        stroke: "#60a5fa"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    ai: AI {
+      label: |md
+        **AI**
+        Ollama · Open WebUI · Arca
+      |
+      style: {
+        fill: "#10082a"
+        stroke: "#a78bfa"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    monitoring: Monitoring {
+      label: |md
+        **Monitoring**
+        Grafana · Prometheus
+      |
+      style: {
+        fill: "#1a1200"
+        stroke: "#f59e0b"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    infra-proxy: Infrastructure Proxying {
+      label: |md
+        **Infrastructure** (via Envoy Backends)
+        Proxmox · TrueNAS · iLO x2
+        Router · Switch · AdGuard x2
+      |
+      style: {
+        fill: "#0a1520"
+        stroke: "#22d3ee"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    style: {
+      fill: "#0a0f1a"
+      stroke: "#60a5fa"
+      border-radius: 10
+    }
+  }
+
+  gateways.internal -> internal: "routes by hostname" {
+    style.stroke: "#60a5fa"
+    style.font-color: "#60a5fa"
+  }
+
+  # DATA LAYER
+  databases: Databases {
+    label: |md
+      **Databases**
+      PostgreSQL · Redis · Qdrant · Mosquitto · pgAdmin
+    |
+    style: {
+      fill: "#1a0808"
+      stroke: "#f87171"
+      font-color: "#f0f6fc"
+      border-radius: 10
+    }
+  }
+
+  observability: Observability Stack {
+    label: |md
+      **Observability** (scrapes all services)
+      Prometheus · Loki · Alloy · Alertmanager
+      Plausible · Uptime Kuma · Scrutiny
+    |
+    style: {
+      fill: "#1a1200"
+      stroke: "#f59e0b"
+      font-color: "#f0f6fc"
+      border-radius: 10
+    }
+  }
+
+  public -> databases: queries {
+    style.stroke: "#f87171"
+    style.stroke-dash: 3
+  }
+  internal.media -> databases: queries {
+    style.stroke: "#f87171"
+    style.stroke-dash: 3
+  }
+  internal.productivity -> databases: queries {
+    style.stroke: "#f87171"
+    style.stroke-dash: 3
+  }
+
+  observability -> internal: "scrapes metrics + logs" {
+    style.stroke: "#f59e0b"
+    style.stroke-dash: 3
+    style.font-color: "#f59e0b"
+  }
+
+  # STORAGE
+  storage: Storage {
+    openebs: OpenEBS Hostpath {
+      label: |md
+        **OpenEBS Hostpath**
+        Local SSD on K8s node
+        App configs · databases · state
+      |
+      style: {
+        fill: "#0a1a10"
+        stroke: "#34d399"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    nfs: NFS over 10G P2P {
+      label: |md
+        **NFS (10G P2P link)**
+        Movies · TV · Music · Downloads
+        MTU 9000 · direct to TrueNAS
+      |
+      style: {
+        fill: "#0a1025"
+        stroke: "#60a5fa"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    volsync: VolSync Backups {
+      label: |md
+        **VolSync → MinIO S3**
+        40+ apps · Restic snapshots
+        Cron scheduled · encrypted
+        6h/7d/4w/3m retention
+      |
+      style: {
+        fill: "#10082a"
+        stroke: "#a78bfa"
+        font-color: "#f0f6fc"
+        border-radius: 8
+      }
+    }
+
+    style: {
+      fill: "#0c1219"
+      stroke: "#30363d"
+      border-radius: 10
+    }
+  }
+
+  databases -> storage.openebs: "persists to" {
+    style.stroke: "#34d399"
+    style.stroke-dash: 3
+  }
+  internal.media -> storage.nfs: "reads/writes media" {
+    style.stroke: "#60a5fa"
+    style.stroke-dash: 3
+  }
+
+  style: {
+    fill: "#0b0f18"
+    stroke: "#34d399"
+    border-radius: 14
+  }
+}
+
+# ================================================================
+# GITOPS PIPELINE
+# ================================================================
+
+gitops: GitOps Pipeline {
+  dev: Developer {
+    style: { fill: "#0a1a10"; stroke: "#34d399"; font-color: "#34d399"; border-radius: 8 }
+  }
+  github: GitHub {
+    style: { fill: "#1a1e2e"; stroke: "#c9d1d9"; font-color: "#c9d1d9"; border-radius: 8 }
+  }
+  flux: Flux CD {
+    style: { fill: "#0a1a10"; stroke: "#34d399"; font-color: "#34d399"; border-radius: 8 }
+  }
+  sops: SOPS Decrypt {
+    label: |md
+      **SOPS**
+      Age key decryption
+    |
+    style: { fill: "#10082a"; stroke: "#a78bfa"; font-color: "#a78bfa"; border-radius: 8 }
+  }
+  helm: Helm + Kustomize {
+    style: { fill: "#0a1a10"; stroke: "#34d399"; font-color: "#34d399"; border-radius: 8 }
+  }
+  renovate: Renovate Bot {
+    label: |md
+      **Renovate Bot**
+      Auto-merges minor/patch
+    |
+    style: { fill: "#0a1a10"; stroke: "#34d399"; font-color: "#34d399"; border-radius: 8 }
+  }
+  certmgr: cert-manager {
+    label: |md
+      **cert-manager**
+      Let's Encrypt DNS-01
+      Cloudflare solver
+    |
+    style: { fill: "#1a0f00"; stroke: "#f97316"; font-color: "#f97316"; border-radius: 8 }
+  }
+
+  dev -> github: "git push" {
+    style.stroke: "#34d399"
+    style.font-color: "#34d399"
+  }
+  github -> flux: webhook {
+    style.stroke: "#34d399"
+    style.font-color: "#34d399"
+  }
+  flux -> sops: decrypts secrets {
+    style.stroke: "#a78bfa"
+    style.font-color: "#a78bfa"
+  }
+  sops -> helm: "renders manifests" {
+    style.stroke: "#34d399"
+    style.font-color: "#34d399"
+  }
+  helm -> cluster: applies {
+    style.stroke: "#34d399"
+    style.font-color: "#34d399"
+  }
+  renovate -> github: "opens PRs" {
+    style.stroke: "#34d399"
+    style.stroke-dash: 5
+    style.font-color: "#34d399"
+  }
+  certmgr -> cloudflare: "DNS-01 challenge" {
+    style.stroke: "#f97316"
+    style.stroke-dash: 5
+    style.font-color: "#f97316"
+  }
+
+  style: {
+    fill: "#0c1219"
+    stroke: "#34d399"
+    border-radius: 12
+  }
+}
+
+# ================================================================
+# PHYSICAL HARDWARE
+# ================================================================
+
+hardware: Physical Hardware {
+  dl360: HP ProLiant DL360 Gen9 {
+    label: |md
+      ### HP ProLiant DL360 Gen9
+      48 cores · 252 GB RAM · 923 GB ZFS · Proxmox VE
+    |
+
+    k8s-vm: "Kubernetes VM (Talos Linux)" {
+      label: |md
+        **Kubernetes (Talos Linux)**
+        16 vCPU · 128 GB RAM
+        Runs the entire K8s cluster
+      |
+      style: { fill: "#0a1a10"; stroke: "#34d399"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    haos: "Home Assistant OS" {
+      label: "Home Assistant\n2 vCPU · 8 GB"
+      style: { fill: "#1a1200"; stroke: "#f59e0b"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    windows: "Windows Server" {
+      label: "Windows Server\n6 vCPU · 8 GB"
+      style: { fill: "#0a1025"; stroke: "#60a5fa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    games: "Game Servers" {
+      label: "Game Servers\n6 vCPU · 32 GB"
+      style: { fill: "#1a0a15"; stroke: "#f472b6"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    openclaw: OpenClaw {
+      label: "OpenClaw\n4 vCPU · 8 GB"
+      style: { fill: "#10082a"; stroke: "#a78bfa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    ct-adguard: "AdGuard (secondary)" {
+      style: { fill: "#0a1520"; stroke: "#22d3ee"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    ct-wg: "WireGuard (HA primary)" {
+      style: { fill: "#10082a"; stroke: "#a78bfa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+
+    style: {
+      fill: "#12171f"
+      stroke: "#30363d"
+      border-radius: 12
+      font-color: "#f0f6fc"
+    }
+  }
+
+  p2p-link: "10G P2P · MTU 9000" {
+    style: {
+      fill: "#1a1500"
+      stroke: "#f59e0b"
+      font-color: "#f59e0b"
+      border-radius: 20
+      bold: true
+    }
+  }
+
+  dl380: HP ProLiant DL380 Gen9 {
+    label: |md
+      ### HP ProLiant DL380 Gen9
+      40 cores · 157 GB RAM · 215 GB ZFS · Proxmox VE
+    |
+
+    truenas: TrueNAS Scale {
+      label: |md
+        **TrueNAS Scale**
+        8 vCPU · 128 GB RAM · 18 drives passthrough
+        22.6 TB raw storage
+        plex pool (media) · sexy-pool (backups) · MinIO S3 (VolSync)
+      |
+      style: { fill: "#0a1025"; stroke: "#60a5fa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    prod-vm: "Production VM" {
+      label: "Production VM\n16 vCPU · 24 GB"
+      style: { fill: "#10082a"; stroke: "#a78bfa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    ct-adguard2: "AdGuard (primary)" {
+      style: { fill: "#0a1520"; stroke: "#22d3ee"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+    ct-wg2: "WireGuard (HA backup)" {
+      style: { fill: "#10082a"; stroke: "#a78bfa"; font-color: "#f0f6fc"; border-radius: 8 }
+    }
+
+    style: {
+      fill: "#12171f"
+      stroke: "#30363d"
+      border-radius: 12
+      font-color: "#f0f6fc"
+    }
+  }
+
+  dl360 -> p2p-link: {
+    style.stroke: "#f59e0b"
+  }
+  p2p-link -> dl380: {
+    style.stroke: "#f59e0b"
+  }
+
+  style: {
+    fill: "#0b0f18"
+    stroke: "#30363d"
+    border-radius: 14
+  }
+}
+
+# Storage connections to hardware
+cluster.storage.nfs -> hardware.dl380.truenas: "10G NFS" {
+  style.stroke: "#60a5fa"
+  style.font-color: "#60a5fa"
+}
+cluster.storage.volsync -> hardware.dl380.truenas: "S3 backups to MinIO" {
+  style.stroke: "#a78bfa"
+  style.font-color: "#a78bfa"
+}
+
+# Infrastructure proxy connections
+cluster.internal.infra-proxy -> hardware.dl360.haos: "" {
+  style.stroke: "#22d3ee"
+  style.stroke-dash: 3
+}
+cluster.internal.infra-proxy -> hardware.dl380.truenas: "" {
+  style.stroke: "#22d3ee"
+  style.stroke-dash: 3
+}
