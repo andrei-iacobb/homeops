@@ -52,7 +52,7 @@ spec:
           mongo:
             image:
               repository: docker.io/mongo
-              tag: "7.0"
+              tag: "8.2"
             env:
               MONGO_INITDB_ROOT_USERNAME: root
               MONGO_INITDB_ROOT_PASSWORD:
