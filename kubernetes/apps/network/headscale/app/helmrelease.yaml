@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: headscale/headscale
-              tag: 0.25.1
+              tag: v0.28.0
             args: ["serve"]
             env:
               TZ: Europe/London
