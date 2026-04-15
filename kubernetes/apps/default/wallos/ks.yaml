@@ -24,8 +24,8 @@ spec:
       APP: wallos
       APP_PVC: wallos-data
       VOLSYNC_SCHEDULE: "45 3 * * *"
-      MOVER_UID: "1000"
-      MOVER_GID: "1000"
+      MOVER_UID: "33"
+      MOVER_GID: "33"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

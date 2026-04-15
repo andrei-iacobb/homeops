@@ -46,7 +46,8 @@ spec:
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
-        fsGroup: 1000
+        fsGroup: 33
+        fsGroupChangePolicy: Always
         seccompProfile:
           type: RuntimeDefault
     service:
