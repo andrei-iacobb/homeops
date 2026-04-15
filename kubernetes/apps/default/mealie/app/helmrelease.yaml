@@ -92,3 +92,7 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /app/data
+      nltk:
+        type: emptyDir
+        globalMounts:
+          - path: /nltk_data

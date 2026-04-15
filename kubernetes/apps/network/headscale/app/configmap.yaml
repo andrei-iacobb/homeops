@@ -25,5 +25,10 @@ data:
         global:
           - 1.1.1.1
           - 8.8.8.8
+    derp:
+      urls:
+        - https://controlplane.tailscale.com/derpmap/default
+      auto_update_enabled: true
+      update_frequency: 24h
     log:
       level: info
