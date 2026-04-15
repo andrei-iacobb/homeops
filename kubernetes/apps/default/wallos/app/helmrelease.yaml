@@ -32,7 +32,7 @@ spec:
                 spec:
                   httpGet:
                     path: /
-                    port: &port 8282
+                    port: &port 80
                   periodSeconds: 15
                   timeoutSeconds: 5
                   failureThreshold: 3
@@ -40,9 +40,6 @@ spec:
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-                add: ["CHOWN", "SETUID", "SETGID"]
             resources:
               requests:
                 cpu: 10m
