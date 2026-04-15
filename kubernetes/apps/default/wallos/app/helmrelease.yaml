@@ -12,6 +12,12 @@ spec:
     controllers:
       wallos:
         strategy: Recreate
+        initContainers:
+          fix-perms:
+            image:
+              repository: busybox
+              tag: latest
+            command: ["sh", "-c", "chmod -R 777 /var/www/html/db"]
         containers:
           app:
             image:
