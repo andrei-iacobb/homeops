@@ -73,3 +73,7 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /var/www/html/db
+      logos:
+        type: emptyDir
+        globalMounts:
+          - path: /var/www/html/images/uploads/logos

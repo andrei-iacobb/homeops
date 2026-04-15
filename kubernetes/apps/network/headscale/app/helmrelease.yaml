@@ -99,6 +99,10 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /data
+      run:
+        type: emptyDir
+        globalMounts:
+          - path: /var/run/headscale
       config:
         type: configMap
         name: headscale-config
