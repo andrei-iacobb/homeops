@@ -1,0 +1,75 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: wallos
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: wallos
+  interval: 1h
+  values:
+    controllers:
+      wallos:
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: bellamy/wallos
+              tag: 2.44.2
+            env:
+              TZ: Europe/London
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8282
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "SETUID", "SETGID"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["wallos.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 1Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /var/www/html/db

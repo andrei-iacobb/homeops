@@ -1,0 +1,33 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: wallos
+  namespace: default
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: wallos
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  path: ./kubernetes/apps/default/wallos/app
+  postBuild:
+    substitute:
+      APP: wallos
+      APP_PVC: wallos-data
+      VOLSYNC_SCHEDULE: "45 3 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret

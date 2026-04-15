@@ -36,3 +36,5 @@ resources:
   - ./sftpgo/ks.yaml
   - ./glance/ks.yaml
   - ./actual-budget/ks.yaml
+  - ./wallos/ks.yaml
+  - ./solis-charge/ks.yaml
