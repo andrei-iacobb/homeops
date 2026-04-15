@@ -146,14 +146,4 @@ spec:
               - path: /var/run
       tmp:
         type: emptyDir
-    route:
-      app:
-        hostnames: ["ui.iacob.uk"]
-        parentRefs:
-          - name: envoy-internal
-            namespace: network
-            sectionName: https
-        rules:
-          - backendRefs:
-              - identifier: app
-                port: 80
+    route: {}

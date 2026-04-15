@@ -675,5 +675,5 @@ data:
           description: Tailscale control server
       - UniFi:
           icon: unifi.svg
-          href: https://ui.iacob.uk
+          href: https://192.168.1.1
           description: Network management
