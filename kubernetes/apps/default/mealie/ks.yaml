@@ -1,0 +1,33 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mealie
+  namespace: default
+spec:
+  targetNamespace: default
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: mealie
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  path: ./kubernetes/apps/default/mealie/app
+  postBuild:
+    substitute:
+      APP: mealie
+      APP_PVC: mealie-data
+      VOLSYNC_SCHEDULE: "0 4 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
