@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: glance-config
+data:
+  glance.yml: |
+    pages:
+      - name: Home
+        columns:
+          - size: small
+            widgets:
+              - type: clock
+                hour-format: "24h"
+                timezones:
+                  - timezone: Europe/London
+                    label: London
+              - type: weather
+                location: Bury St Edmunds, UK
+                units: metric
+              - type: bookmarks
+                groups:
+                  - title: Homelab
+                    links:
+                      - title: Homepage
+                        url: https://home.iacob.uk
+                      - title: Grafana
+                        url: https://grafana.iacob.uk
+                      - title: Uptime
+                        url: https://uptime.iacob.uk
+                  - title: Media
+                    links:
+                      - title: Plex
+                        url: https://plex.iacob.uk
+                      - title: Overseerr
+                        url: https://overseerr.iacob.uk
+                      - title: Sonarr
+                        url: https://sonarr.iacob.uk
+          - size: full
+            widgets:
+              - type: rss
+                title: Tech News
+                style: horizontal-cards
+                feeds:
+                  - url: https://hnrss.org/frontpage
+                    title: Hacker News
+                  - url: https://www.reddit.com/r/selfhosted/.rss
+                    title: r/selfhosted
+                limit: 15
+              - type: rss
+                title: UK News
+                style: detailed-list
+                feeds:
+                  - url: https://feeds.bbci.co.uk/news/rss.xml
+                    title: BBC News
+                limit: 10
+          - size: small
+            widgets:
+              - type: monitor
+                title: Services
+                cache: 1m
+                sites:
+                  - title: Plex
+                    url: https://plex.iacob.uk
+                    icon: si:plex
+                  - title: Grafana
+                    url: https://grafana.iacob.uk
+                    icon: si:grafana
+                  - title: Gitea
+                    url: https://git.iacob.co.uk
+                    icon: si:gitea
