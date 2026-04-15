@@ -14,5 +14,5 @@ spec:
         - type: RequestRedirect
           requestRedirect:
             scheme: https
-            hostname: 192.168.1.1
+            hostname: router.iacob.uk
             statusCode: 302
