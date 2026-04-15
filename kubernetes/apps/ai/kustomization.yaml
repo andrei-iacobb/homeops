@@ -12,3 +12,4 @@ resources:
   - ./ollama/ks.yaml
   - ./openwebui/ks.yaml
   - ./arca/ks.yaml
+  - ./anythingllm/ks.yaml
