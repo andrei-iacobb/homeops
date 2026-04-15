@@ -35,3 +35,4 @@ resources:
   - ./code-server/ks.yaml
   - ./sftpgo/ks.yaml
   - ./glance/ks.yaml
+  - ./actual-budget/ks.yaml
