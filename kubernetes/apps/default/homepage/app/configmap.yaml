@@ -287,10 +287,6 @@ data:
           icon: mdi-server
           href: https://ilo2.iacob.uk
           description: HP DL380 G9 iLO
-      - Router:
-          icon: mdi-router-wireless
-          href: https://router.iacob.uk
-          description: Network router
       - HP Switch:
           icon: mdi-switch
           href: https://switch.iacob.uk
@@ -673,7 +669,3 @@ data:
           icon: mdi-vpn
           href: https://headscale.iacob.uk
           description: Tailscale control server
-      - UniFi:
-          icon: unifi.svg
-          href: https://192.168.1.1
-          description: Network management
