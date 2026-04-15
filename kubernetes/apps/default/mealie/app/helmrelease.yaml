@@ -22,6 +22,7 @@ spec:
               ALLOW_SIGNUP: "false"
               BASE_URL: "https://mealie.iacob.uk"
               DB_ENGINE: sqlite
+              NLTK_DATA: /app/data/nltk_data
             probes:
               liveness: &probes
                 enabled: true

@@ -19,7 +19,7 @@ data:
       sqlite:
         path: /data/db.sqlite
     dns:
-      base_domain: headscale.iacob.uk
+      base_domain: ts.iacob.uk
       magic_dns: true
       nameservers:
         global:
