@@ -1,0 +1,42 @@
+---
+# Runs daily at 23:30 to program Solis inverter charge slots based on Octopus Agile rates.
+# Only charges when electricity price <= 15p/kWh. Clears all slots if no cheap rates found.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: solis-charge
+spec:
+  schedule: "30 23 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: solis-charge
+              image: python:3.12-alpine
+              command:
+                - sh
+                - -c
+                - pip install --quiet requests && python /scripts/solis_agile_charge.py
+              envFrom:
+                - secretRef:
+                    name: solis-charge-secret
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: script
+              configMap:
+                name: solis-charge-script

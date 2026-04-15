@@ -38,3 +38,4 @@ resources:
   - ./actual-budget/ks.yaml
   - ./wallos/ks.yaml
   - ./mealie/ks.yaml
+  - ./solis-charge/ks.yaml
