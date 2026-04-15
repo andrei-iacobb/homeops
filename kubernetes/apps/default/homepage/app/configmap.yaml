@@ -156,7 +156,7 @@ data:
 
       async function swap() {
         try {
-          const url = "https://picsum.photos/2560/1440?random=" + Date.now();
+          const url = "https://picsum.photos/1920/1080?random=" + Date.now();
           const loaded = await loadImage(url);
           next.style.backgroundImage = "url(" + loaded + ")";
           next.className = "bg-layer active";
@@ -171,8 +171,8 @@ data:
 
       // Load initial background
       swap();
-      // Rotate every 30 seconds
-      setInterval(swap, 30000);
+      // Rotate every 60 seconds (less frequent = less bandwidth)
+      setInterval(swap, 60000);
     })();
   docker.yaml: ""
   proxmox.yaml: |
@@ -190,7 +190,7 @@ data:
     statusStyle: dot
     cardBlur: md
     background:
-      image: https://picsum.photos/2560/1440?random=1
+      image: https://picsum.photos/1920/1080?random=1
       brightness: 20
       saturate: 40
       opacity: 40
@@ -229,7 +229,7 @@ data:
         icon: mdi-database
       Tools:
         style: row
-        columns: 3
+        columns: 4
         icon: mdi-wrench
   widgets.yaml: |
     - greeting:
@@ -563,6 +563,14 @@ data:
           icon: openwebui.svg
           href: https://openwebui.iacob.co.uk
           description: AI chat interface
+      - Arca:
+          icon: mdi-robot
+          href: https://arca.iacob.co.uk
+          description: Claude sandbox
+      - AnythingLLM:
+          icon: mdi-brain
+          href: https://anythingllm.iacob.uk
+          description: Chat with documents (RAG)
       - OpenClaw:
           icon: mdi-robot-outline
           href: https://openclaw.iacob.uk
@@ -625,3 +633,47 @@ data:
           icon: shlink.svg
           href: https://shlink.iacob.uk
           description: URL shortener (admin)
+      - SFTPGo:
+          icon: mdi-cloud-upload
+          href: https://drop.iacob.uk
+          description: File drop / WebDAV
+      - Filebrowser:
+          icon: mdi-folder
+          href: https://files.iacob.uk
+          description: Static file hosting
+      - Code Server:
+          icon: vscode.svg
+          href: https://code.iacob.uk
+          description: VS Code in browser
+      - Zipline:
+          icon: mdi-link-variant
+          href: https://share.iacob.co.uk
+          description: File & image sharing
+      - SearXNG:
+          icon: searxng.svg
+          href: https://searxng.iacob.uk
+          description: Private meta-search
+      - Glance:
+          icon: mdi-view-dashboard
+          href: https://glance.iacob.uk
+          description: Dashboard & RSS reader
+      - Actual Budget:
+          icon: mdi-cash-multiple
+          href: https://budget.iacob.uk
+          description: Personal finance
+      - Wallos:
+          icon: mdi-credit-card-clock
+          href: https://wallos.iacob.uk
+          description: Subscription tracker
+      - Mealie:
+          icon: mdi-food
+          href: https://mealie.iacob.uk
+          description: Recipe manager
+      - Headscale:
+          icon: mdi-vpn
+          href: https://headscale.iacob.uk
+          description: Tailscale control server
+      - UniFi:
+          icon: unifi.svg
+          href: https://ui.iacob.uk
+          description: Network management
