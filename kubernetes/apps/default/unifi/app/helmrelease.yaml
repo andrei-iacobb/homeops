@@ -19,7 +19,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/unifi-network-application
-              tag: 10.1.89
+              tag: 10.3.55
             env:
               TZ: Europe/London
               PUID: "1000"
