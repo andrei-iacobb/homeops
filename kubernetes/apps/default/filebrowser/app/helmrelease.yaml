@@ -27,7 +27,7 @@ spec:
                     path: /
                     port: &port 80
                   periodSeconds: 10
-                  timeoutSeconds: 1
+                  timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
             resources:
