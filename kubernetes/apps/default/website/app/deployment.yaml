@@ -35,6 +35,16 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          env:
+            - name: REDIS_HOST
+              value: redis.databases.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: website-secret
+                  key: REDIS_PASSWORD
           livenessProbe:
             httpGet:
               path: /health
