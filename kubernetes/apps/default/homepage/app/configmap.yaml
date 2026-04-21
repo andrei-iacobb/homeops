@@ -262,21 +262,19 @@ data:
           icon: truenas.svg
           href: https://truenas.iacob.uk
           description: NAS storage
-          siteMonitor: https://truenas.iacob.uk
           widget:
             type: truenas
-            url: https://truenas.iacob.uk
+            url: http://192.168.1.67
             key: ${HOMEPAGE_TRUENAS_KEY}
-            version: 1
-            enablePools: false
+            version: 2
+            enablePools: true
       - Proxmox:
           icon: proxmox.svg
           href: https://proxmox.iacob.uk
           description: Virtualization
-          siteMonitor: https://proxmox.iacob.uk
           widget:
             type: proxmox
-            url: https://proxmox.iacob.uk
+            url: https://192.168.1.100:8006
             username: ${HOMEPAGE_PROXMOX_USER}
             password: ${HOMEPAGE_PROXMOX_PASS}
       - iLO DL360:
@@ -291,7 +289,6 @@ data:
           icon: mdi-switch
           href: https://switch.iacob.uk
           description: Network switch
-          siteMonitor: https://switch.iacob.uk
       - VolSync:
           icon: mdi-backup-restore
           href: https://volsync.readthedocs.io/
@@ -301,20 +298,18 @@ data:
           icon: adguard-home
           href: https://dns1.iacob.uk
           description: Web filtering and DNS
-          siteMonitor: https://dns1.iacob.uk
           widget:
             type: adguard
-            url: https://dns1.iacob.uk
+            url: http://192.168.1.120
             username: ${HOMEPAGE_ADGUARD_1_USER}
             password: ${HOMEPAGE_ADGUARD_1_PASS}
       - AdGuard Secondary:
           icon: adguard-home
           href: https://dns2.iacob.uk
           description: DNS failover
-          siteMonitor: https://dns2.iacob.uk
           widget:
             type: adguard
-            url: https://dns2.iacob.uk
+            url: http://192.168.1.125
             username: ${HOMEPAGE_ADGUARD_2_USER}
             password: ${HOMEPAGE_ADGUARD_2_PASS}
     - Social:
@@ -373,7 +368,7 @@ data:
           description: Photo backup
           widget:
             type: immich
-            url: https://photos.iacob.uk
+            url: http://immich-server.default.svc.cluster.local:2283
             key: ${HOMEPAGE_IMMICH_KEY}
             version: 2
       - Echo:
@@ -411,7 +406,7 @@ data:
           description: Media server
           widget:
             type: jellyfin
-            url: https://jellyfin.iacob.uk
+            url: http://jellyfin.media.svc.cluster.local:8096
             key: ${HOMEPAGE_JELLYFIN_KEY}
             enableBlocks: true
             enableNowPlaying: true
@@ -419,14 +414,14 @@ data:
           icon: plex.svg
           href: https://plex.iacob.uk
           description: Media server
-          siteMonitor: https://plex.iacob.uk
+          siteMonitor: https://plex.iacob.uk/identity
       - Sonarr:
           icon: sonarr.svg
           href: https://sonarr.iacob.uk
           description: TV show management
           widget:
             type: sonarr
-            url: https://sonarr.iacob.uk
+            url: http://sonarr.media.svc.cluster.local:8989
             key: ${HOMEPAGE_SONARR_KEY}
       - Radarr:
           icon: radarr.svg
@@ -434,7 +429,7 @@ data:
           description: Movie management
           widget:
             type: radarr
-            url: https://radarr.iacob.uk
+            url: http://radarr.media.svc.cluster.local:7878
             key: ${HOMEPAGE_RADARR_KEY}
       - Lidarr:
           icon: lidarr.svg
@@ -442,7 +437,7 @@ data:
           description: Music management
           widget:
             type: lidarr
-            url: https://lidarr.iacob.uk
+            url: http://lidarr.media.svc.cluster.local:8686
             key: ${HOMEPAGE_LIDARR_KEY}
             enableQueue: true
       - Readarr:
@@ -451,7 +446,7 @@ data:
           description: Book management
           widget:
             type: readarr
-            url: https://readarr.iacob.uk
+            url: http://readarr.media.svc.cluster.local:8787
             key: ${HOMEPAGE_READARR_KEY}
             enableQueue: true
       - Bazarr:
@@ -460,7 +455,7 @@ data:
           description: Subtitle management
           widget:
             type: bazarr
-            url: https://bazarr.iacob.uk
+            url: http://bazarr.media.svc.cluster.local:6767
             key: ${HOMEPAGE_BAZARR_KEY}
       - Prowlarr:
           icon: prowlarr.svg
@@ -468,7 +463,7 @@ data:
           description: Indexer manager
           widget:
             type: prowlarr
-            url: https://prowlarr.iacob.uk
+            url: http://prowlarr.media.svc.cluster.local:9696
             key: ${HOMEPAGE_PROWLARR_KEY}
       - Overseerr:
           icon: overseerr.svg
@@ -476,7 +471,7 @@ data:
           description: Media requests
           widget:
             type: overseerr
-            url: https://overseerr.iacob.uk
+            url: http://overseerr.media.svc.cluster.local:5055
             key: ${HOMEPAGE_OVERSEERR_KEY}
       - qBittorrent:
           icon: qbittorrent.svg
@@ -484,7 +479,7 @@ data:
           description: Torrent client
           widget:
             type: qbittorrent
-            url: https://qbittorrent.iacob.uk
+            url: http://qbittorrent.media.svc.cluster.local:8080
             username: ${HOMEPAGE_QBT_USER}
             password: ${HOMEPAGE_QBT_PASS}
             enableLeechProgress: true
@@ -494,7 +489,7 @@ data:
           description: Usenet client
           widget:
             type: sabnzbd
-            url: https://sabnzbd.iacob.uk
+            url: http://sabnzbd.media.svc.cluster.local
             key: ${HOMEPAGE_SAB_KEY}
       - Calibre-Web:
           icon: calibre.svg
@@ -544,12 +539,10 @@ data:
           icon: mdi-television-play
           href: https://ersatztv.iacob.uk
           description: Fake live TV channels
-          siteMonitor: https://ersatztv.iacob.uk
       - Scrypted:
           icon: mdi-camera-wireless
           href: https://scrypted.iacob.uk
           description: Camera management hub
-          siteMonitor: https://scrypted.iacob.uk
     - AI:
       - Ollama:
           icon: ollama.svg
@@ -571,7 +564,6 @@ data:
           icon: mdi-robot-outline
           href: https://openclaw.iacob.uk
           description: AI agent platform
-          siteMonitor: https://openclaw.iacob.uk
     - Monitoring:
       - Grafana:
           icon: grafana.svg
@@ -585,16 +577,10 @@ data:
           icon: uptime-kuma.svg
           href: https://uptime.iacob.uk
           description: Uptime monitoring
-          siteMonitor: https://uptime.iacob.uk
-          widget:
-            type: uptimekuma
-            url: https://uptime.iacob.uk
-            slug: default
       - Scrutiny:
           icon: scrutiny.svg
           href: https://scrutiny.iacob.uk
           description: SMART disk monitoring
-          siteMonitor: https://scrutiny.iacob.uk
       - Plausible:
           icon: plausible.svg
           href: https://plausible.iacob.co.uk
