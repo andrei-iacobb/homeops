@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: lscr.io/linuxserver/code-server
-              tag: 4.116.0
+              tag: 4.117.0
             env:
               TZ: Europe/London
               PUID: "1000"
