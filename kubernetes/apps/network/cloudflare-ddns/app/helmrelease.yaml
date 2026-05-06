@@ -18,7 +18,8 @@ spec:
               repository: docker.io/favonia/cloudflare-ddns
               tag: 1.16.2
             env:
-              DOMAINS: "plex.iacob.co.uk,wg.iacob.co.uk"
+              # plex.iacob.co.uk is now fronted by the OCI VPS — keep it out of DDNS so home WAN IP isn't published
+              DOMAINS: "wg.iacob.co.uk"
               PROXIED: "false"
               IP6_PROVIDER: "none"
               UPDATE_CRON: "@every 5m"
