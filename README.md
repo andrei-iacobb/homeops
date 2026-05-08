@@ -51,32 +51,39 @@
 ## 🏗️ Architecture
 
 ```
-                          ┌──────────────┐
-            iacob.co.uk   │  Cloudflare  │
-       ┌─────────────────▶│    Tunnel    │──────────┐
-       │                  └──────────────┘          │
-       │                                            ▼
-   ┌───┴───┐                              ╔═══════════════════╗
-   │ User  │   iacob.uk · LAN / VPN       ║  envoy-external   ║
-   │       │─────────────────────────────▶║   192.168.1.8     ║
-   └───────┘                              ╚═══════════════════╝
-                                          ╔═══════════════════╗
-                                          ║  envoy-internal   ║
-                                          ║   192.168.1.7     ║
-                                          ╚═════════╤═════════╝
-                                                    │
-   ┌──────────┐    split DNS                        ▼
-   │ AdGuard  │ ─────────────────────▶ ┌─────────────────────────┐
-   │   DNS    │                        │   Talos · home-cluster  │
-   └──────────┘                        │   ~96 apps / 10 ns      │
-                                       └────────────┬────────────┘
-                                                    │ 10G NFS
-                                                    ▼
-                                          ┌──────────────────┐
-                                          │     TrueNAS      │
-                                          │  media · backups │
-                                          └──────────────────┘
+                                  ┌──────────────┐
+                    iacob.co.uk   │  Cloudflare  │
+              ┌─────────────────▶ │    Tunnel    │
+              │                   └──────┬───────┘
+              │                          │ public
+   ┌──────────┴──────────┐               ▼
+   │        User         │       ╔═══════════════════╗
+   │                     │       ║  envoy-external   ║
+   └──────────┬──────────┘       ║    192.168.1.8    ║
+              │                  ╚═════════╤═════════╝
+              │ iacob.uk                   │
+              │ LAN / VPN                  │
+              ▼                            │
+       ╔═══════════════════╗               │
+       ║  envoy-internal   ║               │
+       ║    192.168.1.7    ║               │
+       ╚═════════╤═════════╝               │
+                 │                         │
+                 └────────────┬────────────┘
+                              ▼
+                ┌─────────────────────────────┐
+                │    Talos · home-cluster     │
+                │     ~96 apps / 10 ns        │
+                └─────────────┬───────────────┘
+                              │ 10G NFS
+                              ▼
+                    ┌──────────────────────┐
+                    │       TrueNAS        │
+                    │   media · backups    │
+                    └──────────────────────┘
 ```
+
+> LAN clients resolve `*.iacob.uk` to `192.168.1.7` via AdGuard split DNS; public `*.iacob.co.uk` is served via Cloudflare Tunnel (no inbound ports open).
 
 ---
 
@@ -183,12 +190,7 @@ Network backbone: 1G LAN + dedicated **10G P2P** between K8s node and TrueNAS fo
 <details>
 <summary><b>📊 Monitoring · 10 apps</b> — metrics, logs, traces, status</summary>
 
-| Stack | Apps |
-|---|---|
-| **Metrics** | Prometheus · Grafana · Alloy · Graphite-Exporter · Exporters (TrueNAS, ProxmoxVE, AdGuard, iLO) |
-| **Logs** | Loki · Promtail |
-| **Status & Health** | Uptime-Kuma · Scrutiny (disk SMART) |
-| **Web Analytics** | Plausible |
+Prometheus · Grafana · Alloy · Loki · Promtail · Graphite-Exporter · Uptime-Kuma · Scrutiny · Plausible · Exporters (TrueNAS / ProxmoxVE / AdGuard / iLO)
 
 </details>
 
