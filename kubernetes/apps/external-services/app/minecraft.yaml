@@ -1,0 +1,49 @@
+---
+# Pelican Panel (Minecraft management) - HTTP backend on LXC 110 / DL360
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-panel
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: minecraft-panel
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: minecraft-panel
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: minecraft-panel
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 80
+endpoints:
+  - addresses:
+      - "192.168.1.40"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minecraft-panel
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - mc.iacob.uk
+  rules:
+    - backendRefs:
+        - name: minecraft-panel
+          port: 80
