@@ -20,7 +20,6 @@
 <br />
 
 **[📊 Dependency Dashboard](https://github.com/andrei-iacobb/homeops/issues?q=is%3Aissue+is%3Aopen+%22Renovate+Dashboard%22)** ·
-**[🏡 Internal Dashboard](https://home.iacob.uk)** ·
 **[🌍 Public Site](https://iacob.co.uk)**
 
 </div>
@@ -51,51 +50,32 @@
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart TB
-    subgraph internet["🌐 Internet"]
-        cf[Cloudflare<br/>Tunnel + DNS]
-    end
-
-    subgraph lan["🏠 LAN · 192.168.1.0/24"]
-        direction TB
-
-        subgraph proxmox["Proxmox Cluster"]
-            direction LR
-            dl360["DL360 Gen9<br/>48 vCPU · 252 GiB"]
-            dl380["DL380 Gen9<br/>40 vCPU · 157 GiB"]
-        end
-
-        subgraph k8s["Talos · home-cluster (single node)"]
-            direction TB
-            envoy_ext[Envoy External<br/>192.168.1.8]
-            envoy_int[Envoy Internal<br/>192.168.1.7]
-            apps[("96 apps across<br/>10 namespaces")]
-            envoy_ext --> apps
-            envoy_int --> apps
-        end
-
-        nas[(TrueNAS<br/>media · backups)]
-        ha[Home Assistant<br/>VM]
-        adguard[AdGuard Home<br/>DNS · ad-block]
-
-        proxmox --> k8s
-        proxmox --> nas
-        proxmox --> ha
-        k8s -- NFS · 10G P2P --- nas
-    end
-
-    user[👤 User] -. iacob.uk · LAN/VPN .-> envoy_int
-    cf -- iacob.co.uk .-> envoy_ext
-    user -. iacob.co.uk · public .-> cf
-    adguard -. split DNS .-> envoy_int
-
-    classDef ext fill:#f38020,stroke:#fff,color:#fff
-    classDef k fill:#326ce5,stroke:#fff,color:#fff
-    classDef storage fill:#0096d6,stroke:#fff,color:#fff
-    class cf ext
-    class envoy_ext,envoy_int,apps k
-    class nas storage
+```
+                          ┌──────────────┐
+            iacob.co.uk   │  Cloudflare  │
+       ┌─────────────────▶│    Tunnel    │──────────┐
+       │                  └──────────────┘          │
+       │                                            ▼
+   ┌───┴───┐                              ╔═══════════════════╗
+   │ User  │   iacob.uk · LAN / VPN       ║  envoy-external   ║
+   │       │─────────────────────────────▶║   192.168.1.8     ║
+   └───────┘                              ╚═══════════════════╝
+                                          ╔═══════════════════╗
+                                          ║  envoy-internal   ║
+                                          ║   192.168.1.7     ║
+                                          ╚═════════╤═════════╝
+                                                    │
+   ┌──────────┐    split DNS                        ▼
+   │ AdGuard  │ ─────────────────────▶ ┌─────────────────────────┐
+   │   DNS    │                        │   Talos · home-cluster  │
+   └──────────┘                        │   ~96 apps / 10 ns      │
+                                       └────────────┬────────────┘
+                                                    │ 10G NFS
+                                                    ▼
+                                          ┌──────────────────┐
+                                          │     TrueNAS      │
+                                          │  media · backups │
+                                          └──────────────────┘
 ```
 
 ---
@@ -237,24 +217,13 @@ Cilium · CoreDNS · Metrics-Server · Reloader · NFS-CSI (×2) · OpenEBS · V
 
 ## 🔄 GitOps Workflow
 
-```mermaid
-sequenceDiagram
-    participant Dev as 👤 me
-    participant GH as GitHub
-    participant Ren as 🤖 Renovate
-    participant Flux as Flux CD
-    participant K8s as ☸️ Cluster
-
-    Note over Ren,GH: Renovate opens PRs<br/>for new image/chart versions
-    Ren->>GH: PR · n8n 2.20.0 → 2.20.1
-    GH-->>GH: auto-merge<br/>(merge-commit strategy)
-    Dev->>GH: git push (manual changes)
-    loop every 1m
-        Flux->>GH: pull main
-    end
-    Flux->>K8s: reconcile<br/>HelmReleases / Kustomizations
-    K8s-->>Flux: status
-    Flux-->>GH: events
+```
+   ┌──────┐                          ┌──────────┐
+   │  me  │── git push ─────────────▶│          │
+   └──────┘                          │  GitHub  │── pull main ──▶  Flux CD ──▶  Cluster
+   ┌──────────┐                      │   main   │     (1m)
+   │ Renovate │── PR + auto-merge ──▶│          │
+   └──────────┘                      └──────────┘
 ```
 
 **Update strategy** — patch/minor container, helm, github-release, github-action, and mise updates auto-merge as standard merge commits. Major versions and critical infra (Talos, ClickHouse, Postgres, MariaDB, Redis, MinIO, Plex, Envoy, Cilium, cert-manager) are held for manual review via the [Dependency Dashboard](https://github.com/andrei-iacobb/homeops/issues?q=is%3Aissue+is%3Aopen+%22Renovate+Dashboard%22).
@@ -330,7 +299,7 @@ Built on the shoulders of the homelab community — primarily [`onedr0p/cluster-
 <div align="center">
 <br />
 
-**[home.iacob.uk](https://home.iacob.uk)** · internal · **[iacob.co.uk](https://iacob.co.uk)** · public
+**[iacob.co.uk](https://iacob.co.uk)**
 
 <sub>Reconciled by Flux. Updated by Renovate. Maintained by coffee. ☕</sub>
 
