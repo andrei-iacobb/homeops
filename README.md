@@ -2,7 +2,7 @@
 
 # 🏠 homeops
 
-**A single-node, GitOps-managed Kubernetes homelab — running on Talos, reconciled by Flux, and entirely declared in this repo.**
+**A single-node, GitOps-managed Kubernetes homelab - running on Talos, reconciled by Flux, and entirely declared in this repo.**
 
 <br />
 
@@ -95,7 +95,7 @@
 | **dl380** | HP ProLiant DL380 Gen9 | 40 vCPU | 157 GiB | Storage · TrueNAS, AdGuard secondary |
 | **Total** | | **88 vCPU** | **409 GiB** | |
 
-Network backbone: 1G LAN + dedicated **10G P2P** between K8s node and TrueNAS for NFS traffic.
+Network backbone: 2.5G LAN + dedicated **10G P2P** between K8s node and TrueNAS for NFS traffic.
 
 ---
 
@@ -143,52 +143,28 @@ Network backbone: 1G LAN + dedicated **10G P2P** between K8s node and TrueNAS fo
 > Inventory derived from [`kubernetes/apps/`](./kubernetes/apps). Click a section to expand.
 
 <details>
-<summary><b>🎬 Media · 30 apps</b> — *arr stack, streaming, transcoding, surveillance</summary>
+<summary><b>🎬 Media · 30 apps</b> - *arr stack, streaming, transcoding, surveillance</summary>
 
-| Category | Apps |
-|---|---|
-| **Streaming** | Plex · Jellyfin · ErsatzTV · Tautulli |
-| **Movies / TV** | Sonarr · Sonarr-LowQ · Radarr · Radarr-LowQ |
-| **Books / Audio** | Readarr · Lidarr · Lidify · Calibre-Web · LazyLibrarian |
-| **Indexers / Subs** | Prowlarr · Bazarr · FlareSolverr |
-| **Downloaders** | qBittorrent · SABnzbd |
-| **Requests / Discovery** | Overseerr · Recommendarr · Pulsarr · Wizarr |
-| **Tooling** | Tdarr · Recyclarr · Huntarr · Agregarr · Sharerr · Plexo |
-| **Surveillance / IoT** | Frigate · Scrypted · Ring-MQTT |
+Plex · Jellyfin · ErsatzTV · Tautulli · Sonarr · Sonarr-LowQ · Radarr · Radarr-LowQ · Readarr · Lidarr · Lidify · Calibre-Web · LazyLibrarian · Prowlarr · Bazarr · FlareSolverr · qBittorrent · SABnzbd · Overseerr · Recommendarr · Pulsarr · Wizarr · Tdarr · Recyclarr · Huntarr · Agregarr · Sharerr · Plexo · Frigate · Scrypted · Ring-MQTT
 
 </details>
 
 <details>
-<summary><b>🛠️ Default · 31 apps</b> — productivity, identity, utilities, hosted services</summary>
+<summary><b>🛠️ Default · 31 apps</b> - productivity, identity, utilities, hosted services</summary>
 
-| Category | Apps |
-|---|---|
-| **Identity & Auth** | Authentik · Vaultwarden |
-| **Files & Photos** | Immich · Paperless · FileBrowser · SFTPGo · Zipline |
-| **Knowledge** | Outline · Mealie · Vikunja |
-| **Dev & Code** | Gitea · code-server · IT-Tools · Stirling-PDF |
-| **Dashboards** | Homepage · Glance · Echo |
-| **Automation** | n8n |
-| **Finance & Home** | Actual-Budget · Wallos · Solis-Charge · NeatPlan |
-| **Network & Web** | Shlink · SearXNG · OpenSpeedTest · UniFi · Website |
-| **Hardware** | iLO4 Fan Controller · Informate · Replicarr |
+Authentik · Vaultwarden · Immich · Paperless · FileBrowser · SFTPGo · Zipline · Outline · Mealie · Vikunja · Gitea · code-server · IT-Tools · Stirling-PDF · Homepage · Glance · Echo · n8n · Actual-Budget · Wallos · Solis-Charge · NeatPlan · Shlink · SearXNG · OpenSpeedTest · UniFi · Website · iLO4 Fan Controller · Informate · Replicarr
 
 </details>
 
 <details>
-<summary><b>🤖 AI · 4 apps</b> — local inference & RAG</summary>
+<summary><b>🤖 AI · 4 apps</b> - local inference & RAG</summary>
 
-| App | Purpose |
-|---|---|
-| **Ollama** | Local LLM inference (CPU + GPU) |
-| **Open WebUI** | Chat-style UI for Ollama |
-| **AnythingLLM** | RAG over private documents |
-| **Arca** | Custom AI workflow |
+Ollama · Open WebUI · AnythingLLM · Arca
 
 </details>
 
 <details>
-<summary><b>📊 Monitoring · 10 apps</b> — metrics, logs, traces, status</summary>
+<summary><b>📊 Monitoring · 10 apps</b> - metrics, logs, traces, status</summary>
 
 Prometheus · Grafana · Alloy · Loki · Promtail · Graphite-Exporter · Uptime-Kuma · Scrutiny · Plausible · Exporters (TrueNAS / ProxmoxVE / AdGuard / iLO)
 
@@ -209,9 +185,9 @@ Envoy Gateway · Cloudflare Tunnel · Cloudflare DDNS · Cloudflare DNS · k8s_g
 </details>
 
 <details>
-<summary><b>⚙️ System</b> — kube-system, storage, cert-manager</summary>
+<summary><b>⚙️ System</b> - kube-system, storage, cert-manager</summary>
 
-Cilium · CoreDNS · Metrics-Server · Reloader · NFS-CSI (×2) · OpenEBS · VolSync · cert-manager
+Cilium · CoreDNS · Metrics-Server · Reloader · NFS-CSI (x2) · OpenEBS · VolSync · cert-manager
 
 </details>
 
@@ -228,7 +204,7 @@ Cilium · CoreDNS · Metrics-Server · Reloader · NFS-CSI (×2) · OpenEBS · V
    └──────────┘                      └──────────┘
 ```
 
-**Update strategy** — patch/minor container, helm, github-release, github-action, and mise updates auto-merge as standard merge commits. Major versions and critical infra (Talos, ClickHouse, Postgres, MariaDB, Redis, MinIO, Plex, Envoy, Cilium, cert-manager) are held for manual review via the [Dependency Dashboard](https://github.com/andrei-iacobb/homeops/issues?q=is%3Aissue+is%3Aopen+%22Renovate+Dashboard%22).
+**Update strategy** - patch/minor container, helm, github-release, github-action, and mise updates auto-merge as standard merge commits. Major versions and critical infra (Talos, ClickHouse, Postgres, MariaDB, Redis, MinIO, Plex, Envoy, Cilium, cert-manager) are held for manual review via the [Dependency Dashboard](https://github.com/andrei-iacobb/homeops/issues?q=is%3Aissue+is%3Aopen+%22Renovate+Dashboard%22).
 
 ---
 
@@ -242,7 +218,7 @@ homeops/
 │   │   ├── ai/  default/  databases/  media/  monitoring/
 │   │   ├── network/  storage/  cert-manager/  kube-system/
 │   │   └── external-services/   # things outside the cluster (HA, iLO, Minecraft)
-│   ├── components/       # reusable bits — volsync, sops, gatus probes
+│   ├── components/       # reusable bits - volsync, sops, gatus probes
 │   └── flux/             # Flux Kustomization graph + meta repos
 ├── talos/
 │   ├── talconfig.yaml    # talhelper input
@@ -252,7 +228,7 @@ homeops/
 └── .renovaterc.json5     # update policy
 ```
 
-Each app follows a consistent shape — `ks.yaml` (Flux Kustomization) + `app/` (HelmRelease, OCIRepository, optional HTTPRoute and SOPS secret). Most apps use [`bjw-s/app-template`](https://github.com/bjw-s-labs/helm-charts).
+Each app follows a consistent shape: `ks.yaml` (Flux Kustomization) + `app/` (HelmRelease, OCIRepository, optional HTTPRoute and SOPS secret). Most apps use [`bjw-s/app-template`](https://github.com/bjw-s-labs/helm-charts).
 
 ---
 
@@ -263,7 +239,7 @@ Each app follows a consistent shape — `ks.yaml` (Flux Kustomization) + `app/` 
 | `envoy-internal` | `192.168.1.7` | `*.iacob.uk` | LAN + WireGuard only |
 | `envoy-external` | `192.168.1.8` | `*.iacob.co.uk` | Public via Cloudflare Tunnel |
 
-Public services sit behind a Cloudflare Tunnel — no inbound ports, DDoS protection at the edge, optional Authentik in front of sensitive apps. Internal services resolve via AdGuard Home split DNS so `*.iacob.uk` points at the internal Envoy, even from outside via WireGuard.
+Public services sit behind a Cloudflare Tunnel: no inbound ports, DDoS protection at the edge, optional Authentik in front of sensitive apps. Internal services resolve via AdGuard Home split DNS so `*.iacob.uk` points at the internal Envoy, even from outside via WireGuard.
 
 ---
 
@@ -296,7 +272,7 @@ sops -e -i <file.sops.yaml>                       # encrypt in place
 
 ## 🙏 Credits
 
-Built on the shoulders of the homelab community — primarily [`onedr0p/cluster-template`](https://github.com/onedr0p/cluster-template), with patterns borrowed from [`onedr0p/home-ops`](https://github.com/onedr0p/home-ops), [`DavidIlie/home-cluster`](https://github.com/DavidIlie/home-cluster), and discoveries via [kubesearch.dev](https://kubesearch.dev).
+Built on the shoulders of the homelab community: primarily [`onedr0p/cluster-template`](https://github.com/onedr0p/cluster-template), with patterns borrowed from [`onedr0p/home-ops`](https://github.com/onedr0p/home-ops), [`DavidIlie/home-cluster`](https://github.com/DavidIlie/home-cluster), and discoveries via [kubesearch.dev](https://kubesearch.dev).
 
 <div align="center">
 <br />
