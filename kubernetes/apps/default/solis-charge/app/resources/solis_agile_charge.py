@@ -31,9 +31,21 @@ MAX_SLOTS = 3
 CHARGE_CURRENT = 50        # Amps - max for this inverter
 DISCHARGE_CURRENT = 50     # Amps
 
+# Max acceptable drift between inverter reported UTC time and real UTC.
+# Anything beyond this almost certainly means the SolisCloud station was
+# flipped to a local-time TZ (e.g. Europe/London with DST), in which case
+# slot writes would be offset and we MUST refuse to push.
+MAX_CLOCK_DRIFT_SECONDS = 30 * 60
+
 # Octopus Energy HACS entities.
 NEXT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_next_day_rates"
 CURRENT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_current_day_rates"
+
+# Inverter timestamp sensor - reports the inverter's own clock as a Unix
+# epoch in UTC. Used to detect SolisCloud TZ misconfiguration.
+INVERTER_TIMESTAMP_ENTITY = (
+    "sensor.solis_inverter_1031030229080043_solis_timestamp_measurements_received"
+)
 
 # Octoplus entities (may be absent if not enrolled - script tolerates this).
 OCTOPLUS_SAVING_EVENT = "event.octopus_energy_a_a2279b81_octoplus_saving_session_events"
@@ -255,6 +267,87 @@ def merge_windows(windows):
     return [m[2] for m in merged]
 
 
+# ---------- Sanity checks ----------
+
+def verify_inverter_clock():
+    """Abort if the inverter clock has drifted from real UTC.
+
+    The HACS solis integration writes raw HH:MM to the inverter with no TZ
+    conversion. We emit times in UTC on the assumption that the SolisCloud
+    station is also UTC+0. If someone flips the station to Europe/London
+    (which honours DST), every slot would be applied 1h late from late
+    March to late October. That mistake cost real money before this check
+    existed - hence the hard abort.
+    """
+    state = hass_get_optional(INVERTER_TIMESTAMP_ENTITY)
+    if not state:
+        print(f"WARN: inverter timestamp sensor missing ({INVERTER_TIMESTAMP_ENTITY}); "
+              f"skipping clock-drift check")
+        return
+    try:
+        inverter_epoch = float(state["state"])
+    except (KeyError, TypeError, ValueError):
+        print(f"WARN: inverter timestamp sensor unreadable; skipping clock-drift check")
+        return
+
+    real_epoch = datetime.now(timezone.utc).timestamp()
+    drift = real_epoch - inverter_epoch
+    inverter_dt = datetime.fromtimestamp(inverter_epoch, tz=timezone.utc)
+    print(f"Inverter clock check: inverter says {inverter_dt:%Y-%m-%d %H:%M:%S} UTC, "
+          f"drift {drift:+.0f}s from real UTC.")
+
+    if abs(drift) > MAX_CLOCK_DRIFT_SECONDS:
+        print(f"ABORTING: inverter clock drift {drift:+.0f}s exceeds "
+              f"{MAX_CLOCK_DRIFT_SECONDS}s. This usually means the SolisCloud "
+              f"station TZ was changed away from UTC+0. Fix the station setting "
+              f"before charging will resume.")
+        sys.exit(2)
+
+
+def _rate_at(rates, dt_utc):
+    """Return rate (£/kWh inc VAT) at a given UTC datetime, or None."""
+    for r in rates:
+        s = datetime.fromisoformat(r["start"])
+        e = datetime.fromisoformat(r["end"])
+        if s <= dt_utc < e:
+            return r["value_inc_vat"]
+    return None
+
+
+def verify_written_slots_are_cheap(charge_windows, rates):
+    """Round-trip check: each slot we're about to write, interpreted as a UTC
+    wall-clock on the same day as the window, must correspond to a cheap rate.
+
+    Catches the historical bug class: slot times written in BST but applied
+    as UTC, putting the actual charge into expensive rates. If the slot's
+    UTC HH:MM doesn't land in a cheap Octopus rate, we abort.
+
+    Free-electricity slots skip this check because their rates are
+    irrelevant (Octopus pays you to use power).
+    """
+    for w in charge_windows:
+        if "free" in (w.get("tag") or ""):
+            continue
+        start_dt = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
+        end_dt = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
+
+        # Sample the rate just inside start and just inside end.
+        probe_start = start_dt
+        probe_end = end_dt - timedelta(minutes=1)
+        for label, probe in (("start", probe_start), ("end-1min", probe_end)):
+            rate = _rate_at(rates, probe)
+            if rate is None:
+                # No rate data for that instant (e.g. far in past) - skip.
+                continue
+            if rate > MAX_RATE:
+                print(f"ABORTING: slot {w['start']} -> {w['end']} {label}-probe "
+                      f"@ {probe:%Y-%m-%d %H:%M UTC} has rate "
+                      f"{rate*100:.1f}p > {MAX_RATE*100:.0f}p cap. "
+                      f"Refusing to charge during expensive rates.")
+                return False
+    return True
+
+
 # ---------- Slot programming ----------
 
 def _utc_hhmm(iso_str):
@@ -365,6 +458,12 @@ def main():
           f"All slot times below are in UTC.")
     print()
 
+    # 0. Verify the inverter clock matches our UTC assumption before we
+    # touch any slot values. If the SolisCloud station was flipped to a
+    # DST-aware TZ, slot writes would silently be 1h offset.
+    verify_inverter_clock()
+    print()
+
     # 1. Free electricity (Power-ups) - top priority charge windows.
     free_sessions = get_free_electricity_sessions()
     if free_sessions:
@@ -431,6 +530,19 @@ def main():
         for s in saving_sessions
     ]
     discharge_windows = merge_windows(discharge_windows)[:MAX_SLOTS]
+
+    # 5.5. Round-trip check: confirm each charge window we're about to write
+    # actually lands in cheap rates after our UTC conversion. Catches any
+    # future TZ bug class before it hits the inverter.
+    if all_charge:
+        print("Round-trip rate check on UTC-converted windows...")
+        if not verify_written_slots_are_cheap(all_charge, rates):
+            print("Clearing all charge slots due to round-trip check failure.")
+            apply_schedule([], discharge_windows)
+            push_to_inverter()
+            sys.exit(3)
+        print("  PASSED")
+        print()
 
     # 6. Apply.
     print("Programming inverter:")
