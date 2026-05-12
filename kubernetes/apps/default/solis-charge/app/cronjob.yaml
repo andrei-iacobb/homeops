@@ -1,12 +1,20 @@
 ---
-# Runs daily at 23:30 to program Solis inverter charge slots based on Octopus Agile rates.
-# Only charges when electricity price <= 15p/kWh. Clears all slots if no cheap rates found.
+# Programs Solis inverter charge / discharge slots based on:
+#   - Octopus Agile rates (charge when <= 15p/kWh)
+#   - Octoplus Free Electricity / Power-ups (force-charge during)
+#   - Octoplus Saving Sessions (discharge during)
+#
+# Hourly cadence so Power-up / Saving Session announcements made during the
+# day are picked up without waiting for the nightly run.
+#
+# Times sent to the inverter are UTC because the SolisCloud station is
+# configured as UTC+0 and the HACS solis integration does not TZ-convert.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: solis-charge
 spec:
-  schedule: "30 23 * * *"
+  schedule: "5 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 5
