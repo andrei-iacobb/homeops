@@ -11,7 +11,9 @@ spec:
       APP: pgadmin
       APP_PVC: pgadmin
       VOLSYNC_SCHEDULE: "15 2 * * *"
-      MOVER_UID: "0"
+      # pgadmin 9.15.0 entrypoint chowns /var/lib/pgadmin to 5050:0;
+      # mover must match to read mode-0600 pgadmin4.db.
+      MOVER_UID: "5050"
       MOVER_GID: "0"
     substituteFrom:
       - name: cluster-secrets
