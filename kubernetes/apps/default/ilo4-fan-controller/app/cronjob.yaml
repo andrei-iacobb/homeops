@@ -1,0 +1,82 @@
+---
+# Periodically re-applies `fan t 7 off` on iLO to suppress the bogus
+# "08-HD Max" temperature sensor's PID contribution. The patched iLO 4
+# firmware accepts the disable, but a periodic internal task reloads
+# sensor config from NVRAM every ~5-10 min, re-enabling it. Without
+# this CronJob the fans wind up to 100% over ~30 min via PID integral.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ilo4-sensor-suppress
+spec:
+  schedule: "*/4 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 60
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: ghcr-pull-secret
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: suppress
+              image: ghcr.io/andrei-iacobb/ilo4-fan-controller:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  timeout 8 sshpass -p "$ILO_PASSWORD" ssh \
+                    -T \
+                    -o KexAlgorithms=diffie-hellman-group14-sha1 \
+                    -o HostKeyAlgorithms=ssh-rsa \
+                    -o Ciphers=aes128-cbc \
+                    -o StrictHostKeyChecking=no \
+                    -o ConnectTimeout=5 \
+                    -o PubkeyAuthentication=no \
+                    "$ILO_USERNAME@$ILO_HOST" 'fan t 7 off'
+                  # iLO mpSSH always exits non-zero; treat exit 124 (timeout)
+                  # and 255 (mpSSH disconnect) as success - the command itself
+                  # was delivered before the connection drop.
+                  rc=$?
+                  if [ $rc -eq 0 ] || [ $rc -eq 124 ] || [ $rc -eq 255 ]; then
+                    echo "fan t 7 off sent (rc=$rc)"
+                    exit 0
+                  fi
+                  echo "ssh failed rc=$rc" >&2
+                  exit $rc
+              env:
+                - name: ILO_HOST
+                  value: 192.168.1.175
+                - name: ILO_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: ilo4-fan-controller-secret
+                      key: ILO_USERNAME
+                - name: ILO_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ilo4-fan-controller-secret
+                      key: ILO_PASSWORD
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
