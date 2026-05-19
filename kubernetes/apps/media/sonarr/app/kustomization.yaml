@@ -9,3 +9,4 @@ resources:
   - ./httproute.yaml
   - ./secret.sops.yaml
   - ./pvc-media.yaml
+  - ./cronjob-rapid-rss.yaml

@@ -1,0 +1,45 @@
+---
+# Hammer Sonarr's RSS sync once per minute during the 8 AM BST hour on
+# Wednesdays - The Boys (and other weekly Amazon Prime shows) drop at
+# 07:00 UTC / 08:00 BST and the first viable NZBgeek upload lands
+# 16-32 min later. Default RSS interval is 15 min, so without this we
+# can miss the first usable release by up to a full cycle.
+#
+# Only runs once weekly during a 1-hour window, so the indexer load is
+# trivial (60 hits/week).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sonarr-rapid-rss
+spec:
+  schedule: "* 8 * * 3"
+  timeZone: Europe/London
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: trigger
+              image: curlimages/curl:8.10.1
+              env:
+                - name: SONARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: sonarr-secret
+                      key: SONARR_API_KEY
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 30 \
+                    -X POST "http://sonarr.media.svc.cluster.local:8989/api/v3/command" \
+                    -H "X-Api-Key: $SONARR_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d '{"name":"RssSync"}' \
+                    -o /dev/null \
+                    -w "RssSync triggered: HTTP %{http_code} in %{time_total}s\n"
