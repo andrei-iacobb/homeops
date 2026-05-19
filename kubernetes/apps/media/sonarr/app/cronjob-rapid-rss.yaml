@@ -1,12 +1,13 @@
 ---
-# Hammer Sonarr's RSS sync once per minute during the 8 AM BST hour on
-# Wednesdays - The Boys (and other weekly Amazon Prime shows) drop at
-# 07:00 UTC / 08:00 BST and the first viable NZBgeek upload lands
-# 16-32 min later. Default RSS interval is 15 min, so without this we
-# can miss the first usable release by up to a full cycle.
+# Every minute of the 8 AM BST hour on Wednesdays, ask Sonarr whether
+# anything that aired in the last ~36h is still missing and not yet in
+# the download queue. If yes -> trigger RssSync. If no -> exit cheaply.
 #
-# Only runs once weekly during a 1-hour window, so the indexer load is
-# trivial (60 hits/week).
+# Cuts Wed-morning Amazon Prime grab latency from up to 15 min (default
+# RSS cycle) to ~1 min, and stops hammering the indexer once Sonarr has
+# actually queued the episode. Cron still fires every minute (k8s has
+# no native "stop on success" for CronJob) but post-grab invocations
+# are sub-200ms no-ops.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -26,20 +27,58 @@ spec:
           restartPolicy: Never
           containers:
             - name: trigger
-              image: curlimages/curl:8.20.0
+              image: alpine:3.22
               env:
                 - name: SONARR_API_KEY
                   valueFrom:
                     secretKeyRef:
                       name: sonarr-secret
                       key: SONARR_API_KEY
-              command: ["sh", "-c"]
+                - name: SONARR_URL
+                  value: http://sonarr.media.svc.cluster.local:8989
+                # Window: episodes that aired in the last 36h (catches
+                # late-night drops) and not more than 1h in the future.
+                - name: WINDOW_PAST_SECONDS
+                  value: "129600"  # 36h
+                - name: WINDOW_FUTURE_SECONDS
+                  value: "3600"    # 1h
+              command: ["/bin/sh", "-c"]
               args:
                 - |
-                  curl -fsS --max-time 30 \
-                    -X POST "http://sonarr.media.svc.cluster.local:8989/api/v3/command" \
-                    -H "X-Api-Key: $SONARR_API_KEY" \
-                    -H "Content-Type: application/json" \
+                  set -eu
+                  apk add --no-cache --quiet curl jq >/dev/null
+
+                  AUTH="X-Api-Key: $SONARR_API_KEY"
+                  NOW=$(date -u +%s)
+                  LOW=$((NOW - WINDOW_PAST_SECONDS))
+                  HIGH=$((NOW + WINDOW_FUTURE_SECONDS))
+
+                  QUEUE_JSON=$(curl -fsS --max-time 10 -H "$AUTH" \
+                    "$SONARR_URL/api/v3/queue?pageSize=200&includeEpisode=true")
+
+                  NEED=$(curl -fsS --max-time 10 -H "$AUTH" \
+                    "$SONARR_URL/api/v3/wanted/missing?pageSize=100&sortKey=airDateUtc&sortDirection=descending&monitored=true" \
+                    | jq --argjson queue "$QUEUE_JSON" \
+                         --argjson low "$LOW" \
+                         --argjson high "$HIGH" '
+                        ($queue.records // [] | map(.episodeId) | unique) as $qids
+                        | [.records[]
+                           | select(.airDateUtc != null)
+                           | select(
+                               (.airDateUtc | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601) as $t
+                               | $t > $low and $t < $high
+                             )
+                           | select([.id] | inside($qids) | not)]
+                        | length')
+
+                  if [ "${NEED:-0}" -le 0 ]; then
+                    echo "[$(date -u +%H:%M:%SZ)] Nothing recently aired is missing and not in queue - skip"
+                    exit 0
+                  fi
+
+                  echo "[$(date -u +%H:%M:%SZ)] $NEED episode(s) need grabbing - triggering RssSync"
+                  curl -fsS --max-time 30 -H "$AUTH" -H "Content-Type: application/json" \
+                    -X POST "$SONARR_URL/api/v3/command" \
                     -d '{"name":"RssSync"}' \
                     -o /dev/null \
-                    -w "RssSync triggered: HTTP %{http_code} in %{time_total}s\n"
+                    -w "RssSync: HTTP %{http_code} in %{time_total}s\n"
