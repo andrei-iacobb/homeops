@@ -5,7 +5,7 @@ metadata:
   name: ilo-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1"
+    grafana_dashboard: '1'
 data:
   ilo.json: |
     {
@@ -36,8 +36,12 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "blue",
                     "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 30
                   },
                   {
                     "color": "yellow",
@@ -45,17 +49,43 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 70
+                    "value": 75
                   },
                   {
                     "color": "red",
-                    "value": 80
+                    "value": 85
                   }
                 ]
               },
-              "unit": "celsius"
+              "unit": "celsius",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -68,7 +98,9 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
@@ -82,7 +114,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "max by (host) (ilo_chassis_temperature_current{host=~\"$server\", name=~\".*CPU.*\"})",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "CPU Temperature",
@@ -138,9 +171,35 @@ data:
                   }
                 ]
               },
-              "unit": "celsius"
+              "unit": "celsius",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -151,7 +210,10 @@ data:
           "id": 2,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": [
+                "mean",
+                "max"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             },
@@ -209,9 +271,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -224,11 +312,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -238,7 +332,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "min by (host) (ilo_power_supply_healthy{host=~\"$server\"})",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Power Supply Status",
@@ -264,9 +359,35 @@ data:
                   }
                 ]
               },
-              "unit": "watt"
+              "unit": "watt",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -279,11 +400,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -293,7 +420,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "ilo_power_current_watt{host=~\"$server\"}",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Power Consumption",
@@ -335,9 +463,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -350,11 +504,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -364,7 +524,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "min by (host) (ilo_chassis_fan_healthy{host=~\"$server\"})",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Fan Status",
@@ -420,9 +581,35 @@ data:
                   }
                 ]
               },
-              "unit": "percent"
+              "unit": "percent",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -433,7 +620,10 @@ data:
           "id": 6,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": [
+                "mean",
+                "max"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             },
@@ -474,9 +664,35 @@ data:
                     "value": null
                   }
                 ]
-              }
+              },
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 6,
@@ -497,7 +713,8 @@ data:
               "expr": "ilo_system_info{host=~\"$server\"}",
               "format": "table",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "System Inventory",
@@ -567,9 +784,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 6,
@@ -590,7 +833,8 @@ data:
               "expr": "max by (host) (ilo_power_up{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "power_up"
+              "refId": "power_up",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -600,7 +844,8 @@ data:
               "expr": "min by (host) (ilo_power_supply_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "psu"
+              "refId": "psu",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -610,7 +855,8 @@ data:
               "expr": "min by (host) (ilo_chassis_fan_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "fans"
+              "refId": "fans",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -620,7 +866,8 @@ data:
               "expr": "min by (host) (ilo_chassis_temperature_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "temp"
+              "refId": "temp",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -630,7 +877,8 @@ data:
               "expr": "min by (host) (ilo_processor_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "cpu"
+              "refId": "cpu",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -640,7 +888,8 @@ data:
               "expr": "min by (host) (ilo_memory_dimm_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "memory"
+              "refId": "memory",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -650,7 +899,8 @@ data:
               "expr": "min by (host) (ilo_storage_disk_healthy{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "storage"
+              "refId": "storage",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Health Summary",
@@ -710,9 +960,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 6,
@@ -733,7 +1009,8 @@ data:
               "expr": "ilo_processor_count{host=~\"$server\"}",
               "format": "table",
               "instant": true,
-              "refId": "sockets"
+              "refId": "sockets",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -743,7 +1020,8 @@ data:
               "expr": "sum by (host) (ilo_processor_core_count{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "cores"
+              "refId": "cores",
+              "legendFormat": "{{host}}"
             },
             {
               "datasource": {
@@ -753,7 +1031,8 @@ data:
               "expr": "sum by (host) (ilo_processor_thread_count{host=~\"$server\"})",
               "format": "table",
               "instant": true,
-              "refId": "threads"
+              "refId": "threads",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "CPU Summary",
@@ -805,9 +1084,35 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "bytes",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -828,7 +1133,8 @@ data:
               "expr": "ilo_memory_dimm_byte{host=~\"$server\"}",
               "format": "table",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Memory DIMMs",
@@ -878,9 +1184,35 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "bytes",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -901,7 +1233,8 @@ data:
               "expr": "ilo_storage_disk_capacity_byte{host=~\"$server\"}",
               "format": "table",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Disk Inventory",
@@ -971,9 +1304,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.host}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -994,7 +1353,8 @@ data:
               "expr": "ilo_storage_disk_healthy{host=~\"$server\"}",
               "format": "table",
               "instant": true,
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}"
             }
           ],
           "title": "Disk Health",
@@ -1032,7 +1392,11 @@ data:
       "refresh": "30s",
       "schemaVersion": 38,
       "style": "dark",
-      "tags": ["ilo", "hp", "hardware"],
+      "tags": [
+        "ilo",
+        "hp",
+        "hardware"
+      ],
       "templating": {
         "list": [
           {

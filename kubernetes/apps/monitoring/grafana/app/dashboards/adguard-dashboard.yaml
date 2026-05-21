@@ -5,7 +5,7 @@ metadata:
   name: adguard-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1"
+    grafana_dashboard: '1'
 data:
   adguard.json: |
     {
@@ -36,14 +36,14 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
-                "lineInterpolation": "linear",
+                "lineInterpolation": "smooth",
                 "lineWidth": 1,
                 "pointSize": 5,
                 "scaleDistribution": {
@@ -69,9 +69,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -82,9 +108,13 @@ data:
           "id": 1,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
               "displayMode": "table",
-              "placement": "bottom"
+              "placement": "right"
             },
             "tooltip": {
               "mode": "multi"
@@ -97,7 +127,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "rate(adguard_num_dns_queries[5m])",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "DNS Queries Rate",
@@ -120,14 +151,14 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
-                "lineInterpolation": "linear",
+                "lineInterpolation": "smooth",
                 "lineWidth": 1,
                 "pointSize": 5,
                 "scaleDistribution": {
@@ -153,9 +184,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -166,9 +223,13 @@ data:
           "id": 2,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
               "displayMode": "table",
-              "placement": "bottom"
+              "placement": "right"
             },
             "tooltip": {
               "mode": "multi"
@@ -181,7 +242,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "rate(adguard_num_blocked_filtering[5m])",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "Blocked Queries Rate",
@@ -207,9 +269,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -222,11 +310,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -236,7 +330,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "adguard_num_dns_queries",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "Total DNS Queries",
@@ -262,9 +357,35 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "short",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -277,11 +398,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -291,7 +418,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "adguard_num_blocked_filtering",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "Total Blocked Queries",
@@ -317,9 +445,35 @@ data:
                   }
                 ]
               },
-              "unit": "percent"
+              "unit": "percent",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -332,11 +486,17 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "showThresholdMarkers": true,
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -346,7 +506,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "(adguard_num_blocked_filtering / adguard_num_dns_queries) * 100",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "Block Rate %",
@@ -369,14 +530,14 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
-                "lineInterpolation": "linear",
+                "lineInterpolation": "smooth",
                 "lineWidth": 1,
                 "pointSize": 5,
                 "scaleDistribution": {
@@ -402,9 +563,35 @@ data:
                   }
                 ]
               },
-              "unit": "Bps"
+              "unit": "Bps",
+              "displayName": "${__field.labels.hostname}"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.120"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 1"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.125"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "AdGuard 2"
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -415,9 +602,13 @@ data:
           "id": 6,
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
               "displayMode": "table",
-              "placement": "bottom"
+              "placement": "right"
             },
             "tooltip": {
               "mode": "multi"
@@ -430,7 +621,8 @@ data:
                 "uid": "prometheus"
               },
               "expr": "rate(adguard_num_dns_queries[5m])",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{hostname}}"
             }
           ],
           "title": "Upstream Response Rate",
@@ -440,7 +632,10 @@ data:
       "refresh": "30s",
       "schemaVersion": 38,
       "style": "dark",
-      "tags": ["adguard", "dns"],
+      "tags": [
+        "adguard",
+        "dns"
+      ],
       "templating": {
         "list": [
           {

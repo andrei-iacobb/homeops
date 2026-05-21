@@ -5,7 +5,7 @@ metadata:
   name: proxmox-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1"
+    grafana_dashboard: '1'
 data:
   proxmox.json: |
     {
@@ -654,7 +654,8 @@ data:
                   }
                 ]
               },
-              "unit": "percentunit"
+              "unit": "percentunit",
+              "displayName": "${__field.labels.id}"
             },
             "overrides": []
           },
@@ -722,7 +723,8 @@ data:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "displayName": "${__field.labels.id}"
             },
             "overrides": [
               {
@@ -948,7 +950,8 @@ data:
                   }
                 ]
               },
-              "unit": "percentunit"
+              "unit": "percentunit",
+              "displayName": "${__field.labels.id}"
             },
             "overrides": []
           },
@@ -1021,7 +1024,8 @@ data:
                   }
                 ]
               },
-              "unit": "bytes"
+              "unit": "bytes",
+              "displayName": "${__field.labels.id}"
             },
             "overrides": [
               {

@@ -5,7 +5,7 @@ metadata:
   name: truenas-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1"
+    grafana_dashboard: '1'
 data:
   truenas.json: |
     {
@@ -32,8 +32,14 @@ data:
               "mappings": [
                 {
                   "options": {
-                    "0": { "text": "DOWN", "color": "red" },
-                    "1": { "text": "UP", "color": "green" }
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
                   },
                   "type": "value"
                 }
@@ -41,15 +47,26 @@ data:
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "green", "value": 1 }
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
                 ]
               },
               "unit": "none"
             },
             "overrides": []
           },
-          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 0,
+            "y": 0
+          },
           "id": 1,
           "options": {
             "colorMode": "background",
@@ -57,14 +74,19 @@ data:
             "justifyMode": "center",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "textMode": "value"
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
               "expr": "max by (host) (truenas_replication_up)",
               "legendFormat": "TrueNAS API",
               "refId": "A"
@@ -90,22 +112,38 @@ data:
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "yellow", "value": 10 },
-                  { "color": "green", "value": 20 }
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10
+                  },
+                  {
+                    "color": "green",
+                    "value": 20
+                  }
                 ]
               },
               "unit": "percent"
             },
             "overrides": []
           },
-          "gridPos": { "h": 8, "w": 20, "x": 4, "y": 0 },
+          "gridPos": {
+            "h": 8,
+            "w": 20,
+            "x": 4,
+            "y": 0
+          },
           "id": 2,
           "options": {
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "showThresholdLabels": false,
@@ -113,7 +151,10 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
               "expr": "max by (pool) (truenas_pool_free_percent)",
               "legendFormat": "{{pool}}",
               "refId": "A"
@@ -139,42 +180,69 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "scheme",
-                "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "pointSize": 5,
-                "scaleDistribution": { "type": "linear" },
+                "scaleDistribution": {
+                  "type": "linear"
+                },
                 "showPoints": "never",
                 "spanNulls": false,
-                "stacking": { "group": "A", "mode": "none" },
-                "thresholdsStyle": { "mode": "off" }
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
               },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "green", "value": null }
+                  {
+                    "color": "green",
+                    "value": null
+                  }
                 ]
               },
               "unit": "percent"
             },
             "overrides": []
           },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
           "id": 3,
           "options": {
             "legend": {
-              "calcs": ["lastNotNull", "min"],
+              "calcs": [
+                "lastNotNull",
+                "min"
+              ],
               "displayMode": "table",
               "placement": "right"
             },
-            "tooltip": { "mode": "multi" }
+            "tooltip": {
+              "mode": "multi"
+            }
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
               "expr": "max by (pool) (truenas_pool_free_percent)",
               "legendFormat": "{{pool}}",
               "refId": "A"
@@ -191,49 +259,250 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "left",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false,
+                "inspect": false
               },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "green", "value": null }
+                  {
+                    "color": "transparent",
+                    "value": null
+                  }
                 ]
               },
               "unit": "decbytes"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Pool"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 110
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Used %"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 100
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "gradient",
+                      "valueDisplayMode": "text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 70
+                        },
+                        {
+                          "color": "orange",
+                          "value": 85
+                        },
+                        {
+                          "color": "red",
+                          "value": 95
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Used"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Total"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              }
+            ]
           },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 16
+          },
           "id": 4,
           "options": {
-            "displayMode": "gradient",
-            "minVizWidth": 0,
-            "minVizHeight": 10,
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "values": false,
-              "calcs": ["lastNotNull"],
+            "showHeader": true,
+            "cellHeight": "md",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
               "fields": ""
             },
-            "showUnfilled": true
+            "sortBy": [
+              {
+                "displayName": "Used %",
+                "desc": true
+              }
+            ]
           },
+          "pluginVersion": "11.0.0",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (pool) (truenas_pool_size_bytes)",
-              "legendFormat": "{{pool}} total",
-              "refId": "A"
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
+              "format": "table",
+              "instant": true,
+              "refId": "Used"
             },
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
-              "legendFormat": "{{pool}} used",
-              "refId": "B"
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (pool) (truenas_pool_size_bytes - truenas_pool_allocated_bytes)",
+              "format": "table",
+              "instant": true,
+              "refId": "Free"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (pool) (truenas_pool_size_bytes)",
+              "format": "table",
+              "instant": true,
+              "refId": "Total"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "100 * (max by (pool) (truenas_pool_allocated_bytes) / max by (pool) (truenas_pool_size_bytes))",
+              "format": "table",
+              "instant": true,
+              "refId": "UsedPct"
             }
           ],
-          "title": "Pool Size & Usage",
-          "type": "bargauge"
+          "transformations": [
+            {
+              "id": "joinByField",
+              "options": {
+                "byField": "pool",
+                "mode": "outer"
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time 1": true,
+                  "Time 2": true,
+                  "Time 3": true,
+                  "Time 4": true
+                },
+                "indexByName": {
+                  "pool": 0,
+                  "Value #Used": 1,
+                  "Value #Free": 2,
+                  "Value #Total": 3,
+                  "Value #UsedPct": 4
+                },
+                "renameByName": {
+                  "pool": "Pool",
+                  "Value #Used": "Used",
+                  "Value #Free": "Free",
+                  "Value #Total": "Total",
+                  "Value #UsedPct": "Used %"
+                }
+              }
+            }
+          ],
+          "title": "Pool Capacity",
+          "type": "table"
         },
         {
           "datasource": {
@@ -252,42 +521,68 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "scheme",
-                "hideFrom": { "tooltip": false, "viz": false, "legend": false },
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
                 "lineInterpolation": "smooth",
                 "lineWidth": 2,
                 "pointSize": 5,
-                "scaleDistribution": { "type": "linear" },
+                "scaleDistribution": {
+                  "type": "linear"
+                },
                 "showPoints": "never",
                 "spanNulls": false,
-                "stacking": { "group": "A", "mode": "none" },
-                "thresholdsStyle": { "mode": "off" }
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
               },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "green", "value": null }
+                  {
+                    "color": "green",
+                    "value": null
+                  }
                 ]
               },
               "unit": "decbytes"
             },
             "overrides": []
           },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 16
+          },
           "id": 5,
           "options": {
             "legend": {
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "displayMode": "table",
               "placement": "right"
             },
-            "tooltip": { "mode": "multi" }
+            "tooltip": {
+              "mode": "multi"
+            }
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
               "expr": "max by (pool) (truenas_pool_allocated_bytes)",
               "legendFormat": "{{pool}}",
               "refId": "A"
@@ -300,7 +595,10 @@ data:
       "refresh": "30s",
       "schemaVersion": 38,
       "style": "dark",
-      "tags": ["truenas", "storage"],
+      "tags": [
+        "truenas",
+        "storage"
+      ],
       "templating": {
         "list": []
       },
