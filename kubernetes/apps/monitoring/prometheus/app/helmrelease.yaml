@@ -117,6 +117,13 @@ spec:
         existingSecret: grafana-admin
         userKey: admin-user
         passwordKey: admin-password
+      env:
+        GF_SECURITY_ALLOW_EMBEDDING: "true"
+        GF_SECURITY_COOKIE_SAMESITE: "none"
+        GF_SECURITY_COOKIE_SECURE: "true"
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+        GF_AUTH_ANONYMOUS_HIDE_VERSION: "true"
       additionalDataSources:
         - name: Loki
           type: loki
