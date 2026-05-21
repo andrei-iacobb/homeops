@@ -1,0 +1,279 @@
+# Home Assistant Lovelace dashboard - Homeops Monitoring
+#
+# How to install:
+#   1. Open Home Assistant (http://192.168.1.90:8123)
+#   2. Settings -> Dashboards -> Add Dashboard -> "New dashboard from scratch"
+#      Title: Homelab Monitoring, Icon: mdi:server, URL slug: homelab
+#   3. Open the new dashboard, click the three dots top-right -> Edit dashboard
+#   4. Click three dots again -> Raw configuration editor
+#   5. Paste this entire YAML, click Save
+#
+# Each card iframes a single Grafana panel from grafana.iacob.uk.
+# Grafana is configured with anonymous Viewer access + allow_embedding=true so
+# nothing logs in.
+
+title: Homelab Monitoring
+views:
+  # ============================================================ OVERVIEW
+  - title: Overview
+    icon: mdi:view-dashboard
+    path: overview
+    type: sections
+    max_columns: 4
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Status
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=1&theme=dark&refresh=30s
+            title: TrueNAS API
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=1&theme=dark&refresh=30s
+            title: iLO Hardware
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=12&theme=dark&refresh=30s
+            title: AdGuard Block Rate
+            aspect_ratio: '100%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Workload
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=30&theme=dark&refresh=30s
+            title: Running VMs
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=31&theme=dark&refresh=30s
+            title: Running LXCs
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=32&theme=dark&refresh=30s
+            title: Cluster CPU
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=33&theme=dark&refresh=30s
+            title: Cluster Memory
+            aspect_ratio: '100%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: AdGuard KPIs
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=10&theme=dark&refresh=30s
+            title: DNS Queries
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=11&theme=dark&refresh=30s
+            title: Blocked Queries
+            aspect_ratio: '100%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=13&theme=dark&refresh=30s
+            title: Avg Response Time
+            aspect_ratio: '100%'
+
+  # ============================================================ STORAGE
+  - title: Storage
+    icon: mdi:harddisk
+    path: storage
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: TrueNAS Pools
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=2&theme=dark&refresh=30s
+            title: Pool Free Space
+            aspect_ratio: '55%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=4&theme=dark&refresh=30s
+            title: Pool Capacity
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=3&theme=dark&refresh=30s
+            title: Pool Free Space % Over Time
+            aspect_ratio: '50%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Proxmox Storage
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=39&theme=dark&refresh=30s
+            title: Proxmox Storage Pools
+            aspect_ratio: '50%'
+          - type: heading
+            heading: Server Disks
+            heading_style: subtitle
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=7&theme=dark&refresh=30s
+            title: iLO Storage Disks
+            aspect_ratio: '60%'
+
+  # ============================================================ SERVERS (iLO)
+  - title: Servers
+    icon: mdi:server-network
+    path: servers
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Temperature & Health
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=2&theme=dark&refresh=30s
+            title: CPU Temperature
+            aspect_ratio: '55%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=3&theme=dark&refresh=30s
+            title: Temperature Over Time
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=6&theme=dark&refresh=30s
+            title: Hardware Health Timeline
+            aspect_ratio: '50%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Power
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=4&theme=dark&refresh=30s
+            title: Power Draw (W)
+            aspect_ratio: '55%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=5&theme=dark&refresh=30s
+            title: Power Consumption Over Time
+            aspect_ratio: '50%'
+
+  # ============================================================ DNS (AdGuard)
+  - title: DNS
+    icon: mdi:dns
+    path: dns
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Query Volume
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=14&theme=dark&refresh=30s
+            title: DNS Query Rate
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=15&theme=dark&refresh=30s
+            title: Blocked Queries Rate
+            aspect_ratio: '50%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Per-Instance & Top Domains
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=16&theme=dark&refresh=30s
+            title: Instance Summary
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=17&theme=dark&refresh=30s
+            title: Top Blocked Domains
+            aspect_ratio: '70%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=18&theme=dark&refresh=30s
+            title: Top Queried Domains
+            aspect_ratio: '70%'
+
+  # ============================================================ CLUSTER (Proxmox)
+  - title: Cluster
+    icon: mdi:hexagon-multiple
+    path: cluster
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Node Utilization
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=34&theme=dark&refresh=30s
+            title: Node CPU Usage
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=35&theme=dark&refresh=30s
+            title: Node Memory Usage
+            aspect_ratio: '50%'
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Guests
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=36&theme=dark&refresh=30s
+            title: Guests
+            aspect_ratio: '60%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=37&theme=dark&refresh=30s
+            title: Guest Network RX
+            aspect_ratio: '50%'
+          - type: iframe
+            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=38&theme=dark&refresh=30s
+            title: Guest Network TX
+            aspect_ratio: '50%'
+
+  # ============================================================ FULL DASHBOARDS (deep dive)
+  - title: Full Grafana
+    icon: mdi:chart-box-multiple
+    path: full
+    type: sections
+    max_columns: 1
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: TrueNAS (full)
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d/truenas/truenas-monitoring?orgId=1&kiosk=tv&theme=dark&refresh=30s
+            aspect_ratio: '40%'
+      - type: grid
+        cards:
+          - type: heading
+            heading: HP iLO (full)
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d/ilo/hp-ilo-monitoring?orgId=1&kiosk=tv&theme=dark&refresh=30s
+            aspect_ratio: '60%'
+      - type: grid
+        cards:
+          - type: heading
+            heading: AdGuard (full)
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d/adguard/adguard-home-monitoring?orgId=1&kiosk=tv&theme=dark&refresh=30s
+            aspect_ratio: '70%'
+      - type: grid
+        cards:
+          - type: heading
+            heading: Proxmox (full)
+            heading_style: title
+          - type: iframe
+            url: https://grafana.iacob.uk/d/proxmox/proxmox-cluster?orgId=1&kiosk=tv&theme=dark&refresh=30s
+            aspect_ratio: '60%'
