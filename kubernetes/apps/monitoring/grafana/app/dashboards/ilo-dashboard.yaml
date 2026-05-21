@@ -14,348 +14,268 @@ data:
       },
       "editable": true,
       "fiscalYearStartMonth": 0,
-      "graphTooltip": 0,
+      "graphTooltip": 1,
       "id": null,
       "links": [],
       "liveNow": false,
       "panels": [
         {
+          "id": 20,
+          "title": "Power Status",
+          "type": "stat",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 5
           },
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
-              "max": 100,
-              "min": 0,
+              "decimals": 0,
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "FAIL",
+                      "color": "red",
+                      "index": 1
+                    },
+                    "1": {
+                      "text": "OK",
+                      "color": "green",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "red",
                     "value": null
                   },
                   {
                     "color": "green",
-                    "value": 30
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "none",
+              "displayName": "${__field.labels.host}"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "colorMode": "background_solid",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_power_supply_healthy)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 21,
+          "title": "Cooling",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 6,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0,
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "FAIL",
+                      "color": "red",
+                      "index": 1
+                    },
+                    "1": {
+                      "text": "OK",
+                      "color": "green",
+                      "index": 0
+                    }
+                  }
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "none",
+              "displayName": "${__field.labels.host}"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "colorMode": "background_solid",
+            "graphMode": "none",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_chassis_fan_healthy)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 22,
+          "title": "Power Draw",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 0,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "yellow",
-                    "value": 60
+                    "value": 300
                   },
                   {
                     "color": "orange",
-                    "value": 75
+                    "value": 500
                   },
                   {
                     "color": "red",
-                    "value": 85
-                  }
-                ]
-              },
-              "unit": "celsius",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "max by (host) (ilo_chassis_temperature_current{host=~\"$server\", name=~\".*CPU.*\"})",
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "CPU Temperature",
-          "type": "gauge"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "celsius",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 2,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max"
-              ],
-              "displayMode": "table",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "multi"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "max by (host) (ilo_chassis_temperature_current{host=~\"$server\", name=~\".*CPU.*\"})",
-              "legendFormat": "{{host}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Temperature Over Time",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 1,
-                      "text": "Failed"
-                    },
-                    "1": {
-                      "color": "green",
-                      "index": 0,
-                      "text": "OK"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 0,
-            "y": 8
-          },
-          "id": 3,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "background",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "min by (host) (ilo_power_supply_healthy{host=~\"$server\"})",
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "Power Supply Status",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
+                    "value": 700
                   }
                 ]
               },
@@ -389,81 +309,82 @@ data:
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 8,
-            "y": 8
-          },
-          "id": 4,
           "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
             "orientation": "auto",
+            "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "values": false,
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": ""
+              "fields": "",
+              "values": false
             },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "background",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "11.0.0",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "ilo_power_current_watt{host=~\"$server\"}",
-              "refId": "A",
-              "legendFormat": "{{host}}"
+              "expr": "ilo_power_current_watt",
+              "refId": "A"
             }
-          ],
-          "title": "Power Consumption",
-          "type": "stat"
+          ]
         },
         {
+          "id": 23,
+          "title": "Peak CPU Temp",
+          "type": "stat",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 18,
+            "y": 0,
+            "w": 6,
+            "h": 5
           },
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 1,
-                      "text": "Failed"
-                    },
-                    "1": {
-                      "color": "green",
-                      "index": 0,
-                      "text": "OK"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
+              "decimals": 0,
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "blue",
                     "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 25
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 55
+                  },
+                  {
+                    "color": "orange",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
                   }
                 ]
               },
-              "unit": "short",
+              "unit": "celsius",
               "displayName": "${__field.labels.host}"
             },
             "overrides": [
@@ -493,48 +414,152 @@ data:
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 8
-          },
-          "id": 5,
           "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
             "orientation": "auto",
+            "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "values": false,
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": ""
+              "fields": "",
+              "values": false
             },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "background",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "11.0.0",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_chassis_fan_healthy{host=~\"$server\"})",
-              "refId": "A",
-              "legendFormat": "{{host}}"
+              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"})",
+              "refId": "A"
             }
-          ],
-          "title": "Fan Status",
-          "type": "stat"
+          ]
         },
         {
+          "id": 24,
+          "title": "CPU Temperature",
+          "type": "gauge",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 9
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 1,
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 25
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 55
+                  },
+                  {
+                    "color": "orange",
+                    "value": 70
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "celsius",
+              "displayName": "${__field.labels.host}"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "minVizHeight": 75,
+            "minVizWidth": 75
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"})",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 25,
+          "title": "Temperature Over Time",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 12,
+            "h": 9
           },
           "fieldConfig": {
             "defaults": {
@@ -542,20 +567,260 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
+                "fillOpacity": 15,
+                "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
-                "lineInterpolation": "linear",
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "celsius"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"})",
+              "refId": "A",
+              "legendFormat": "{{host}}"
+            }
+          ],
+          "pluginVersion": "11.0.0"
+        },
+        {
+          "id": 26,
+          "title": "Power Consumption Over Time",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 14,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "watt"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.175"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL360"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "192.168.1.180"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "DL380"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "calcs": [
+                "lastNotNull",
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "ilo_power_current_watt",
+              "refId": "A",
+              "legendFormat": "{{host}}"
+            }
+          ],
+          "pluginVersion": "11.0.0"
+        },
+        {
+          "id": 27,
+          "title": "Fan Speed % Over Time",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 14,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 8,
+                "gradientMode": "opacity",
+                "hideFrom": {
+                  "tooltip": false,
+                  "viz": false,
+                  "legend": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "smooth",
                 "lineWidth": 1,
                 "pointSize": 5,
                 "scaleDistribution": {
@@ -576,59 +841,60 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "blue",
                     "value": null
                   }
                 ]
               },
-              "unit": "percent",
-              "displayName": "${__field.labels.host}"
+              "unit": "percent"
             },
             "overrides": [
               {
                 "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
+                  "id": "byRegexp",
+                  "options": "/^192\\.168\\.1\\.175/"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL360"
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "blue"
+                    }
                   }
                 ]
               },
               {
                 "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
+                  "id": "byRegexp",
+                  "options": "/^192\\.168\\.1\\.180/"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL380"
+                    "id": "color",
+                    "value": {
+                      "mode": "fixed",
+                      "fixedColor": "orange"
+                    }
                   }
                 ]
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 16
-          },
-          "id": 6,
           "options": {
             "legend": {
               "calcs": [
+                "lastNotNull",
                 "mean",
                 "max"
               ],
               "displayMode": "table",
-              "placement": "bottom"
+              "placement": "right",
+              "showLegend": true
             },
             "tooltip": {
-              "mode": "multi"
+              "mode": "multi",
+              "sort": "desc"
             }
           },
           "targets": [
@@ -637,273 +903,544 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "ilo_chassis_fan_current_percent{host=~\"$server\"}",
-              "legendFormat": "{{host}} {{name}}",
-              "refId": "A"
+              "expr": "ilo_chassis_fan_current_percent",
+              "refId": "A",
+              "legendFormat": "{{host}} {{name}}"
             }
           ],
-          "title": "Fan Speed (%)",
-          "type": "timeseries"
+          "pluginVersion": "11.0.0"
         },
         {
+          "id": 28,
+          "title": "Server Health Summary",
+          "type": "table",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 24,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": true,
+                "inspect": false
               },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "transparent",
                     "value": null
                   }
                 ]
-              },
-              "displayName": "${__field.labels.host}"
+              }
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.175"
+                  "options": "Power"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 24
-          },
-          "id": 7,
-          "options": {
-            "showHeader": true
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "ilo_system_info{host=~\"$server\"}",
-              "format": "table",
-              "instant": true,
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "System Inventory",
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true,
-                  "container": true,
-                  "endpoint": true,
-                  "instance": true,
-                  "job": true,
-                  "namespace": true,
-                  "pod": true,
-                  "service": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "bios_version": "BIOS",
-                  "host": "iLO IP",
-                  "host_name": "Host",
-                  "model": "Model",
-                  "serial": "Serial",
-                  "sku": "SKU",
-                  "uuid": "UUID"
-                }
-              }
-            }
-          ],
-          "type": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 1,
-                      "text": "Failed"
-                    },
-                    "1": {
-                      "color": "green",
-                      "index": 0,
-                      "text": "OK"
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
                     }
                   },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
                   }
                 ]
               },
-              "unit": "short",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.175"
+                  "options": "Cooling"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL360"
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
                   }
                 ]
               },
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.180"
+                  "options": "CPU"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL380"
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Memory"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Storage"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Temp"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Server"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "192.168.1.175": {
+                            "text": "DL360",
+                            "index": 0
+                          },
+                          "192.168.1.180": {
+                            "text": "DL380",
+                            "index": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "CPUs"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Cores"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Threads"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
                   }
                 ]
               }
             ]
           },
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 30
-          },
-          "id": 8,
           "options": {
-            "showHeader": true
+            "cellHeight": "md",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
           },
+          "pluginVersion": "11.0.0",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (host) (ilo_power_up{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_power_supply_healthy)",
+              "refId": "Power",
               "instant": true,
-              "refId": "power_up",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_power_supply_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_chassis_fan_healthy)",
+              "refId": "Cooling",
               "instant": true,
-              "refId": "psu",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_chassis_fan_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_processor_healthy)",
+              "refId": "CPU",
               "instant": true,
-              "refId": "fans",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_chassis_temperature_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_memory_dimm_healthy)",
+              "refId": "Memory",
               "instant": true,
-              "refId": "temp",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_processor_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_storage_disk_healthy)",
+              "refId": "Storage",
               "instant": true,
-              "refId": "cpu",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_memory_dimm_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "min by (host) (ilo_chassis_temperature_healthy)",
+              "refId": "Temp",
               "instant": true,
-              "refId": "memory",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "min by (host) (ilo_storage_disk_healthy{host=~\"$server\"})",
-              "format": "table",
+              "expr": "max by (host) (ilo_processor_count)",
+              "refId": "CPUs",
               "instant": true,
-              "refId": "storage",
-              "legendFormat": "{{host}}"
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (host) (ilo_processor_core_count)",
+              "refId": "Cores",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (host) (ilo_processor_thread_count)",
+              "refId": "Threads",
+              "instant": true,
+              "format": "table"
             }
           ],
-          "title": "Health Summary",
           "transformations": [
             {
               "id": "joinByField",
@@ -922,125 +1459,317 @@ data:
                   "Time 4": true,
                   "Time 5": true,
                   "Time 6": true,
-                  "Time 7": true
+                  "Time 7": true,
+                  "Time 8": true,
+                  "Time 9": true,
+                  "Time 10": true
                 },
-                "indexByName": {},
+                "indexByName": {
+                  "host": 0,
+                  "Value #Power": 1,
+                  "Value #Cooling": 2,
+                  "Value #Temp": 3,
+                  "Value #CPU": 4,
+                  "Value #Memory": 5,
+                  "Value #Storage": 6,
+                  "Value #CPUs": 7,
+                  "Value #Cores": 8,
+                  "Value #Threads": 9
+                },
                 "renameByName": {
-                  "Value #cpu": "CPU",
-                  "Value #fans": "Fans",
-                  "Value #memory": "Memory",
-                  "Value #power_up": "Power",
-                  "Value #psu": "PSU",
-                  "Value #storage": "Storage",
-                  "Value #temp": "Temp",
-                  "host": "iLO IP"
+                  "host": "Server",
+                  "Value #Power": "Power",
+                  "Value #Cooling": "Cooling",
+                  "Value #Temp": "Temp",
+                  "Value #CPU": "CPU",
+                  "Value #Memory": "Memory",
+                  "Value #Storage": "Storage",
+                  "Value #CPUs": "CPUs",
+                  "Value #Cores": "Cores",
+                  "Value #Threads": "Threads"
                 }
               }
             }
-          ],
-          "type": "table"
+          ]
         },
         {
+          "id": 29,
+          "title": "Storage Disks",
+          "type": "table",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 30,
+            "w": 24,
+            "h": 12
           },
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
               },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": true,
+                "inspect": false
+              },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "transparent",
                     "value": null
                   }
                 ]
-              },
-              "unit": "short",
-              "displayName": "${__field.labels.host}"
+              }
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.175"
+                  "options": "Server"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL360"
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "192.168.1.175": {
+                            "text": "DL360",
+                            "index": 0
+                          },
+                          "192.168.1.180": {
+                            "text": "DL380",
+                            "index": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 80
                   }
                 ]
               },
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.180"
+                  "options": "Capacity"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "DL380"
+                    "id": "unit",
+                    "value": "decbytes"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Endurance Used"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 100
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "gradient",
+                      "valueDisplayMode": "text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 50
+                        },
+                        {
+                          "color": "orange",
+                          "value": 75
+                        },
+                        {
+                          "color": "red",
+                          "value": 90
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Health"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "FAIL",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Disk"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 90
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Bay"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
                   }
                 ]
               }
             ]
           },
-          "gridPos": {
-            "h": 6,
-            "w": 24,
-            "x": 0,
-            "y": 36
-          },
-          "id": 9,
           "options": {
-            "showHeader": true
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Server",
+                "desc": false
+              },
+              {
+                "displayName": "Bay",
+                "desc": false
+              }
+            ]
           },
+          "pluginVersion": "11.0.0",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "ilo_processor_count{host=~\"$server\"}",
-              "format": "table",
+              "expr": "ilo_storage_disk_capacity_byte",
+              "refId": "Capacity",
               "instant": true,
-              "refId": "sockets",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (host) (ilo_processor_core_count{host=~\"$server\"})",
-              "format": "table",
+              "expr": "ilo_storage_disk_healthy",
+              "refId": "Health",
               "instant": true,
-              "refId": "cores",
-              "legendFormat": "{{host}}"
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (host) (ilo_processor_thread_count{host=~\"$server\"})",
-              "format": "table",
+              "expr": "ilo_storage_disk_endurance_utilization_percent",
+              "refId": "Endurance",
               "instant": true,
-              "refId": "threads",
-              "legendFormat": "{{host}}"
+              "format": "table"
             }
           ],
-          "title": "CPU Summary",
           "transformations": [
             {
               "id": "joinByField",
               "options": {
-                "byField": "host",
+                "byField": "name",
                 "mode": "outer"
               }
             },
@@ -1050,391 +1779,68 @@ data:
                 "excludeByName": {
                   "Time 1": true,
                   "Time 2": true,
-                  "Time 3": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "Value #cores": "Cores",
-                  "Value #sockets": "Sockets",
-                  "Value #threads": "Threads",
-                  "host": "iLO IP"
-                }
-              }
-            }
-          ],
-          "type": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 42
-          },
-          "id": 10,
-          "options": {
-            "showHeader": true
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "ilo_memory_dimm_byte{host=~\"$server\"}",
-              "format": "table",
-              "instant": true,
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "Memory DIMMs",
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true,
+                  "Time 3": true,
                   "container": true,
                   "endpoint": true,
                   "instance": true,
                   "job": true,
                   "namespace": true,
                   "pod": true,
-                  "service": true
+                  "service": true,
+                  "model": true,
+                  "host 2": true,
+                  "host 3": true,
+                  "location 2": true,
+                  "location 3": true,
+                  "serial 2": true,
+                  "serial 3": true,
+                  "type 2": true,
+                  "type 3": true
                 },
-                "indexByName": {},
+                "indexByName": {
+                  "name": 0,
+                  "host 1": 1,
+                  "location 1": 2,
+                  "model 1": 3,
+                  "serial 1": 4,
+                  "type 1": 5,
+                  "Value #Capacity": 6,
+                  "Value #Endurance": 7,
+                  "Value #Health": 8
+                },
                 "renameByName": {
-                  "Value": "Capacity",
-                  "host": "iLO IP",
-                  "name": "DIMM"
+                  "name": "Disk",
+                  "host 1": "Server",
+                  "location 1": "Bay",
+                  "model 1": "Model",
+                  "serial 1": "Serial",
+                  "type 1": "Type",
+                  "Value #Capacity": "Capacity",
+                  "Value #Endurance": "Endurance Used",
+                  "Value #Health": "Health"
                 }
               }
             }
-          ],
-          "type": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "bytes",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 50
-          },
-          "id": 11,
-          "options": {
-            "showHeader": true
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "ilo_storage_disk_capacity_byte{host=~\"$server\"}",
-              "format": "table",
-              "instant": true,
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "Disk Inventory",
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true,
-                  "container": true,
-                  "endpoint": true,
-                  "instance": true,
-                  "job": true,
-                  "name": true,
-                  "namespace": true,
-                  "pod": true,
-                  "service": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "Value": "Capacity",
-                  "host": "iLO IP",
-                  "location": "Bay",
-                  "media_type": "Media",
-                  "model": "Model",
-                  "serial_number": "Serial"
-                }
-              }
-            }
-          ],
-          "type": "table"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "color": "red",
-                      "index": 1,
-                      "text": "Failed"
-                    },
-                    "1": {
-                      "color": "green",
-                      "index": 0,
-                      "text": "OK"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short",
-              "displayName": "${__field.labels.host}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.175"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL360"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.180"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "DL380"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 58
-          },
-          "id": 12,
-          "options": {
-            "showHeader": true
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "ilo_storage_disk_healthy{host=~\"$server\"}",
-              "format": "table",
-              "instant": true,
-              "refId": "A",
-              "legendFormat": "{{host}}"
-            }
-          ],
-          "title": "Disk Health",
-          "transformations": [
-            {
-              "id": "organize",
-              "options": {
-                "excludeByName": {
-                  "Time": true,
-                  "__name__": true,
-                  "container": true,
-                  "endpoint": true,
-                  "instance": true,
-                  "job": true,
-                  "name": true,
-                  "namespace": true,
-                  "pod": true,
-                  "service": true
-                },
-                "indexByName": {},
-                "renameByName": {
-                  "Value": "Health",
-                  "host": "iLO IP",
-                  "location": "Bay",
-                  "media_type": "Media",
-                  "model": "Model",
-                  "serial_number": "Serial"
-                }
-              }
-            }
-          ],
-          "type": "table"
+          ]
         }
       ],
       "refresh": "30s",
-      "schemaVersion": 38,
+      "schemaVersion": 39,
       "style": "dark",
       "tags": [
         "ilo",
-        "hp",
+        "hpe",
         "hardware"
       ],
       "templating": {
-        "list": [
-          {
-            "current": {
-              "selected": false,
-              "text": "All",
-              "value": "$__all"
-            },
-            "datasource": {
-              "type": "prometheus",
-              "uid": "prometheus"
-            },
-            "definition": "query_result(ilo_system_info)",
-            "hide": 0,
-            "includeAll": true,
-            "allValue": ".*",
-            "label": "Server",
-            "multi": true,
-            "name": "server",
-            "options": [],
-            "query": {
-              "query": "query_result(ilo_system_info)",
-              "refId": "StandardVariableQuery"
-            },
-            "refresh": 1,
-            "regex": "host=\"(?P<value>[^\"]+)\".*host_name=\"(?P<text>[^\"]+)\"",
-            "skipUrlSync": false,
-            "sort": 0,
-            "type": "query"
-          }
-        ]
+        "list": []
       },
       "time": {
         "from": "now-6h",
         "to": "now"
       },
       "timepicker": {},
-      "timezone": "",
+      "timezone": "browser",
       "title": "HP iLO Monitoring",
       "uid": "ilo",
       "version": 1,

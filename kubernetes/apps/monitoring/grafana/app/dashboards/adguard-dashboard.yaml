@@ -14,15 +14,299 @@ data:
       },
       "editable": true,
       "fiscalYearStartMonth": 0,
-      "graphTooltip": 0,
+      "graphTooltip": 1,
       "id": null,
       "links": [],
       "liveNow": false,
       "panels": [
         {
+          "id": 10,
+          "title": "DNS Queries",
+          "type": "stat",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 1,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": true,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(adguard_num_dns_queries)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "title": "Blocked Queries",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 6,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 1,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": true,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(adguard_num_blocked_filtering)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "title": "Block Rate",
+          "type": "gauge",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 1,
+              "mappings": [],
+              "max": 50,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 30
+                  },
+                  {
+                    "color": "orange",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 75
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "minVizHeight": 75,
+            "minVizWidth": 75
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "100 * sum(adguard_num_blocked_filtering) / sum(adguard_num_dns_queries)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 13,
+          "title": "Avg Response Time",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 18,
+            "y": 0,
+            "w": 6,
+            "h": 5
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "decimals": 2,
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 30
+                  },
+                  {
+                    "color": "orange",
+                    "value": 100
+                  },
+                  {
+                    "color": "red",
+                    "value": 250
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "value_and_name",
+            "wideLayout": true
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "avg(adguard_avg_processing_time) * 1000",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 14,
+          "title": "DNS Query Rate (per second)",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -30,21 +314,23 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 15,
+                "fillOpacity": 20,
                 "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "smooth",
-                "lineWidth": 1,
+                "lineWidth": 2,
                 "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
@@ -64,13 +350,12 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "blue",
                     "value": null
                   }
                 ]
               },
-              "unit": "short",
-              "displayName": "${__field.labels.hostname}"
+              "unit": "qps"
             },
             "overrides": [
               {
@@ -99,25 +384,20 @@ data:
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
           "options": {
             "legend": {
               "calcs": [
+                "lastNotNull",
                 "mean",
-                "max",
-                "lastNotNull"
+                "max"
               ],
               "displayMode": "table",
-              "placement": "right"
+              "placement": "right",
+              "showLegend": true
             },
             "tooltip": {
-              "mode": "multi"
+              "mode": "multi",
+              "sort": "desc"
             }
           },
           "targets": [
@@ -131,13 +411,21 @@ data:
               "legendFormat": "{{hostname}}"
             }
           ],
-          "title": "DNS Queries Rate",
-          "type": "timeseries"
+          "pluginVersion": "11.0.0"
         },
         {
+          "id": 15,
+          "title": "Blocked Queries Rate (per second)",
+          "type": "timeseries",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 12,
+            "h": 8
           },
           "fieldConfig": {
             "defaults": {
@@ -145,21 +433,23 @@ data:
                 "mode": "palette-classic"
               },
               "custom": {
+                "axisBorderShow": false,
                 "axisCenteredZero": false,
                 "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 15,
+                "fillOpacity": 20,
                 "gradientMode": "opacity",
                 "hideFrom": {
                   "tooltip": false,
                   "viz": false,
                   "legend": false
                 },
+                "insertNulls": false,
                 "lineInterpolation": "smooth",
-                "lineWidth": 1,
+                "lineWidth": 2,
                 "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
@@ -179,13 +469,12 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "blue",
                     "value": null
                   }
                 ]
               },
-              "unit": "short",
-              "displayName": "${__field.labels.hostname}"
+              "unit": "qps"
             },
             "overrides": [
               {
@@ -214,25 +503,20 @@ data:
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 2,
           "options": {
             "legend": {
               "calcs": [
+                "lastNotNull",
                 "mean",
-                "max",
-                "lastNotNull"
+                "max"
               ],
               "displayMode": "table",
-              "placement": "right"
+              "placement": "right",
+              "showLegend": true
             },
             "tooltip": {
-              "mode": "multi"
+              "mode": "multi",
+              "sort": "desc"
             }
           },
           "targets": [
@@ -246,433 +530,642 @@ data:
               "legendFormat": "{{hostname}}"
             }
           ],
-          "title": "Blocked Queries Rate",
-          "type": "timeseries"
+          "pluginVersion": "11.0.0"
         },
         {
+          "id": 16,
+          "title": "Instance Summary",
+          "type": "table",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short",
-              "displayName": "${__field.labels.hostname}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.120"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 1"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.125"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 2"
-                  }
-                ]
-              }
-            ]
-          },
           "gridPos": {
-            "h": 8,
-            "w": 8,
             "x": 0,
-            "y": 8
-          },
-          "id": 3,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "adguard_num_dns_queries",
-              "refId": "A",
-              "legendFormat": "{{hostname}}"
-            }
-          ],
-          "title": "Total DNS Queries",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+            "y": 13,
+            "w": 24,
+            "h": 7
           },
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short",
-              "displayName": "${__field.labels.hostname}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.120"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 1"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.125"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 2"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 8,
-            "y": 8
-          },
-          "id": 4,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "adguard_num_blocked_filtering",
-              "refId": "A",
-              "legendFormat": "{{hostname}}"
-            }
-          ],
-          "title": "Total Blocked Queries",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent",
-              "displayName": "${__field.labels.hostname}"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.120"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 1"
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "192.168.1.125"
-                },
-                "properties": [
-                  {
-                    "id": "displayName",
-                    "value": "AdGuard 2"
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 8
-          },
-          "id": 5,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "center",
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "(adguard_num_blocked_filtering / adguard_num_dns_queries) * 100",
-              "refId": "A",
-              "legendFormat": "{{hostname}}"
-            }
-          ],
-          "title": "Block Rate %",
-          "type": "stat"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
               },
               "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 15,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
                 },
-                "lineInterpolation": "smooth",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
+                "filterable": true,
+                "inspect": false
               },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "transparent",
                     "value": null
                   }
                 ]
-              },
-              "unit": "Bps",
-              "displayName": "${__field.labels.hostname}"
+              }
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.120"
+                  "options": "Block %"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "AdGuard 1"
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 50
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "gradient",
+                      "valueDisplayMode": "text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 30
+                        },
+                        {
+                          "color": "orange",
+                          "value": 50
+                        },
+                        {
+                          "color": "red",
+                          "value": 75
+                        }
+                      ]
+                    }
                   }
                 ]
               },
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "192.168.1.125"
+                  "options": "Queries"
                 },
                 "properties": [
                   {
-                    "id": "displayName",
-                    "value": "AdGuard 2"
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Blocked"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Avg Time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "ms"
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 2
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background",
+                      "mode": "basic"
+                    }
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "DISABLED",
+                            "color": "red",
+                            "index": 1
+                          },
+                          "1": {
+                            "text": "ENABLED",
+                            "color": "green",
+                            "index": 0
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Instance"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "192.168.1.120": {
+                            "text": "AdGuard 1",
+                            "index": 0
+                          },
+                          "192.168.1.125": {
+                            "text": "AdGuard 2",
+                            "index": 1
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 130
                   }
                 ]
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 16
-          },
-          "id": 6,
           "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "lastNotNull"
+            "cellHeight": "md",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
               ],
-              "displayMode": "table",
-              "placement": "right"
+              "show": false
             },
-            "tooltip": {
-              "mode": "multi"
-            }
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Block %",
+                "desc": true
+              }
+            ]
           },
+          "pluginVersion": "11.0.0",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(adguard_num_dns_queries[5m])",
-              "refId": "A",
-              "legendFormat": "{{hostname}}"
+              "expr": "max by (hostname) (adguard_protection_enabled)",
+              "refId": "Status",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (hostname) (adguard_num_dns_queries)",
+              "refId": "Queries",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (hostname) (adguard_num_blocked_filtering)",
+              "refId": "Blocked",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "100 * max by (hostname) (adguard_num_blocked_filtering) / max by (hostname) (adguard_num_dns_queries)",
+              "refId": "Block %",
+              "instant": true,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (hostname) (adguard_avg_processing_time) * 1000",
+              "refId": "Avg Time",
+              "instant": true,
+              "format": "table"
             }
           ],
-          "title": "Upstream Response Rate",
-          "type": "timeseries"
+          "transformations": [
+            {
+              "id": "joinByField",
+              "options": {
+                "byField": "hostname",
+                "mode": "outer"
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time 1": true,
+                  "Time 2": true,
+                  "Time 3": true,
+                  "Time 4": true,
+                  "Time 5": true
+                },
+                "indexByName": {
+                  "hostname": 0,
+                  "Value #Status": 1,
+                  "Value #Queries": 2,
+                  "Value #Blocked": 3,
+                  "Value #Block %": 4,
+                  "Value #Avg Time": 5
+                },
+                "renameByName": {
+                  "hostname": "Instance",
+                  "Value #Status": "Status",
+                  "Value #Queries": "Queries",
+                  "Value #Blocked": "Blocked",
+                  "Value #Block %": "Block %",
+                  "Value #Avg Time": "Avg Time"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": 17,
+          "title": "Top Blocked Domains",
+          "type": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 10
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": true,
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "transparent",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Blocks"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 10000
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "gradient",
+                      "valueDisplayMode": "text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 100
+                        },
+                        {
+                          "color": "orange",
+                          "value": 1000
+                        },
+                        {
+                          "color": "red",
+                          "value": 5000
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Blocks",
+                "desc": true
+              }
+            ]
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "topk(15, sum by (domain) (adguard_top_blocked_domains))",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "indexByName": {
+                  "domain": 0,
+                  "Value": 1
+                },
+                "renameByName": {
+                  "domain": "Domain",
+                  "Value": "Blocks"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": 18,
+          "title": "Top Queried Domains",
+          "type": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 20,
+            "w": 12,
+            "h": 10
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": true,
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "transparent",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Queries"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "short"
+                  },
+                  {
+                    "id": "min",
+                    "value": 0
+                  },
+                  {
+                    "id": "max",
+                    "value": 50000
+                  },
+                  {
+                    "id": "decimals",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "gauge",
+                      "mode": "basic",
+                      "valueDisplayMode": "text"
+                    }
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "blue",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Queries",
+                "desc": true
+              }
+            ]
+          },
+          "pluginVersion": "11.0.0",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "topk(15, sum by (domain) (adguard_top_queried_domains))",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "indexByName": {
+                  "domain": 0,
+                  "Value": 1
+                },
+                "renameByName": {
+                  "domain": "Domain",
+                  "Value": "Queries"
+                }
+              }
+            }
+          ]
         }
       ],
       "refresh": "30s",
-      "schemaVersion": 38,
+      "schemaVersion": 39,
       "style": "dark",
       "tags": [
         "adguard",
         "dns"
       ],
       "templating": {
-        "list": [
-          {
-            "current": {
-              "selected": false,
-              "text": "All",
-              "value": "$__all"
-            },
-            "datasource": {
-              "type": "prometheus",
-              "uid": "prometheus"
-            },
-            "definition": "label_values(adguard_num_dns_queries, instance)",
-            "hide": 0,
-            "includeAll": true,
-            "label": "Instance",
-            "multi": true,
-            "name": "instance",
-            "options": [],
-            "query": {
-              "query": "label_values(adguard_num_dns_queries, instance)",
-              "refId": "StandardVariableQuery"
-            },
-            "refresh": 1,
-            "regex": "",
-            "skipUrlSync": false,
-            "sort": 0,
-            "type": "query"
-          }
-        ]
+        "list": []
       },
       "time": {
         "from": "now-6h",
         "to": "now"
       },
       "timepicker": {},
-      "timezone": "",
+      "timezone": "browser",
       "title": "AdGuard Home Monitoring",
       "uid": "adguard",
       "version": 1,
