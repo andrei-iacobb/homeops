@@ -8,7 +8,8 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./cloudflare-ddns/ks.yaml
+  # cloudflare-ddns removed: it only updated wg.iacob.co.uk -> home WAN IP, which
+  # leaked the home address. WG endpoint deleted from DNS; deployment no longer needed.
   - ./cloudflare-dns/ks.yaml
   - ./cloudflare-tunnel/ks.yaml
   - ./envoy-gateway/ks.yaml
