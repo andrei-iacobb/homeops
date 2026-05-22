@@ -346,8 +346,8 @@ data:
           href: https://x.com
           description: X (Twitter)
     - Base:
-      - Gitea:
-          icon: gitea.svg
+      - Forgejo:
+          icon: forgejo.svg
           href: https://git.iacob.co.uk
           description: Git service
       - Notes:

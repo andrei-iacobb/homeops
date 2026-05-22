@@ -66,6 +66,6 @@ data:
                   - title: Grafana
                     url: https://grafana.iacob.uk
                     icon: si:grafana
-                  - title: Gitea
+                  - title: Forgejo
                     url: https://git.iacob.co.uk
-                    icon: si:gitea
+                    icon: si:forgejo

@@ -14,7 +14,7 @@ resources:
   - ./openspeedtest/ks.yaml
   - ./it-tools/ks.yaml
   - ./paperless/ks.yaml
-  - ./gitea/ks.yaml
+  - ./forgejo/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./homepage/ks.yaml
   - ./n8n/ks.yaml

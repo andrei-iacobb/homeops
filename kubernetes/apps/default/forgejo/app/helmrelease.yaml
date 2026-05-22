@@ -2,11 +2,11 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: gitea
+  name: forgejo
 spec:
   chartRef:
     kind: OCIRepository
-    name: gitea
+    name: forgejo
   interval: 1h
   values:
     controllers:
@@ -46,27 +46,27 @@ spec:
               runAsGroup: 0
           app:
             image:
-              repository: gitea/gitea
-              tag: 1.26.2
+              repository: codeberg.org/forgejo/forgejo
+              tag: 15.0.2
             env:
               USER_UID:
                 valueFrom:
                   secretKeyRef:
-                    name: gitea-secret
+                    name: forgejo-secret
                     key: PUID
               USER_GID:
                 valueFrom:
                   secretKeyRef:
-                    name: gitea-secret
+                    name: forgejo-secret
                     key: PGID
-              GITEA__database__DB_TYPE: postgres
-              GITEA__database__HOST: postgres.databases.svc.cluster.local:5432
-              GITEA__database__NAME: gitea
-              GITEA__database__USER: gitea
-              GITEA__database__PASSWD:
+              FORGEJO__database__DB_TYPE: postgres
+              FORGEJO__database__HOST: postgres.databases.svc.cluster.local:5432
+              FORGEJO__database__NAME: gitea
+              FORGEJO__database__USER: gitea
+              FORGEJO__database__PASSWD:
                 valueFrom:
                   secretKeyRef:
-                    name: gitea-secret
+                    name: forgejo-secret
                     key: GITEA_DB_PASSWORD
             probes:
               liveness: &probes
