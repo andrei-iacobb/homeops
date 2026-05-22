@@ -1,11 +1,10 @@
 ---
-# Validation-only hostname while we test. Once the cluster pod proves out,
-# add `hs.iacobapp.dev` here and flip the Cloudflare-tunnel ingress to
-# stop pointing at the laptop.
+# LAN-side route. Lets you hit the cluster pod directly from inside the
+# network without going through Cloudflare. Useful for debugging.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: holden-systems
+  name: holden-systems-internal
 spec:
   parentRefs:
     - name: envoy-internal
@@ -13,6 +12,25 @@ spec:
       sectionName: https
   hostnames:
     - hs-k8s.iacob.uk
+  rules:
+    - backendRefs:
+        - name: holden-systems
+          port: 8080
+---
+# Public route. Cloudflare-tunnel forwards hs.iacobapp.dev to
+# envoy-external (see network/cloudflare-tunnel helmrelease) and this
+# HTTPRoute terminates it onto the holden-systems service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: holden-systems-external
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - hs.iacobapp.dev
   rules:
     - backendRefs:
         - name: holden-systems

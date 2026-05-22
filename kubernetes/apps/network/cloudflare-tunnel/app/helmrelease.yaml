@@ -103,11 +103,16 @@ spec:
                   http2Origin: true
                   originServerName: external.${SECRET_DOMAIN}
                 service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
-              # Temporary: forward hs.iacobapp.dev to static export of Holden Systems site
-              # served on andrei's laptop. Port 3030 hosts `next dev` for editing;
-              # 3031 hosts the static prod build (HMR-free, hydrates through the tunnel).
+              # Holden Systems marketing site - served by the cluster
+              # (kubernetes/apps/default/holden-systems). The laptop dev
+              # server (next dev on :3030, bunx serve on :3031) stays
+              # available for local iteration; this hostname is no
+              # longer wired to the laptop.
               - hostname: "hs.iacobapp.dev"
-                service: http://192.168.20.159:3031
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               # iacob.uk + iacobapp.dev redirects are handled by an HTTPRoute on
               # envoy-external. Send those hostnames there so the route can return 301.
               - hostname: "iacob.uk"
