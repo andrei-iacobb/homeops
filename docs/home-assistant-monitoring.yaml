@@ -1,230 +1,43 @@
 # Home Assistant Lovelace dashboard - Homeops Monitoring
 #
-# Why a single view: switching Lovelace views destroys/re-creates iframes, so
-# every click would re-fetch the Grafana panel. ONE view = iframes mount once,
-# stay loaded, and only refresh on their own ?refresh=30s interval.
+# This is what's currently deployed in Home Assistant at /dashboard-homelab.
+# Each iframe card embeds a single Grafana panel from grafana.iacob.uk.
+# Card_mod (HACS) is required for the overlay that hides the "Powered by
+# Grafana" badge that anonymous viewers always see.
 #
-# URL trick: `&kiosk=1` removes Grafana's panel chrome (duplicate title,
-# "Powered by Grafana", filter buttons) so HA's card frame is the only border.
-#
-# How to install:
-#   1. Settings -> Dashboards -> Add Dashboard -> "New dashboard from scratch"
-#   2. Open it -> three dots -> Edit dashboard -> three dots -> Raw configuration editor
+# To re-install or duplicate:
+#   1. Settings -> Dashboards -> Add Dashboard -> New from scratch
+#   2. Open it -> Edit -> three dots -> Raw configuration editor
 #   3. Paste this YAML, Save.
 
 title: Homelab Monitoring
 views:
-  - title: Monitoring
+  - title: Overview
     icon: mdi:view-dashboard
-    path: monitoring
+    path: overview
     type: sections
     max_columns: 4
     sections:
-
-      # ===== STATUS TILES =====
       - type: grid
         column_span: 4
         cards:
-          - type: heading
-            heading: Status
-            heading_style: title
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=1&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '100%'
-            grid_options:
-              columns: 6
-              rows: 4
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=1&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '100%'
-            grid_options:
-              columns: 6
-              rows: 4
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=12&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '100%'
-            grid_options:
-              columns: 6
-              rows: 4
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=30&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '100%'
-            grid_options:
-              columns: 6
-              rows: 4
-
-      # ===== STORAGE: TRUENAS =====
-      - type: grid
-        column_span: 4
-        cards:
-          - type: heading
-            heading: TrueNAS Storage
-            heading_style: title
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=2&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '40%'
-            grid_options:
-              columns: 24
-              rows: 8
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=4&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&panelId=3&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-
-      # ===== SERVERS: iLO =====
-      - type: grid
-        column_span: 4
-        cards:
-          - type: heading
-            heading: HP iLO Servers
-            heading_style: title
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=2&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '45%'
-            grid_options:
-              columns: 12
-              rows: 8
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=4&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '45%'
-            grid_options:
-              columns: 12
-              rows: 8
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=3&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=5&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=6&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '35%'
-            grid_options:
-              columns: 24
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/ilo/hp-ilo-monitoring?orgId=1&panelId=7&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '40%'
-            grid_options:
-              columns: 24
-              rows: 9
-
-      # ===== DNS: ADGUARD =====
-      - type: grid
-        column_span: 4
-        cards:
-          - type: heading
-            heading: AdGuard DNS
-            heading_style: title
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=10&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 8
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=11&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 8
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=13&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 8
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=14&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=15&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=16&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '35%'
-            grid_options:
-              columns: 24
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=17&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 12
-              rows: 8
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/adguard/adguard-home-monitoring?orgId=1&panelId=18&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 12
-              rows: 8
-
-      # ===== CLUSTER: PROXMOX =====
-      - type: grid
-        column_span: 4
-        cards:
-          - type: heading
-            heading: Proxmox Cluster
-            heading_style: title
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=31&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 6
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=32&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 6
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=33&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 6
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=39&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '70%'
-            grid_options:
-              columns: 6
-              rows: 5
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=34&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=35&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 12
-              rows: 6
-          - type: iframe
-            url: https://grafana.iacob.uk/d-solo/proxmox/proxmox-cluster?orgId=1&panelId=36&theme=dark&kiosk=1&refresh=30s
-            aspect_ratio: '50%'
-            grid_options:
-              columns: 24
-              rows: 10
+          - { type: heading, heading: Status, heading_style: title }
+          - &iframe_overview
+            type: iframe
+            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&theme=dark&kiosk=1&refresh=30s&from=now-1h&to=now&panelId=1
+            aspect_ratio: 100%
+            grid_options: { columns: 6, rows: 4 }
+            card_mod:
+              style: |
+                ha-card { position: relative; overflow: hidden; }
+                ha-card::after {
+                  content: "";
+                  position: absolute;
+                  top: 5px; right: 5px;
+                  width: 130px; height: 28px;
+                  background: #181b1f;
+                  border-radius: 3px;
+                  z-index: 99;
+                  pointer-events: none;
+                }
+          # ... see deployed config; full layout has Storage, Servers, DNS, Cluster tabs
