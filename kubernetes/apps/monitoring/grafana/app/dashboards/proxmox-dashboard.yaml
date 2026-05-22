@@ -78,7 +78,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "count(pve_up{id=~\"qemu/.+\", instance=\"10.67.0.102:9221\"} == 1)",
+              "expr": "count(pve_up{id=~\"qemu/.+\"} == 1)",
               "refId": "A"
             }
           ]
@@ -142,7 +142,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "count(pve_up{id=~\"lxc/.+\", instance=\"10.67.0.102:9221\"} == 1)",
+              "expr": "count(pve_up{id=~\"lxc/.+\"} == 1)",
               "refId": "A"
             }
           ]
@@ -407,7 +407,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_cpu_usage_ratio{instance=\"10.67.0.102:9221\"} * 100 and on(id) pve_node_info",
+              "expr": "pve_cpu_usage_ratio * 100 and on(id) pve_node_info",
               "refId": "A",
               "legendFormat": "{{id}}"
             }
@@ -526,7 +526,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_memory_usage_bytes{instance=\"10.67.0.102:9221\"} / pve_memory_size_bytes * 100 and on(id) pve_node_info",
+              "expr": "pve_memory_usage_bytes / pve_memory_size_bytes * 100 and on(id) pve_node_info",
               "refId": "A",
               "legendFormat": "{{id}}"
             }
@@ -894,7 +894,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_guest_info{instance=\"10.67.0.102:9221\"}",
+              "expr": "pve_guest_info",
               "refId": "Info",
               "instant": true,
               "format": "table"
@@ -904,7 +904,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (id) (pve_up{instance=\"10.67.0.102:9221\"} and on (id, instance) pve_guest_info)",
+              "expr": "sum by (id) (pve_up and on (id, instance) pve_guest_info)",
               "refId": "Status",
               "instant": true,
               "format": "table"
@@ -914,7 +914,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (id) (pve_cpu_usage_limit{instance=\"10.67.0.102:9221\"} and on (id, instance) pve_guest_info)",
+              "expr": "sum by (id) (pve_cpu_usage_limit and on (id, instance) pve_guest_info)",
               "refId": "vCPU",
               "instant": true,
               "format": "table"
@@ -924,7 +924,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (id) (pve_memory_size_bytes{instance=\"10.67.0.102:9221\"} and on (id, instance) pve_guest_info)",
+              "expr": "sum by (id) (pve_memory_size_bytes and on (id, instance) pve_guest_info)",
               "refId": "Memory",
               "instant": true,
               "format": "table"
@@ -934,7 +934,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (id) (pve_cpu_usage_ratio{instance=\"10.67.0.102:9221\"} * 100 and on (id, instance) pve_guest_info and on (id) pve_up == 1)",
+              "expr": "sum by (id) (pve_cpu_usage_ratio * 100 and on (id, instance) pve_guest_info and on (id) pve_up == 1)",
               "refId": "CPU %",
               "instant": true,
               "format": "table"
@@ -944,7 +944,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (id) (pve_memory_usage_bytes{instance=\"10.67.0.102:9221\"} / pve_memory_size_bytes * 100 and on (id, instance) pve_guest_info and on (id) pve_up == 1)",
+              "expr": "sum by (id) (pve_memory_usage_bytes / pve_memory_size_bytes * 100 and on (id, instance) pve_guest_info and on (id) pve_up == 1)",
               "refId": "Memory %",
               "instant": true,
               "format": "table"
@@ -1114,7 +1114,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(pve_network_receive_bytes{instance=\"10.67.0.102:9221\"}[5m]) * on(id, instance) group_left(name) pve_guest_info",
+              "expr": "rate(pve_network_receive_bytes[5m]) * on(id, instance) group_left(name) pve_guest_info",
               "refId": "A",
               "legendFormat": "{{name}}"
             }
@@ -1208,7 +1208,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "rate(pve_network_transmit_bytes{instance=\"10.67.0.102:9221\"}[5m]) * on(id, instance) group_left(name) pve_guest_info",
+              "expr": "rate(pve_network_transmit_bytes[5m]) * on(id, instance) group_left(name) pve_guest_info",
               "refId": "A",
               "legendFormat": "{{name}}"
             }
@@ -1381,7 +1381,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_disk_usage_bytes{instance=\"10.67.0.102:9221\", id=~\"storage/.+\"}",
+              "expr": "pve_disk_usage_bytes{id=~\"storage/.+\"}",
               "refId": "Used",
               "instant": true,
               "format": "table"
@@ -1391,7 +1391,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_disk_size_bytes{instance=\"10.67.0.102:9221\", id=~\"storage/.+\"}",
+              "expr": "pve_disk_size_bytes{id=~\"storage/.+\"}",
               "refId": "Total",
               "instant": true,
               "format": "table"
@@ -1401,7 +1401,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "pve_disk_usage_bytes{instance=\"10.67.0.102:9221\", id=~\"storage/.+\"} / pve_disk_size_bytes{instance=\"10.67.0.102:9221\"} * 100",
+              "expr": "pve_disk_usage_bytes{id=~\"storage/.+\"} / pve_disk_size_bytes * 100",
               "refId": "Used %",
               "instant": true,
               "format": "table"
