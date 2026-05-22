@@ -1,0 +1,43 @@
+---
+# 301 redirects for the secondary domains to andrei.iacob.co.uk.
+# The cloudflare-tunnel ingress sends these hostnames here; envoy returns 301.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: redirect-iacob-uk
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - iacob.uk
+    - "*.iacob.uk"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: andrei.iacob.co.uk
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: redirect-iacobapp-dev
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - iacobapp.dev
+    # Note: do NOT match *.iacobapp.dev - subdomains like hs.iacobapp.dev and
+    # s.iacobapp.dev have their own backends in the tunnel config.
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: andrei.iacob.co.uk
+            statusCode: 301

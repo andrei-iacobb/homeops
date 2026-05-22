@@ -103,6 +103,31 @@ spec:
                   http2Origin: true
                   originServerName: external.${SECRET_DOMAIN}
                 service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+              # Temporary: forward hs.iacobapp.dev to local Next.js dev server on laptop
+              - hostname: "hs.iacobapp.dev"
+                service: http://192.168.20.159:3030
+              # iacob.uk + iacobapp.dev redirects are handled by an HTTPRoute on
+              # envoy-external. Send those hostnames there so the route can return 301.
+              - hostname: "iacob.uk"
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+              - hostname: "*.iacob.uk"
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+              - hostname: "iacobapp.dev"
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
+              - hostname: "*.iacobapp.dev"
+                originRequest:
+                  http2Origin: true
+                  originServerName: external.${SECRET_DOMAIN}
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
     persistence:
       config-file:
