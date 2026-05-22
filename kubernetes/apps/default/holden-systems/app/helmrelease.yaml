@@ -1,0 +1,87 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: holden-systems
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: holden-systems
+  interval: 1h
+  values:
+    controllers:
+      holden-systems:
+        replicas: 2 # zero-downtime rollouts and survives single-pod restart
+        strategy: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 0
+          maxSurge: 1
+        containers:
+          app:
+            image:
+              repository: ghcr.io/andrei-iacobb/holden-systems-site
+              # Pinning to digest so Flux/Renovate can bump deterministically.
+              # CI also publishes :<sha> and :latest.
+              tag: d33606d
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8080
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+    defaultPodOptions:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: holden-systems
+    service:
+      app:
+        controller: holden-systems
+        ports:
+          http:
+            port: *port
+    persistence:
+      # nginx writes its pid + temp paths; readOnlyRootFilesystem demands these
+      # be mounted as tmpfs.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+      nginx-cache:
+        type: emptyDir
+        globalMounts:
+          - path: /var/cache/nginx
+      nginx-run:
+        type: emptyDir
+        globalMounts:
+          - path: /var/run

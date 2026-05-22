@@ -35,6 +35,7 @@ resources:
   - ./code-server/ks.yaml
   - ./sftpgo/ks.yaml
   - ./glance/ks.yaml
+  - ./holden-systems/ks.yaml
   - ./actual-budget/ks.yaml
   - ./wallos/ks.yaml
   - ./mealie/ks.yaml
