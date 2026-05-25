@@ -146,23 +146,6 @@ endpoints:
   - addresses:
       - "192.168.1.187"
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: windows-vm-cc
-  namespace: external-services
-spec:
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
-      sectionName: https
-  hostnames:
-    - cc.iacobapp.dev
-  rules:
-    - backendRefs:
-        - name: windows-vm
-          port: 3000
----
 # HP Switch - HTTP backend (no TLS)
 apiVersion: v1
 kind: Service
