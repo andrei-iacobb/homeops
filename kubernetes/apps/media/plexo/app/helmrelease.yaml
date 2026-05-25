@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/davidilie/plexo
-              tag: master-94d019ff-1773519359
+              tag: master-b96fdb72-1778790437
             env:
               TZ: Europe/London
               SHOW_MUSIC: "true"
@@ -58,9 +58,9 @@ spec:
             resources:
               requests:
                 cpu: 10m
-                memory: 128Mi
+                memory: 256Mi
               limits:
-                memory: 512Mi
+                memory: 1Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
