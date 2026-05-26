@@ -15,7 +15,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/andrei-iacobb/slate
+              repository: git.iacob.co.uk/andrei/slate
               tag: latest
             env:
               TZ: Europe/London
@@ -52,7 +52,7 @@ spec:
 
     defaultPodOptions:
       imagePullSecrets:
-        - name: ghcr-pull-secret
+        - name: git-iacob-pull-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
