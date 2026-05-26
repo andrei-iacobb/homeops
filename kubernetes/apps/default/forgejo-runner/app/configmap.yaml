@@ -19,11 +19,11 @@ data:
       enabled: true
       dir: /data/cache
     container:
-      # Use host (= pod) network so job containers can reach the dind sidecar at localhost:2375.
       network: host
       privileged: false
-      # Mount the dind TCP socket env into the job container.
-      docker_host: tcp://127.0.0.1:2375
+      # dind exposes /shared-run/docker.sock via the shared emptyDir; act_runner
+      # mounts it into job containers as /var/run/docker.sock.
+      docker_host: unix:///shared-run/docker.sock
       valid_volumes:
         - "**"
       force_pull: false

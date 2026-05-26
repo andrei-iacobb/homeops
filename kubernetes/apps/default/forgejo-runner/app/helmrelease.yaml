@@ -36,7 +36,7 @@ spec:
             workingDir: /data
             env:
               FORGEJO_INSTANCE_URL: "https://git.iacob.co.uk"
-              DOCKER_HOST: "tcp://localhost:2375"
+              DOCKER_HOST: "unix:///shared-run/docker.sock"
             envFrom:
               - secretRef:
                   name: forgejo-runner-secret
@@ -58,6 +58,7 @@ spec:
               tag: 27-dind
             args:
               - dockerd
+              - --host=unix:///shared-run/docker.sock
               - --host=tcp://0.0.0.0:2375
               - --tls=false
             env:
@@ -90,6 +91,10 @@ spec:
         globalMounts:
           - path: /var/lib/docker
             subPath: ""
+      docker-sock:
+        type: emptyDir
+        globalMounts:
+          - path: /shared-run
       config:
         type: configMap
         name: forgejo-runner-config
