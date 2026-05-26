@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-runner-config
+  namespace: default
+data:
+  config.yaml: |
+    log:
+      level: info
+    runner:
+      file: /data/.runner
+      capacity: 1
+      timeout: 3h
+      shutdown_timeout: 3h
+      fetch_timeout: 30s
+      fetch_interval: 2s
+    cache:
+      enabled: true
+      dir: /data/cache
+    container:
+      # Use host (= pod) network so job containers can reach the dind sidecar at localhost:2375.
+      network: host
+      privileged: false
+      # Mount the dind TCP socket env into the job container.
+      docker_host: tcp://127.0.0.1:2375
+      valid_volumes:
+        - "**"
+      force_pull: false
+    host:
+      workdir_parent: /data/workdir

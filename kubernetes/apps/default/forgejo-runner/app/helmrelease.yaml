@@ -32,7 +32,7 @@ spec:
                     --name "k8s-runner-$(hostname)" \
                     --labels "docker:docker://node:22-bookworm,ubuntu-latest:docker://catthehacker/ubuntu:act-22.04"
                 fi
-                exec forgejo-runner daemon
+                exec forgejo-runner daemon --config /config/config.yaml
             workingDir: /data
             env:
               FORGEJO_INSTANCE_URL: "https://git.iacob.co.uk"
@@ -90,3 +90,10 @@ spec:
         globalMounts:
           - path: /var/lib/docker
             subPath: ""
+      config:
+        type: configMap
+        name: forgejo-runner-config
+        globalMounts:
+          - path: /config/config.yaml
+            subPath: config.yaml
+            readOnly: true
