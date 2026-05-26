@@ -42,3 +42,4 @@ resources:
   - ./solis-charge/ks.yaml
   - ./ilo4-fan-controller/ks.yaml
   - ./slate/ks.yaml
+  - ./forgejo-runner/ks.yaml

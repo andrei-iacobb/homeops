@@ -1,0 +1,92 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: forgejo-runner
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: forgejo-runner
+  interval: 1h
+  values:
+    controllers:
+      forgejo-runner:
+        strategy: Recreate
+        # docker:dind sidecar provides the container runtime act_runner uses to exec jobs.
+        containers:
+          runner:
+            image:
+              repository: code.forgejo.org/forgejo/runner
+              tag: 6.4.1
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                # Register on first boot (config.yml present after register)
+                if [ ! -s /data/.runner ]; then
+                  echo "registering runner..."
+                  forgejo-runner register \
+                    --no-interactive \
+                    --instance "${FORGEJO_INSTANCE_URL}" \
+                    --token "${FORGEJO_RUNNER_TOKEN}" \
+                    --name "k8s-runner-$(hostname)" \
+                    --labels "docker:docker://node:22-bookworm,ubuntu-latest:docker://catthehacker/ubuntu:act-22.04"
+                fi
+                exec forgejo-runner daemon
+            workingDir: /data
+            env:
+              FORGEJO_INSTANCE_URL: "https://git.iacob.co.uk"
+              DOCKER_HOST: "tcp://localhost:2375"
+            envFrom:
+              - secretRef:
+                  name: forgejo-runner-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                cpu: 4000m
+                memory: 4Gi
+          dind:
+            image:
+              repository: docker
+              tag: 27-dind
+            args:
+              - dockerd
+              - --host=tcp://0.0.0.0:2375
+              - --tls=false
+            env:
+              DOCKER_TLS_CERTDIR: ""
+            securityContext:
+              privileged: true
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                cpu: 4000m
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
+      dind-storage:
+        type: emptyDir
+        globalMounts:
+          - path: /var/lib/docker
+            subPath: ""

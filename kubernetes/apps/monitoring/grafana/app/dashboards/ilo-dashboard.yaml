@@ -225,7 +225,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "ilo_power_current_watt",
+              "expr": "max by (host) (ilo_power_current_watt)",
               "legendFormat": "{{host}}",
               "refId": "A"
             }
@@ -281,7 +281,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "ilo_power_current_watt",
+              "expr": "max by (host) (ilo_power_current_watt)",
               "legendFormat": "{{host}}",
               "refId": "A"
             }
