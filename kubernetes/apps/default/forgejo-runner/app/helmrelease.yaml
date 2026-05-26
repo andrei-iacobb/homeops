@@ -55,7 +55,7 @@ spec:
           dind:
             image:
               repository: docker
-              tag: 27-dind
+              tag: 29-dind
             args:
               - dockerd
               - --host=tcp://0.0.0.0:2375
