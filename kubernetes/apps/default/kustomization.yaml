@@ -41,3 +41,4 @@ resources:
   - ./mealie/ks.yaml
   - ./solis-charge/ks.yaml
   - ./ilo4-fan-controller/ks.yaml
+  - ./slate/ks.yaml
