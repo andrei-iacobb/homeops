@@ -16,8 +16,8 @@ spec:
         containers:
           runner:
             image:
-              repository: code.forgejo.org/forgejo/runner
-              tag: 6.4.1
+              repository: data.forgejo.org/forgejo/runner
+              tag: 12.10.2
             command: ["/bin/sh", "-c"]
             args:
               - |
