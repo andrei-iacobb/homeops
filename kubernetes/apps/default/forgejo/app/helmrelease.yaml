@@ -68,6 +68,8 @@ spec:
                   secretKeyRef:
                     name: forgejo-secret
                     key: GITEA_DB_PASSWORD
+              FORGEJO__actions__ENABLED: "true"
+              FORGEJO__actions__DEFAULT_ACTIONS_URL: "github"
             probes:
               liveness: &probes
                 enabled: true
