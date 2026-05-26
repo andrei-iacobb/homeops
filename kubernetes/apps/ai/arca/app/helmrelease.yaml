@@ -18,7 +18,7 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/andrei-iacobb/arca
+              repository: git.iacob.co.uk/andrei/arca
               tag: latest
             envFrom:
               - secretRef:
@@ -70,7 +70,7 @@ spec:
 
     defaultPodOptions:
       imagePullSecrets:
-        - name: ghcr-pull-secret
+        - name: forgejo-pull-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
