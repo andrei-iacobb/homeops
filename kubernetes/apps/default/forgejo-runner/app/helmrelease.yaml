@@ -73,6 +73,13 @@ spec:
                 cpu: 4000m
                 memory: 4Gi
     defaultPodOptions:
+      # Route git.iacob.co.uk straight to the in-cluster Forgejo Service so CI
+      # pushes/pulls bypass Cloudflare (whose free-plan request body cap of
+      # 100 MB rejects larger image layers with 413).
+      hostAliases:
+        - ip: "10.41.106.89"
+          hostnames:
+            - git.iacob.co.uk
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
