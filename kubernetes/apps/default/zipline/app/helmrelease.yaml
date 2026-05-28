@@ -22,6 +22,12 @@ spec:
               CORE_PORT: &port 3000
               DATASOURCE_TYPE: local
               DATASOURCE_LOCAL_DIRECTORY: /zipline/uploads
+              # Allow multi-GB iPhone footage. Chunking is on by default
+              # (CHUNKS_MAX=95mb) which keeps each request under Cloudflare
+              # free tier's 100MB body cap, but FILES_MAX_FILE_SIZE still
+              # gates the whole upload - bump it before chunking matters.
+              FILES_MAX_FILE_SIZE: "10gb"
+              FILES_MAX_FILES_PER_UPLOAD: "20"
             envFrom:
               - secretRef:
                   name: zipline-secret
