@@ -33,13 +33,6 @@ spec:
         podMonitorSelectorNilUsesHelmValues: false
         podMonitorNamespaceSelector: {}
         ruleSelectorNilUsesHelmValues: false
-        additionalScrapeConfigs:
-          - job_name: wireguard
-            static_configs:
-              - targets:
-                  - 192.168.1.50:9586
-                labels:
-                  instance: wireguard-vpn
         resources:
           requests:
             cpu: 500m
