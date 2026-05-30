@@ -9,7 +9,7 @@ kind: CronJob
 metadata:
   name: ilo4-sensor-suppress
 spec:
-  schedule: "*/4 * * * *"
+  schedule: "*/2 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
