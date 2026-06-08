@@ -108,6 +108,15 @@
       ],
       automerge: false,
     },
+    {
+      description: [
+        "Ignore lakker/pulsarr >=1.0 — GitHub releases use 1.x semver but Docker Hub only publishes 0.x tags",
+      ],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["docker.io/lakker/pulsarr", "lakker/pulsarr"],
+      matchCurrentVersion: "!/^0\\./",
+      enabled: false,
+    },
     // =====================
     // Grouping
     // =====================
