@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/readarr
-              tag: 0.4.18.2805
+              repository: ghcr.io/pennydreadful/bookshelf
+              tag: hardcover-v0.4.20.129
             env:
               TZ: Europe/London
               READARR__PORT: &port 8787
@@ -68,9 +68,7 @@ spec:
                   timeoutSeconds: 5
                   failureThreshold: 30
             securityContext:
-              allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
-              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 10m
@@ -79,10 +77,7 @@ spec:
                 memory: 1Gi
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 568
-        runAsGroup: 568
-        fsGroup: 568
+        # LinuxServer-based image (s6-overlay) - starts as root, drops to PUID/PGID 568
         fsGroupChangePolicy: OnRootMismatch
         supplementalGroups: [1000, 10000]
         seccompProfile: { type: RuntimeDefault }
