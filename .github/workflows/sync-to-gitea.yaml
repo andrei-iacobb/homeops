@@ -1,0 +1,34 @@
+---
+# Pushes main back to Gitea (git.iacob.co.uk) after every merge on GitHub.
+#
+# Why: Gitea has a push-mirror to GitHub that force-pushes. Flux and Renovate
+# operate on GitHub, so any merge landing on GitHub main (e.g. renovate
+# automerges) gets clobbered the next time the Gitea mirror syncs while Gitea
+# is behind. Keeping Gitea current means the mirror push is always a no-op
+# and stale local pushes to Gitea are rejected as non-fast-forward instead
+# of silently overwriting GitHub. (PR #413 was lost this way on 2026-06-12.)
+name: Sync main to Gitea
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Push main to Gitea
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Push to Gitea
+        env:
+          GITEA_USER: ${{ secrets.GITEA_USER }}
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        run: |
+          git push "https://${GITEA_USER}:${GITEA_TOKEN}@git.iacob.co.uk/andrei/homeops.git" HEAD:main
