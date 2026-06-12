@@ -45,4 +45,17 @@ jobs:
               exit 0
             fi
           fi
-          gh pr merge --merge --delete-branch --repo "$REPO" "$PR"
+          # No --delete-branch: gh deletes the branch even when the merge
+          # fails, which auto-closes the PR. Renovate cleans up its own
+          # branches after it sees the merge.
+          # Retry while GitHub computes mergeability (fresh PRs report
+          # UNKNOWN for a few seconds).
+          for i in 1 2 3 4 5; do
+            if gh pr merge --merge --repo "$REPO" "$PR"; then
+              exit 0
+            fi
+            echo "Merge attempt $i failed - retrying in 15s"
+            sleep 15
+          done
+          echo "PR $PR could not be merged (conflict or blocked) - leaving for Renovate to rebase"
+          exit 1
