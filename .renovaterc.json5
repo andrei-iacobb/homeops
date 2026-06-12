@@ -4,7 +4,6 @@
     "config:recommended",
     "docker:enableMajor",
     "helpers:pinGitHubActionDigests",
-    ":automergePr",
     ":dependencyDashboard",
     ":disableRateLimiting",
     ":semanticCommits",
@@ -12,7 +11,12 @@
   ],
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
-  platformAutomerge: true,
+  // Renovate doesn't merge directly - it posts "/automerge" and the
+  // renovate-automerge workflow merges with Andrei's PAT so merge commits
+  // count on his contribution graph.
+  platformAutomerge: false,
+  automergeType: "pr-comment",
+  automergeComment: "/automerge",
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   ignorePaths: ["**/*.sops.*"],
   flux: {
@@ -42,8 +46,6 @@
       matchDatasources: ["docker"],
       matchUpdateTypes: ["minor", "patch", "digest"],
       automerge: true,
-      automergeType: "pr",
-      automergeStrategy: "merge-commit",
       ignoreTests: true,
     },
     {
@@ -51,8 +53,6 @@
       matchDatasources: ["helm"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
-      automergeType: "pr",
-      automergeStrategy: "merge-commit",
       ignoreTests: true,
     },
     {
@@ -60,8 +60,6 @@
       matchDatasources: ["github-releases", "github-tags"],
       matchUpdateTypes: ["minor", "patch"],
       automerge: true,
-      automergeType: "pr",
-      automergeStrategy: "merge-commit",
       ignoreTests: true,
     },
     {
@@ -69,16 +67,12 @@
       matchManagers: ["github-actions"],
       matchUpdateTypes: ["minor", "patch", "digest"],
       automerge: true,
-      automergeType: "pr",
-      automergeStrategy: "merge-commit",
       ignoreTests: true,
     },
     {
       description: ["Auto-merge Mise Tools"],
       matchManagers: ["mise"],
       automerge: true,
-      automergeType: "pr",
-      automergeStrategy: "merge-commit",
       matchUpdateTypes: ["minor", "patch"],
       ignoreTests: true,
     },

@@ -1,0 +1,48 @@
+---
+# Merges Renovate PRs with Andrei's PAT instead of letting the Renovate app
+# merge them, so the merge commits on main are authored by andrei-iacobb and
+# count on the contribution graph.
+#
+# Flow: .renovaterc.json5 sets automergeType "pr-comment" - when Renovate
+# decides a PR qualifies for automerge it posts "/automerge" instead of
+# merging. This workflow picks that up and merges with AUTOMERGE_PAT.
+# The pull_request:synchronize trigger retries after Renovate rebases a
+# previously-approved PR (the comment already exists, so no new comment event).
+name: Renovate Automerge
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [synchronize]
+
+permissions: {}
+
+jobs:
+  automerge:
+    name: Merge Renovate PR
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       github.event.comment.user.login == 'renovate[bot]' &&
+       contains(github.event.comment.body, '/automerge')) ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.user.login == 'renovate[bot]')
+    steps:
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_PAT }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event_name == 'issue_comment' && github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          # On rebase events, only merge if Renovate already requested automerge
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if ! gh api "repos/${REPO}/issues/${PR}/comments" \
+                 --jq '.[] | select(.user.login == "renovate[bot]") | .body' \
+                 | grep -q '/automerge'; then
+              echo "No /automerge request from Renovate - skipping"
+              exit 0
+            fi
+          fi
+          gh pr merge --merge --delete-branch --repo "$REPO" "$PR"
