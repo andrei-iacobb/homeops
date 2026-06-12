@@ -1,0 +1,33 @@
+---
+# Replaces the Gitea->GitHub push mirror, which force-pushed all refs and
+# repeatedly destroyed renovate branches and merge commits on GitHub
+# (force-push races lost 55+ merged PRs between 2026-06-02 and 2026-06-12).
+#
+# This pushes main to GitHub fast-forward-only: if GitHub has commits Gitea
+# doesn't (e.g. a renovate automerge seconds ago), the push fails loudly
+# instead of silently overwriting them. The GitHub-side sync-to-gitea
+# workflow handles the reverse direction, so both remotes converge without
+# either ever force-pushing.
+name: Push main to GitHub
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  push:
+    name: Fast-forward push to GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone and push
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          CLONE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          AUTH_URL=$(echo "$CLONE_URL" | sed "s#https://#https://oauth2:${FORGEJO_TOKEN}@#")
+          git clone --bare --branch main --single-branch "$AUTH_URL" repo
+          cd repo
+          # No --force: a non-fast-forward means GitHub is ahead - fail and
+          # let sync-to-gitea bring Gitea up to date instead of clobbering.
+          git push "https://andrei-iacobb:${MIRROR_TOKEN}@github.com/andrei-iacobb/homeops.git" main:main
