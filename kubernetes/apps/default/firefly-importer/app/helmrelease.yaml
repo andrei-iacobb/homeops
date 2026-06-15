@@ -1,0 +1,89 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: firefly-importer
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: firefly-importer
+  interval: 1h
+  values:
+    controllers:
+      firefly-importer:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: fireflyiii/data-importer
+              tag: version-2.3.2
+            env:
+              TZ: Europe/London
+              APP_DEBUG: "false"
+              TRUSTED_PROXIES: "**"
+              FIREFLY_III_URL: http://firefly-iii.default.svc.cluster.local:8080
+              VANITY_URL: https://firefly.iacob.co.uk
+              FIREFLY_III_ACCESS_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: firefly-importer-secret
+                    key: FIREFLY_III_ACCESS_TOKEN
+              NORDIGEN_ID:
+                valueFrom:
+                  secretKeyRef:
+                    name: firefly-importer-secret
+                    key: NORDIGEN_ID
+              NORDIGEN_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: firefly-importer-secret
+                    key: NORDIGEN_KEY
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: &port 8080
+                  initialDelaySeconds: 20
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 33
+        runAsGroup: 33
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["firefly-import.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
