@@ -37,6 +37,7 @@ resources:
   - ./glance/ks.yaml
   - ./holden-systems/ks.yaml
   - ./actual-budget/ks.yaml
+  - ./firefly-iii/ks.yaml
   - ./wallos/ks.yaml
   - ./mealie/ks.yaml
   - ./solis-charge/ks.yaml

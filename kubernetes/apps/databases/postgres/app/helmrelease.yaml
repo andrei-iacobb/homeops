@@ -66,6 +66,11 @@ spec:
                   secretKeyRef:
                     name: postgres-secret
                     key: INFORMATE_DB_PASSWORD
+              FIREFLY_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: FIREFLY_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true

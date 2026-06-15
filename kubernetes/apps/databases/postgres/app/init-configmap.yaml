@@ -14,7 +14,8 @@ data:
     CREATE DATABASE IF NOT EXISTS authentik;
     CREATE DATABASE IF NOT EXISTS vikunja;
     CREATE DATABASE IF NOT EXISTS informate;
-    
+    CREATE DATABASE IF NOT EXISTS firefly;
+
     -- Create users with passwords from secrets (these will be created via env vars)
     -- The passwords are set via environment variables in the init script below
   
@@ -33,7 +34,8 @@ data:
         SELECT 'CREATE DATABASE authentik' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'authentik')\gexec
         SELECT 'CREATE DATABASE vikunja' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vikunja')\gexec
         SELECT 'CREATE DATABASE informate' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'informate')\gexec
-        
+        SELECT 'CREATE DATABASE firefly' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'firefly')\gexec
+
         -- Create users if they don't exist
         DO \$\$
         BEGIN
@@ -61,6 +63,9 @@ data:
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'informate') THEN
                 CREATE USER informate WITH PASSWORD '${INFORMATE_DB_PASSWORD}';
             END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'firefly') THEN
+                CREATE USER firefly WITH PASSWORD '${FIREFLY_DB_PASSWORD}';
+            END IF;
         END
         \$\$;
         
@@ -73,6 +78,7 @@ data:
         GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
         GRANT ALL PRIVILEGES ON DATABASE vikunja TO vikunja;
         GRANT ALL PRIVILEGES ON DATABASE informate TO informate;
+        GRANT ALL PRIVILEGES ON DATABASE firefly TO firefly;
 
         ALTER DATABASE immich OWNER TO immich;
         ALTER DATABASE vaultwarden OWNER TO vaultwarden;
@@ -82,7 +88,8 @@ data:
         ALTER DATABASE authentik OWNER TO authentik;
         ALTER DATABASE vikunja OWNER TO vikunja;
         ALTER DATABASE informate OWNER TO informate;
-        
+        ALTER DATABASE firefly OWNER TO firefly;
+
         -- Connect to immich database and create required extensions
         \c immich
         CREATE EXTENSION IF NOT EXISTS vector;
@@ -111,4 +118,7 @@ data:
 
         \c informate
         GRANT ALL ON SCHEMA public TO informate;
+
+        \c firefly
+        GRANT ALL ON SCHEMA public TO firefly;
     EOSQL
