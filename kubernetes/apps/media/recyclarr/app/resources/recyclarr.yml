@@ -32,6 +32,7 @@ sonarr:
           enabled: true
         upgrade:
           allowed: false # don't replace existing files; grab best available for missing only
+          until_quality: Bluray-2160p Remux
         min_format_score: 0
         quality_sort: top
         qualities:
@@ -55,6 +56,7 @@ sonarr:
           enabled: true
         upgrade:
           allowed: false # don't replace existing files; grab best available for missing only
+          until_quality: Bluray-1080p Remux
         min_format_score: 0
         quality_sort: top
         qualities:
@@ -143,6 +145,7 @@ radarr:
           enabled: true
         upgrade:
           allowed: false # don't replace existing files; grab best available for missing only
+          until_quality: Remux-2160p
         min_format_score: 0
         quality_sort: top
         qualities:
@@ -164,6 +167,7 @@ radarr:
           enabled: true
         upgrade:
           allowed: false # don't replace existing files; grab best available for missing only
+          until_quality: Remux-1080p
         min_format_score: 0
         quality_sort: top
         qualities:
