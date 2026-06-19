@@ -36,15 +36,14 @@ MAX_SLOTS = 3
 CHARGE_CURRENT = 50        # Amps - max for this inverter
 DISCHARGE_CURRENT = 50     # Amps
 
-# Only grid-charge during these UK-local hours - i.e. overnight, when the
-# solar array is NOT generating. Charging the battery from the grid during
-# daylight is wasteful when you have solar: the panels would fill the battery
-# for free, and in summer Agile goes cheap at midday *because* of national
-# solar glut, which previously tricked this script into paying to import all
-# afternoon. Window is UK local time and may wrap past midnight
-# (start > end => overnight). Set start == end to allow charging 24h.
-CHARGE_WINDOW_START = os.environ.get("CHARGE_WINDOW_START", "23:00")
-CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "07:00")
+# Grid-charge during cheap (<= MAX_RATE) slots. Default is 24h (start == end
+# => no time restriction), so every sub-15p slot is taken regardless of time
+# of day. The window is an optional knob: set CHARGE_WINDOW_START/END (UK
+# local "HH:MM") to restrict grid-charging to e.g. overnight ("23:00"/"07:00")
+# if you ever want to stop importing during daylight when solar could fill the
+# battery for free. Window may wrap past midnight (start > end => overnight).
+CHARGE_WINDOW_START = os.environ.get("CHARGE_WINDOW_START", "00:00")
+CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "00:00")
 
 # Max acceptable drift between inverter reported UTC time and real UTC.
 # Anything beyond this almost certainly means the SolisCloud station was
