@@ -5,8 +5,12 @@ Solis Agile Charge / Discharge Optimizer.
 Reads Octopus Agile rates, Octoplus Free Electricity (Power-ups) and Octoplus
 Saving Sessions from Home Assistant and programs the Solis inverter:
 
-  - Charge during cheap Agile slots (<= MAX_RATE)
-  - Force-charge during Free Electricity windows (Power-ups), no rate check
+  - Charge during cheap Agile slots (<= MAX_RATE) that fall in the overnight
+    grid-charge window only. Daytime cheap slots are skipped on purpose: the
+    solar array charges the battery for free then, so grid-charging would
+    waste money (in summer Agile is cheap at midday precisely because of solar).
+  - Force-charge during Free Electricity windows (Power-ups), no rate check,
+    any time of day (Octopus pays you to import).
   - Discharge during Saving Sessions to dodge grid usage
   - All times are emitted in UTC because the inverter clock runs UTC+0 on
     SolisCloud (no DST). The HACS solis integration ships HH,MM straight to
@@ -16,20 +20,31 @@ Saving Sessions from Home Assistant and programs the Solis inverter:
 Up to 3 charge slots and 3 discharge slots. Unused slots are cleared.
 """
 
+import json
 import os
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta, timezone
-
-import requests
 
 # === CONFIG ===
 HASS_URL = os.environ["HASS_URL"]
 HASS_TOKEN = os.environ["HASS_TOKEN"]
 
-MAX_RATE = 0.15            # 15p/kWh inc VAT
+MAX_RATE = float(os.environ.get("MAX_RATE", "0.15"))   # £/kWh inc VAT cap (15p)
 MAX_SLOTS = 3
 CHARGE_CURRENT = 50        # Amps - max for this inverter
 DISCHARGE_CURRENT = 50     # Amps
+
+# Only grid-charge during these UK-local hours - i.e. overnight, when the
+# solar array is NOT generating. Charging the battery from the grid during
+# daylight is wasteful when you have solar: the panels would fill the battery
+# for free, and in summer Agile goes cheap at midday *because* of national
+# solar glut, which previously tricked this script into paying to import all
+# afternoon. Window is UK local time and may wrap past midnight
+# (start > end => overnight). Set start == end to allow charging 24h.
+CHARGE_WINDOW_START = os.environ.get("CHARGE_WINDOW_START", "23:00")
+CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "07:00")
 
 # Max acceptable drift between inverter reported UTC time and real UTC.
 # Anything beyond this almost certainly means the SolisCloud station was
@@ -59,34 +74,46 @@ OCTOPLUS_FREE_EVENT_CANDIDATES = [
 HEADERS = {
     "Authorization": f"Bearer {HASS_TOKEN}",
     "Content-Type": "application/json",
+    # Cloudflare in front of hass.iacob.co.uk 403s the default Python-urllib
+    # User-Agent, so set an explicit one.
+    "User-Agent": "solis-charge/1.0",
 }
 
 
 # ---------- HASS plumbing ----------
 
+def _request(method, url, payload=None, timeout=10):
+    """Minimal stdlib HTTP. Avoids a runtime `pip install` that can fail the
+    whole job when PyPI is slow/unreachable. Raises urllib.error.HTTPError on
+    non-2xx (callers that need 404-tolerance catch it)."""
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, method=method, headers=HEADERS)
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        body = resp.read()
+        return json.loads(body) if body else None
+
+
 def hass_get(entity_id):
-    resp = requests.get(f"{HASS_URL}/api/states/{entity_id}", headers=HEADERS, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+    result = _request("GET", f"{HASS_URL}/api/states/{entity_id}")
+    if result is None:
+        raise RuntimeError(f"empty response for {entity_id}")
+    return result
 
 
 def hass_get_optional(entity_id):
-    resp = requests.get(f"{HASS_URL}/api/states/{entity_id}", headers=HEADERS, timeout=10)
-    if resp.status_code == 404:
-        return None
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        return hass_get(entity_id)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
 
 
 def hass_service(domain, service, data, timeout=10):
-    resp = requests.post(
-        f"{HASS_URL}/api/services/{domain}/{service}",
-        headers=HEADERS,
-        json=data,
-        timeout=timeout,
+    return _request(
+        "POST", f"{HASS_URL}/api/services/{domain}/{service}",
+        payload=data, timeout=timeout,
     )
-    resp.raise_for_status()
-    return resp
 
 
 # ---------- Octopus data ----------
@@ -175,10 +202,38 @@ def _future_sessions(sessions):
 
 # ---------- Window logic ----------
 
+def _hhmm_to_min(s):
+    h, m = (s.split(":") + ["0"])[:2]
+    return int(h) * 60 + int(m)
+
+
+def in_charge_window(iso_str):
+    """True if a slot start falls inside the allowed (overnight) charge window.
+
+    The Octopus rate timestamps carry their own UK-local offset (e.g.
+    +01:00 in BST), so reading hour/minute straight off the parsed datetime
+    gives UK wall-clock with no tzdata dependency. Handles windows that wrap
+    past midnight (start > end)."""
+    start = _hhmm_to_min(CHARGE_WINDOW_START)
+    end = _hhmm_to_min(CHARGE_WINDOW_END)
+    if start == end:
+        return True  # 24h - charging allowed any time
+    dt = datetime.fromisoformat(iso_str)
+    m = dt.hour * 60 + dt.minute
+    if start < end:
+        return start <= m < end
+    return m >= start or m < end  # wraps midnight
+
+
 def find_cheap_windows(rates):
-    """Find consecutive cheap slots. Up to MAX_SLOTS windows, prefer cheapest avg."""
+    """Find consecutive cheap slots inside the allowed overnight window.
+
+    Up to MAX_SLOTS windows, prefer cheapest avg. Slots that are cheap but
+    fall in daytime/solar hours are intentionally excluded - solar charges
+    the battery for free then, so paying to grid-charge would waste money."""
     cheap = sorted(
-        [r for r in rates if r["value_inc_vat"] <= MAX_RATE],
+        [r for r in rates
+         if r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])],
         key=lambda r: r["start"],
     )
 
@@ -490,8 +545,14 @@ def main():
         sys.exit(1)
 
     cheap_count = sum(1 for r in rates if r["value_inc_vat"] <= MAX_RATE)
+    eligible_count = sum(
+        1 for r in rates
+        if r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])
+    )
     print(f"  {cheap_count} cheap slots (<={MAX_RATE*100:.0f}p), "
           f"{len(rates) - cheap_count} expensive slots")
+    print(f"  Grid-charge window: {CHARGE_WINDOW_START}-{CHARGE_WINDOW_END} UK local "
+          f"(overnight only) -> {eligible_count} cheap slot(s) eligible to charge")
     print(f"  Rate range: {min(r['value_inc_vat'] for r in rates)*100:.1f}p "
           f"- {max(r['value_inc_vat'] for r in rates)*100:.1f}p")
     print()

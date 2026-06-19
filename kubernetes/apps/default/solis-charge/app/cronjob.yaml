@@ -28,9 +28,8 @@ spec:
             - name: solis-charge
               image: python:3.14-alpine
               command:
-                - sh
-                - -c
-                - pip install --quiet requests && python /scripts/solis_agile_charge.py
+                - python
+                - /scripts/solis_agile_charge.py
               envFrom:
                 - secretRef:
                     name: solis-charge-secret
