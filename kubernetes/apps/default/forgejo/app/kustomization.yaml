@@ -8,3 +8,11 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+configMapGenerator:
+  # Public profile card override (templates/user/profile.tmpl). Copied into the
+  # Forgejo custom dir by the init-custom container at pod start.
+  - name: forgejo-custom-templates
+    files:
+      - profile.tmpl=files/profile.tmpl
+    options:
+      disableNameSuffixHash: true

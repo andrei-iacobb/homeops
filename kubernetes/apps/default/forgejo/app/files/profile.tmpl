@@ -1,0 +1,290 @@
+{{template "base/head" .}}
+<div role="main" aria-label="{{.Title}}" class="page-content user profile">
+	<div class="ui container">
+		{{template "base/alert" .}}
+{{if and .IsSigned (eq .SignedUserID .ContextUser.ID)}}
+		{{/* ============================================================
+		     OWNER VIEW - the original Forgejo profile, unchanged.
+		     Andrei (signed in, viewing his own profile) keeps the full
+		     repo list, tabs and management UI.
+		     ============================================================ */}}
+		<div class="ui stackable grid">
+			<div class="ui four wide column">
+				{{template "shared/user/profile_big_avatar" .}}
+			</div>
+			<div class="ui twelve wide column tw-mb-4">
+				{{template "user/overview/header" .}}
+				{{if eq .TabName "activity"}}
+					{{if eq .SignedUserID .ContextUser.ID}}
+					<p id="visibility-hint">
+						{{if .ContextUser.KeepActivityPrivate}}
+							{{ctx.Locale.Tr "user.public_activity.visibility_hint.self_private" (print AppSubUrl "/user/settings#keep-activity-private")}}
+						{{else}}
+							{{if eq .ContextUser.Visibility 2}}
+								{{ctx.Locale.Tr "user.public_activity.visibility_hint.self_private_profile" (print AppSubUrl "/user/settings#visibility-setting")}}
+							{{else}}
+								{{ctx.Locale.Tr "user.public_activity.visibility_hint.self_public" (print AppSubUrl "/user/settings#keep-activity-private")}}
+							{{end}}
+						{{end}}
+					</p>
+					{{else}}
+						{{if .IsAdmin}}
+						<div id="visibility-hint" class="ui info message">
+							{{if or .ContextUser.KeepActivityPrivate (eq .ContextUser.Visibility 2)}}
+								{{ctx.Locale.Tr "user.public_activity.visibility_hint.admin_private"}}
+							{{else}}
+								{{ctx.Locale.Tr "user.public_activity.visibility_hint.admin_public"}}
+							{{end}}
+						</div>
+						{{else}}
+							{{if .ContextUser.KeepActivityPrivate}}
+								<p id="visibility-hint">{{ctx.Locale.Tr "user.disabled_public_activity"}}</p>
+							{{end}}
+						{{end}}
+					{{end}}
+					{{if or .IsAdmin (eq .SignedUserID .ContextUser.ID) (not .ContextUser.KeepActivityPrivate)}}
+						{{template "user/heatmap" .}}
+						{{template "user/dashboard/feeds" .}}
+					{{end}}
+				{{else if eq .TabName "stars"}}
+					<div class="stars">
+						{{template "shared/repo_search" .}}
+						{{template "explore/repo_list" .}}
+						{{template "base/paginate" .}}
+					</div>
+				{{else if eq .TabName "following"}}
+					{{template "repo/user_cards" .}}
+				{{else if eq .TabName "followers"}}
+					{{template "repo/user_cards" .}}
+				{{else if eq .TabName "overview"}}
+					<div id="readme_profile" class="{{if not .IsProfileReadmePlain}}markup{{end}}">
+					{{if .IsProfileReadmePlain}}
+						<pre>{{.ProfileReadme}}</pre>
+					{{else}}
+						{{.ProfileReadme}}
+					{{end}}
+					</div>
+				{{else}}
+					{{template "shared/repo_search" .}}
+					{{template "explore/repo_list" .}}
+					{{template "base/paginate" .}}
+				{{end}}
+			</div>
+		</div>
+{{else}}
+		{{/* ============================================================
+		     PUBLIC VIEW - minimal profile card.
+		     Visitors get a single card: avatar, name, a full-activity
+		     contribution graph (counts only, never repo names) and a
+		     "work with me" link. No repo list, no tabs.
+		     ============================================================ */}}
+		<style>
+			.ap-wrap{display:flex;justify-content:center;padding:clamp(16px,2.5vw,28px) 8px clamp(28px,5vw,52px);color-scheme:dark}
+			.ap-card{position:relative;overflow:hidden;width:100%;max-width:860px;
+				padding:clamp(24px,4vw,40px);border-radius:22px;
+				background:linear-gradient(180deg,#0e0f12 0%,#0a0b0d 100%);
+				border:1px solid rgba(255,255,255,.08);
+				box-shadow:0 1px 0 0 rgba(255,255,255,.04) inset,0 24px 60px -20px rgba(0,0,0,.8),0 8px 24px -12px rgba(0,0,0,.6);
+				animation:ap-in .55s cubic-bezier(.2,.8,.2,1) both}
+			.ap-glow{position:absolute;inset:-40% -10% auto -10%;height:340px;pointer-events:none;z-index:0;
+				background:radial-gradient(60% 100% at 50% 0%,rgba(57,211,83,.16),rgba(57,211,83,0) 70%)}
+			.ap-card>:not(.ap-glow){position:relative;z-index:1}
+			.ap-head{display:flex;align-items:center;gap:clamp(16px,3vw,22px)}
+			.ap-avatar img{width:clamp(72px,12vw,104px)!important;height:clamp(72px,12vw,104px)!important;
+				border-radius:50%;object-fit:cover;display:block;
+				border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px -8px rgba(0,0,0,.7)}
+			.ap-id{min-width:0}
+			.ap-name{margin:0;font-size:clamp(21px,3.2vw,30px);font-weight:650;line-height:1.1;
+				letter-spacing:-.02em;color:#f2f3f5;text-wrap:balance}
+			.ap-handle{margin:4px 0 0;font-family:ui-monospace,"SFMono-Regular","JetBrains Mono",Menlo,monospace;
+				font-size:13.5px;color:rgba(242,243,245,.5)}
+			.ap-bio{margin:10px 0 0;font-size:14px;line-height:1.55;color:rgba(242,243,245,.66)}
+			.ap-bio p{margin:0}
+			.ap-bio a{color:rgba(242,243,245,.85);text-decoration:underline;text-underline-offset:2px}
+
+			.ap-graph{margin-top:clamp(22px,4vw,30px)}
+			.ap-heatmap{display:flex;flex-direction:column;gap:8px}
+			.ap-hm-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
+				scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+			.ap-hm-scroll::-webkit-scrollbar{height:7px}
+			.ap-hm-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
+			.ap-hm-inner{display:inline-flex;flex-direction:column;gap:4px;--cell:11px;--gap:3px}
+			.ap-hm-months{display:grid;grid-auto-rows:13px;column-gap:var(--gap);
+				margin-left:calc(28px + var(--gap));
+				font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;color:rgba(242,243,245,.45)}
+			.ap-hm-months span{grid-row:1;white-space:nowrap;overflow:visible}
+			.ap-hm-main{display:flex;gap:var(--gap)}
+			.ap-hm-days{display:grid;grid-template-rows:repeat(7,var(--cell));row-gap:var(--gap);
+				width:28px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;color:rgba(242,243,245,.42)}
+			.ap-hm-days span{line-height:var(--cell);height:var(--cell)}
+			.ap-hm-grid{display:grid;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell);
+				grid-auto-flow:column;gap:var(--gap)}
+			.ap-cell{width:var(--cell);height:var(--cell);border-radius:3px;background:rgba(255,255,255,.05);
+				outline:1px solid rgba(255,255,255,.04);outline-offset:-1px;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
+			.ap-cell[data-level="1"]{background:#0e4429}
+			.ap-cell[data-level="2"]{background:#006d32}
+			.ap-cell[data-level="3"]{background:#26a641}
+			.ap-cell[data-level="4"]{background:#39d353}
+			.ap-cell[data-future="1"]{background:transparent;outline:none}
+			.ap-cell:hover{transform:scale(1.35);outline-color:rgba(255,255,255,.35)}
+			.ap-hm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+				font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:rgba(242,243,245,.5)}
+			.ap-hm-caption{font-variant-numeric:tabular-nums}
+			.ap-hm-caption b{color:#f2f3f5;font-weight:600}
+			.ap-hm-legend{display:flex;align-items:center;gap:5px}
+			.ap-hm-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px}
+			.ap-hm-legend i[data-level="1"]{background:#0e4429}
+			.ap-hm-legend i[data-level="2"]{background:#006d32}
+			.ap-hm-legend i[data-level="3"]{background:#26a641}
+			.ap-hm-legend i[data-level="4"]{background:#39d353}
+			.ap-hm-skeleton{height:104px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.07),rgba(255,255,255,.04));background-size:200% 100%;animation:ap-shimmer 1.3s ease-in-out infinite}
+			.ap-hm-error{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:rgba(242,243,245,.4);padding:8px 0}
+
+			.ap-foot{margin-top:clamp(24px,4vw,32px);padding-top:clamp(20px,3vw,24px);
+				border-top:1px solid rgba(255,255,255,.07);
+				display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+			.ap-foot-label{font-size:15px;color:rgba(242,243,245,.6)}
+			.ap-cta{position:relative;display:inline-flex;align-items:center;gap:6px;
+				font-size:15px;font-weight:600;color:#f2f3f5;text-decoration:none;
+				border-radius:6px;transition:color .2s cubic-bezier(.2,.8,.2,1)}
+			.ap-cta svg{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+			.ap-cta::after{content:"";position:absolute;left:0;right:auto;bottom:-3px;height:1.5px;width:0;
+				background:#39d353;transition:width .25s cubic-bezier(.2,.8,.2,1)}
+			.ap-cta:hover{color:#39d353}
+			.ap-cta:hover::after{width:calc(100% - 22px)}
+			.ap-cta:hover svg{transform:translate(2px,-2px)}
+			.ap-cta:active{transform:translateY(1px)}
+			.ap-cta:focus-visible{outline:none;box-shadow:0 0 0 2px #0a0b0d,0 0 0 4px #39d353}
+
+			@keyframes ap-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+			@keyframes ap-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+			@media (max-width:540px){
+				.ap-head{flex-direction:column;text-align:center}
+				.ap-foot{justify-content:center}
+			}
+			@media (prefers-reduced-motion:reduce){
+				.ap-card{animation:none}
+				.ap-cell,.ap-cta,.ap-cta svg,.ap-cta::after{transition:none}
+				.ap-hm-skeleton{animation:none}
+			}
+		</style>
+
+		<section class="ap-wrap">
+			<article class="ap-card" aria-label="{{.ContextUser.Name}} profile">
+				<div class="ap-glow" aria-hidden="true"></div>
+				<header class="ap-head">
+					<div class="ap-avatar">{{ctx.AvatarUtils.Avatar .ContextUser 256}}</div>
+					<div class="ap-id">
+						<h1 class="ap-name">{{if .ContextUser.FullName}}{{.ContextUser.FullName}}{{else}}{{.ContextUser.Name}}{{end}}</h1>
+						<p class="ap-handle">@{{.ContextUser.Name}}</p>
+						{{if .RenderedDescription}}<div class="ap-bio markup">{{.RenderedDescription}}</div>{{end}}
+					</div>
+				</header>
+
+				<div class="ap-graph">
+					<div id="ap-heatmap" class="ap-heatmap" data-src="{{AppSubUrl}}/assets/data/heatmap.json" role="img" aria-label="Contribution activity over the last year">
+						<div class="ap-hm-skeleton"></div>
+					</div>
+				</div>
+
+				<footer class="ap-foot">
+					<span class="ap-foot-label">Work with me at</span>
+					<a class="ap-cta" href="https://andrei.iacob.co.uk" target="_blank" rel="noopener noreferrer">andrei.iacob.co.uk<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11l6-6M6 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+				</footer>
+			</article>
+		</section>
+
+		<script>
+		(function(){
+			var root=document.getElementById('ap-heatmap');
+			if(!root)return;
+			var src=root.getAttribute('data-src');
+			function lvl(c){if(c<=0)return 0;if(c<3)return 1;if(c<7)return 2;if(c<15)return 3;return 4;}
+			function key(d){return d.toISOString().slice(0,10);} // UTC date, matches the UTC-bucketed JSON
+			var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+			function err(){root.innerHTML='<div class="ap-hm-error">Activity graph unavailable.</div>';}
+			fetch(src+'?t='+Math.floor(Date.now()/3600000),{cache:'no-cache'})
+				.then(function(r){if(!r.ok)throw 0;return r.json();})
+				.then(render).catch(err);
+
+			function render(data){
+				var counts={};(data.days||[]).forEach(function(d){counts[d.date]=d.count;});
+				var total=data.total||0;
+				var today=new Date();today.setUTCHours(0,0,0,0);
+				var end=new Date(today);end.setUTCDate(end.getUTCDate()+(6-end.getUTCDay())); // Saturday this week (UTC)
+				var WEEKS=53;
+				var start=new Date(end);start.setUTCDate(start.getUTCDate()-(WEEKS*7-1)); // Sunday, 53 weeks back (UTC)
+
+				var inner=document.createElement('div');inner.className='ap-hm-inner';
+				var months=document.createElement('div');months.className='ap-hm-months';
+				months.style.gridTemplateColumns='repeat('+WEEKS+',var(--cell))';
+				var main=document.createElement('div');main.className='ap-hm-main';
+				var days=document.createElement('div');days.className='ap-hm-days';
+				['','Mon','','Wed','','Fri',''].forEach(function(t){var s=document.createElement('span');s.textContent=t;days.appendChild(s);});
+				var grid=document.createElement('div');grid.className='ap-hm-grid';
+
+				var cur=new Date(start),col=0,lastMonth=-1;
+				for(var i=0;i<WEEKS*7;i++){
+					if(cur.getUTCDay()===0){ // start of a column = Sunday
+						col=Math.floor(i/7);
+						var m=cur.getUTCMonth();
+						if(m!==lastMonth){
+							// only label if this column has room before the next and isn't the very last sliver
+							var sp=document.createElement('span');sp.textContent=MON[m];
+							sp.style.gridColumnStart=(col+1);
+							months.appendChild(sp);lastMonth=m;
+						}
+					}
+					var cell=document.createElement('div');cell.className='ap-cell';
+					var k=key(cur);
+					if(cur>today){
+						cell.setAttribute('data-future','1');
+					}else{
+						var c=counts[k]||0;
+						cell.setAttribute('data-level',lvl(c));
+						cell.title=(c===0?'No contributions':(c+' contribution'+(c>1?'s':'')))+' on '+k;
+					}
+					grid.appendChild(cell);
+					cur.setUTCDate(cur.getUTCDate()+1);
+				}
+
+				main.appendChild(days);main.appendChild(grid);
+				var foot=document.createElement('div');foot.className='ap-hm-foot';
+				var cap=document.createElement('span');cap.className='ap-hm-caption';
+				cap.innerHTML='<b>'+total.toLocaleString()+'</b> contribution'+(total===1?'':'s')+' in the last year';
+				var leg=document.createElement('span');leg.className='ap-hm-legend';
+				leg.appendChild(document.createTextNode('Less'));
+				[0,1,2,3,4].forEach(function(L){var i=document.createElement('i');if(L)i.setAttribute('data-level',L);leg.appendChild(i);});
+				leg.appendChild(document.createTextNode('More'));
+				foot.appendChild(cap);foot.appendChild(leg);
+
+				inner.appendChild(months);inner.appendChild(main);
+				var scroll=document.createElement('div');scroll.className='ap-hm-scroll';
+				scroll.appendChild(inner);
+				root.innerHTML='';root.appendChild(scroll);root.appendChild(foot);
+				scroll.scrollLeft=scroll.scrollWidth; // show most recent weeks first on mobile
+			}
+		})();
+		</script>
+{{end}}
+	</div>
+</div>
+
+{{if and .IsSigned (eq .SignedUserID .ContextUser.ID)}}
+<div class="ui g-modal-confirm delete modal" id="block-user">
+	<div class="header">
+		{{ctx.Locale.Tr "user.block_user"}}
+	</div>
+	<div class="content">
+		<p>{{ctx.Locale.Tr "user.block_user.detail"}}</p>
+		<ul>
+			<li>{{ctx.Locale.Tr "user.block_user.detail_1"}}</li>
+			<li>{{ctx.Locale.Tr "user.block_user.detail_2"}}</li>
+			<li>{{ctx.Locale.Tr "user.block_user.detail_3"}}</li>
+		</ul>
+	</div>
+	{{template "base/modal_actions_confirm" .}}
+</div>
+{{end}}
+
+{{template "base/footer" .}}

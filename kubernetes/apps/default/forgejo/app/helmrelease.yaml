@@ -27,6 +27,21 @@ spec:
             securityContext:
               runAsUser: 0
               runAsGroup: 0
+          init-custom:
+            # Lay down the public profile-card template override before Forgejo starts.
+            image:
+              repository: busybox
+              tag: "1.38"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                mkdir -p /data/gitea/templates/user
+                cp /custom-src/profile.tmpl /data/gitea/templates/user/profile.tmpl
+                chown -R 1000:1000 /data/gitea/templates
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
         containers:
           perms-fix:
             image:
@@ -96,6 +111,51 @@ spec:
               limits:
                 cpu: 2000m
                 memory: 2Gi
+          heatmap-gen:
+            # Writes a full-activity contribution graph (daily counts only, never
+            # repo names) to a static JSON the public profile card fetches. Refreshed
+            # hourly so the graph stays live even though every repo is private.
+            image:
+              repository: postgres
+              tag: "17-alpine"
+            env:
+              PGHOST: postgres.databases.svc.cluster.local
+              PGUSER: gitea
+              PGDB: gitea
+              PGPASS:
+                valueFrom:
+                  secretKeyRef:
+                    name: forgejo-secret
+                    key: GITEA_DB_PASSWORD
+            command:
+              - /bin/sh
+              - -c
+              - |
+                cat > /tmp/q.sql <<'EOF'
+                SELECT json_build_object('generated',extract(epoch from now())::int,'total',(SELECT count(*) FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000),'days',COALESCE((SELECT json_agg(json_build_object('date',d,'count',c) ORDER BY d) FROM (SELECT to_char(to_timestamp(created_unix) AT TIME ZONE 'UTC','YYYY-MM-DD') d, count(*) c FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000 GROUP BY 1) s),'[]'::json));
+                EOF
+                DIR=/data/gitea/public/assets/data
+                mkdir -p "$${DIR}"
+                while true; do
+                  if PGPASSWORD="$${PGPASS}" psql -h "$${PGHOST}" -U "$${PGUSER}" -d "$${PGDB}" -tAf /tmp/q.sql > "$${DIR}/heatmap.json.tmp" 2>/dev/null; then
+                    mv "$${DIR}/heatmap.json.tmp" "$${DIR}/heatmap.json"
+                  fi
+                  sleep 3600
+                done
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1000
+              runAsGroup: 1000
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                cpu: 250m
+                memory: 128Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -119,6 +179,13 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /data
+      custom-templates:
+        type: configMap
+        name: forgejo-custom-templates
+        advancedMounts:
+          gitea:
+            init-custom:
+              - path: /custom-src
     route:
       app:
         hostnames: ["git.iacob.co.uk"]
