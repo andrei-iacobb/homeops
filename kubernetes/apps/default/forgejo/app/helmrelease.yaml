@@ -127,28 +127,42 @@ spec:
                   secretKeyRef:
                     name: forgejo-secret
                     key: GITEA_DB_PASSWORD
+              GITHUB_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: forgejo-secret
+                    key: GITHUB_TOKEN
             command:
               - /bin/sh
               - -c
               - |
-                cat > /tmp/q.sql <<'EOF'
-                SELECT json_build_object('generated',extract(epoch from now())::int,'total',(SELECT count(*) FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000),'days',COALESCE((SELECT json_agg(json_build_object('date',d,'count',c) ORDER BY d) FROM (SELECT to_char(to_timestamp(created_unix) AT TIME ZONE 'UTC','YYYY-MM-DD') d, count(*) c FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000 GROUP BY 1) s),'[]'::json));
+                apk add --no-cache curl jq >/dev/null 2>&1 || true
+                cat > /tmp/fj.sql <<'EOF'
+                SELECT COALESCE(json_object_agg(d, c), '{}'::json) FROM (SELECT to_char(to_timestamp(created_unix) AT TIME ZONE 'UTC','YYYY-MM-DD') d, count(*) c FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000 GROUP BY 1) s;
                 EOF
+                GHQ='{"query":"query{user(login:\"andrei-iacobb\"){contributionsCollection{contributionCalendar{weeks{contributionDays{date contributionCount}}}}}}"}'
                 DIR=/data/gitea/public/assets/data
                 mkdir -p "$${DIR}"
                 while true; do
-                  if PGPASSWORD="$${PGPASS}" psql -h "$${PGHOST}" -U "$${PGUSER}" -d "$${PGDB}" -tAf /tmp/q.sql > "$${DIR}/heatmap.json.tmp" 2>/dev/null; then
+                  # Forgejo daily counts (own activity incl. private repos) -> {date:count}
+                  PGPASSWORD="$${PGPASS}" psql -h "$${PGHOST}" -U "$${PGUSER}" -d "$${PGDB}" -tAf /tmp/fj.sql > /tmp/fj.json 2>/dev/null || echo '{}' > /tmp/fj.json
+                  [ -s /tmp/fj.json ] || echo '{}' > /tmp/fj.json
+                  # GitHub daily counts (full calendar incl. private, via the user's token) -> {date:count}
+                  curl -s -m 30 -H "Authorization: bearer $${GITHUB_TOKEN}" -H "Content-Type: application/json" -d "$${GHQ}" https://api.github.com/graphql \
+                    | jq '[ (.data.user.contributionsCollection.contributionCalendar.weeks // [])[].contributionDays[] | {(.date): .contributionCount} ] | add // {}' > /tmp/gh.json 2>/dev/null || echo '{}' > /tmp/gh.json
+                  [ -s /tmp/gh.json ] || echo '{}' > /tmp/gh.json
+                  # Merge: max per day (no double-counting mirrored repos), only replace when there is real data
+                  if cat /tmp/fj.json /tmp/gh.json | jq -s '[ .[] | to_entries[] ] | group_by(.key) | map({date: .[0].key, count: (map(.value)|max)}) | sort_by(.date) | {generated:(now|floor), total:(map(.count)|add // 0), days:.}' > "$${DIR}/heatmap.json.tmp" 2>/dev/null && jq -e '.days|length>0' "$${DIR}/heatmap.json.tmp" >/dev/null 2>&1; then
                     mv "$${DIR}/heatmap.json.tmp" "$${DIR}/heatmap.json"
                   fi
                   sleep 3600
                 done
             securityContext:
-              runAsNonRoot: true
-              runAsUser: 1000
-              runAsGroup: 1000
+              # root needed for `apk add curl jq`; sidecar only reads the DB + GitHub
+              # and writes one JSON file. allowPrivilegeEscalation stays off.
+              runAsUser: 0
+              runAsGroup: 0
               allowPrivilegeEscalation: false
-              capabilities:
-                drop: ["ALL"]
             resources:
               requests:
                 cpu: 10m
