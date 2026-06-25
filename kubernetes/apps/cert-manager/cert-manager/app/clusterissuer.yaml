@@ -9,10 +9,28 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-production
     solvers:
+      # iacob.co.uk lives in a Cloudflare zone the original token is scoped to.
       - dns01:
           cloudflare:
             apiTokenSecretRef:
               name: cert-manager-secret
               key: api-token
         selector:
-          dnsZones: ["${SECRET_DOMAIN}", "iacob.uk", "iacobapp.dev"]
+          dnsZones: ["${SECRET_DOMAIN}"]
+      # iacobapp.dev + iacob.uk are separate zones (different NS pair) and each
+      # needs its own zone-scoped Cloudflare token - the original token cannot
+      # see them, which left both certs stuck/expired on DNS-01.
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cert-manager-secret
+              key: api-token-iacobapp-dev
+        selector:
+          dnsZones: ["iacobapp.dev"]
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cert-manager-secret
+              key: api-token-iacob-uk
+        selector:
+          dnsZones: ["iacob.uk"]
