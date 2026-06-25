@@ -23,7 +23,17 @@ spec:
           containers:
             - name: recyclarr
               image: ghcr.io/recyclarr/recyclarr:8.6.0
-              command: ["recyclarr", "sync"]
+              # recyclarr exits 1 when a sync succeeds but emits warnings (e.g. it
+              # replaced existing custom formats) - that is not a failure, but it made
+              # Kubernetes mark the Job Failed and spam KubeJobFailed alerts. Treat
+              # exit 1 as success; any other non-zero code still fails the Job.
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  recyclarr sync
+                  code=$?
+                  [ "$code" -eq 1 ] && exit 0
+                  exit "$code"
               envFrom:
                 - secretRef:
                     name: recyclarr-secret
