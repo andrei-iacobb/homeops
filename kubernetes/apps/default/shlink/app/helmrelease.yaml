@@ -107,7 +107,7 @@ spec:
             port: *webport
     route:
       api:
-        hostnames: ["s.iacobapp.dev"]
+        hostnames: ["s.iacobapp.dev", "me.iacobapp.dev"]
         parentRefs:
           - name: envoy-external
             namespace: network
