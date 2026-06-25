@@ -117,7 +117,7 @@ spec:
             # hourly so the graph stays live even though every repo is private.
             image:
               repository: postgres
-              tag: "17-alpine"
+              tag: "18-alpine"
             env:
               PGHOST: postgres.databases.svc.cluster.local
               PGUSER: gitea
