@@ -9,14 +9,12 @@
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="noindex">
 <meta name="description" content="Live drive-bay health and locator for the HPE Gen9 fleet">
-
 <style>
   :root{
     --bg:#0c0e14; --panel:rgba(22,26,35,.72); --panel2:#1c212d; --ink:#e8ebf2;
     --t2:#aab2c2; --t3:#7c869a; --t4:#586074; --line:#252b3a; --line2:#323a4d;
     --green:#34d399; --amber:#f59e0b; --blue:#3b82f6; --grey:#4b5563; --red:#ef4444;
-    --acc:#7c9cff;
-    --radius:13px;
+    --hot:#fb7185; --acc:#7c9cff; --radius:13px;
   }
   *{box-sizing:border-box}
   html{color-scheme:dark}
@@ -30,7 +28,6 @@
   .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
   main{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
 
-  /* header */
   header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
   .brand{display:flex;align-items:center;gap:11px}
   .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,#3b82f6,#7c9cff);
@@ -46,15 +43,19 @@
   .conn.down .dot{background:var(--red);box-shadow:0 0 9px var(--red)}
   @keyframes breathe{50%{opacity:.45}}
 
-  /* fleet summary chips */
-  .fleetbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+  .fleetbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
   .chip{display:flex;align-items:baseline;gap:7px;border:1px solid var(--line);border-radius:10px;
     padding:8px 13px;background:var(--panel2)}
   .chip b{font-size:16px;font-weight:650}
   .chip span{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
   .chip.warn b{color:var(--amber)} .chip.loc b{color:var(--blue)}
+  .stopall{display:none;align-items:center;gap:7px;border:1px solid var(--blue);color:#cfe0ff;
+    background:#0e1830;border-radius:10px;padding:8px 13px;font:inherit;font-size:12.5px;cursor:pointer}
+  .stopall:hover{background:#13203f}
+  .stopall:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .stopall.on{display:inline-flex}
+  .stopall i{width:9px;height:9px;border-radius:2px;background:var(--blue)}
 
-  /* host card */
   .host{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);
     backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin-bottom:18px;overflow:hidden}
   .host > .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
@@ -67,68 +68,88 @@
   .mini b{color:var(--t2);font-weight:600}
   .body{padding:6px 18px 18px}
 
-  /* cage */
   .cage{margin-top:14px}
   .cage .lbl{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3);
     text-transform:uppercase;letter-spacing:.06em;margin:0 2px 8px}
   .cage .lbl .lid{color:var(--t4);font-size:10.5px}
   .bays{display:flex;gap:8px;flex-wrap:wrap}
 
-  /* a bay = a drive caddy */
-  .bay{position:relative;width:54px;height:64px;border:1px solid var(--line2);border-radius:7px;
+  /* a bay = a drive caddy, with health on its face */
+  .bay{position:relative;width:62px;height:74px;border:1px solid var(--line2);border-radius:7px;
     background:linear-gradient(180deg,#10141d,#0b0e15);cursor:pointer;padding:6px 6px 5px;
     display:flex;flex-direction:column;justify-content:space-between;text-align:left;
     color:var(--t2);font:inherit;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
   .bay:hover{transform:translateY(-2px);border-color:#3c465c;box-shadow:0 6px 18px #0008}
   .bay:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .bay .top{display:flex;justify-content:space-between;align-items:flex-start}
   .bay .slotno{font-size:10px;color:var(--t4);line-height:1}
-  .bay .dev{font-size:10px;color:var(--t3);line-height:1.1;font-family:ui-monospace,Menlo,monospace}
-  .bay .led{width:12px;height:12px;border-radius:50%;background:var(--grey);align-self:flex-start}
-  .bay .cap{font-size:9.5px;color:var(--t4);font-family:ui-monospace,Menlo,monospace;
-    font-variant-numeric:tabular-nums;line-height:1}
+  .bay .led{width:12px;height:12px;border-radius:50%;background:var(--grey)}
+  .bay .dev{font-size:10.5px;color:var(--t3);line-height:1.1;font-family:ui-monospace,Menlo,monospace;margin-top:2px}
+  .bay .hl{font-size:9.5px;line-height:1.15;font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .bay .hl .st{font-weight:600}
+  .bay .hl .ok{color:var(--green)} .bay .hl .bad{color:var(--amber)} .bay .hl .mut{color:var(--t4)}
+  .bay .hl .t{color:var(--t3)} .bay .hl .t.hot{color:var(--hot)}
 
   .bay.healthy .led{background:var(--green);box-shadow:0 0 8px var(--green)}
   .bay.healthy{border-color:#1e4736}
   .bay.fault .led{background:var(--amber);box-shadow:0 0 10px var(--amber)}
   .bay.fault{border-color:#7a5512;background:linear-gradient(180deg,#1d160a,#0b0e15)}
-  .bay.empty{opacity:.6;background:repeating-linear-gradient(135deg,#0c0f17,#0c0f17 6px,#0e121b 6px,#0e121b 12px)}
+  .bay.empty{opacity:.62;background:repeating-linear-gradient(135deg,#0c0f17,#0c0f17 6px,#0e121b 6px,#0e121b 12px)}
   .bay.empty .led{background:#333a49;box-shadow:none}
   .bay.locate{border-color:var(--blue)}
   .bay.locate .led{background:var(--blue);box-shadow:0 0 12px var(--blue);animation:pulse 1.1s ease-in-out infinite}
   .bay.locate::after{content:"";position:absolute;inset:-1px;border-radius:7px;border:1px solid var(--blue);
     animation:pulse 1.1s ease-in-out infinite;pointer-events:none}
-  .bay .ring{display:none}
+  .bay.open{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .bay.pending{opacity:.55}
 
-  .bay.pending{opacity:.55;pointer-events:none}
-
-  /* tooltip */
-  #tip{position:fixed;z-index:50;max-width:280px;pointer-events:none;opacity:0;transform:translateY(4px);
+  /* hover quick-peek */
+  #tip{position:fixed;z-index:40;max-width:230px;pointer-events:none;opacity:0;transform:translateY(4px);
     transition:opacity .1s ease,transform .1s ease;
-    background:#0b0e15;border:1px solid var(--line2);border-radius:10px;padding:11px 13px;
-    box-shadow:0 12px 40px #000a;font-size:12px}
+    background:#0b0e15;border:1px solid var(--line2);border-radius:9px;padding:7px 10px;
+    box-shadow:0 12px 40px #000a;font-size:11.5px;color:var(--t2)}
   #tip.show{opacity:1;transform:translateY(0)}
-  #tip .th{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-  #tip .th .led{width:9px;height:9px;border-radius:50%}
-  #tip .th b{font-size:12.5px}
-  #tip table{border-collapse:collapse;width:100%}
-  #tip td{padding:1.5px 0;vertical-align:top}
-  #tip td.k{color:var(--t3);padding-right:12px;white-space:nowrap}
-  #tip td.v{color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;text-align:right}
-  #tip .reason{margin-top:7px;color:var(--amber);font-size:11.5px}
-  #tip .hint{margin-top:8px;padding-top:7px;border-top:1px solid var(--line);color:var(--t4);font-size:11px}
 
-  /* legend + states */
+  /* click inspector (pinned, actionable) */
+  #scrim{position:fixed;inset:0;z-index:48;display:none}
+  #scrim.show{display:block}
+  #inspect{position:fixed;z-index:49;width:268px;display:none;
+    background:#0d1019;border:1px solid var(--line2);border-radius:12px;
+    box-shadow:0 20px 60px #000b;font-size:12.5px;overflow:hidden}
+  #inspect.show{display:block}
+  #inspect .ih{display:flex;align-items:center;gap:9px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
+  #inspect .ih .led{width:11px;height:11px;border-radius:50%}
+  #inspect .ih b{font-size:13px}
+  #inspect .ih .x{margin-left:auto;color:var(--t3);background:none;border:0;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
+  #inspect .ih .x:hover{color:var(--ink)}
+  #inspect table{border-collapse:collapse;width:100%;padding:0}
+  #inspect .body2{padding:10px 14px}
+  #inspect td{padding:2px 0;vertical-align:top}
+  #inspect td.k{color:var(--t3);padding-right:14px;white-space:nowrap}
+  #inspect td.v{color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;text-align:right;word-break:break-all}
+  #inspect td.v.ok{color:var(--green)} #inspect td.v.bad{color:var(--amber)} #inspect td.v.hot{color:var(--hot)}
+  #inspect .reason{margin:8px 14px 0;color:var(--amber);font-size:11.5px}
+  #inspect .act{padding:12px 14px 14px}
+  #inspect .btn{width:100%;border-radius:9px;padding:9px;font:inherit;font-size:12.5px;font-weight:600;
+    cursor:pointer;border:1px solid var(--blue);background:#0e1830;color:#cfe0ff;display:flex;
+    align-items:center;justify-content:center;gap:8px}
+  #inspect .btn:hover{background:#13203f}
+  #inspect .btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  #inspect .btn.stop{border-color:var(--amber);background:#241a08;color:#fcd9a0}
+  #inspect .btn.stop:hover{background:#2e2009}
+  #inspect .btn .g{width:9px;height:9px;border-radius:50%;background:var(--blue)}
+  #inspect .btn.stop .g{border-radius:2px;background:var(--amber)}
+  #inspect .empty-note{padding:0 14px 12px;color:var(--t3);font-size:11.5px}
+
   .legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--t3);font-size:12px;margin:8px 2px 0}
   .legend span{display:inline-flex;align-items:center;gap:6px}
   .legend i{width:10px;height:10px;border-radius:50%}
   .empty-state{border:1px dashed var(--line2);border-radius:var(--radius);padding:40px;text-align:center;color:var(--t3)}
   .empty-state h3{color:var(--t2);margin:0 0 6px;font-size:15px}
-  .foot{margin-top:26px;color:var(--t4);font-size:11.5px;text-align:center}
+  .foot{margin-top:26px;color:var(--t4);font-size:11.5px;text-align:center;min-height:16px}
 
-  @media (prefers-reduced-motion: reduce){
-    *{animation:none !important;transition:none !important}
-  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important;transition:none !important} }
 </style>
 </head>
 <body>
@@ -136,10 +157,7 @@
   <header class="top">
     <div class="brand">
       <div class="logo"><i></i></div>
-      <div>
-        <h1>BayWatch</h1>
-        <div class="sub">drive-bay health &amp; locator</div>
-      </div>
+      <div><h1>BayWatch</h1><div class="sub">drive-bay health &amp; locator</div></div>
     </div>
     <div class="spacer"></div>
     <div id="conn" class="conn"><span class="dot"></span><span id="connText">connecting</span></div>
@@ -150,23 +168,24 @@
   <div class="legend">
     <span><i style="background:var(--green);box-shadow:0 0 7px var(--green)"></i>healthy</span>
     <span><i style="background:var(--amber);box-shadow:0 0 7px var(--amber)"></i>fault (ZFS / SMART)</span>
-    <span><i style="background:var(--blue);box-shadow:0 0 7px var(--blue)"></i>locate</span>
+    <span><i style="background:var(--blue);box-shadow:0 0 7px var(--blue)"></i>locating</span>
     <span><i style="background:#333a49"></i>empty bay</span>
-    <span style="color:var(--t4)">click a bay to locate &middot; hover for drive detail</span>
+    <span style="color:var(--t4)">click a bay for health &amp; locate</span>
   </div>
   <div class="foot mono" id="foot"></div>
 </main>
 
 <div id="tip"></div>
+<div id="scrim"></div>
+<div id="inspect" role="dialog" aria-label="Drive bay detail"></div>
 
 <script>
 (() => {
   "use strict";
   const $ = (s, r=document) => r.querySelector(s);
   const state = { hosts: [], locateDefault: 120, connected: false };
-  const ledColor = { healthy:"var(--green)", fault:"var(--amber)", empty:"#333a49", unknown:"var(--grey)" };
+  let open = null; // {host, encId, slot} currently in the inspector
 
-  // ---- data helpers ----
   const hostByName = n => state.hosts.find(h => h.host === n);
   function upsertHost(h){
     const i = state.hosts.findIndex(x => x.host === h.host);
@@ -178,6 +197,21 @@
     for(const e of h.enclosures||[]) if(e.logical_id===encId)
       for(const s of e.slots||[]) if(s.slot===slotNo) return {h,e,s};
     return null;
+  }
+  const allLocating = () => {
+    const out=[];
+    for(const h of state.hosts) for(const e of h.enclosures||[]) for(const s of e.slots||[])
+      if(s.locate) out.push({host:h.host, encId:e.logical_id, slot:s.slot});
+    return out;
+  };
+
+  // ---- health helpers (on-tile) ----
+  function healthBits(s){
+    if(!s.present) return {cls:"mut", label:"empty"};
+    if(s.fault)    return {cls:"bad", label:(s.reason||"FAULT").replace(/^zfs:/,"")};
+    // healthy: prefer a compact SMART/ZFS ok token
+    const z = (s.zfs && s.zfs!=="-") ? s.zfs : "";
+    return {cls:"ok", label: z==="ONLINE" ? "OK" : (z||"OK")};
   }
 
   // ---- rendering ----
@@ -192,222 +226,254 @@
     root.innerHTML = "";
     for(const h of state.hosts) root.appendChild(hostCard(h));
     updateCountdowns();
+    if(open) renderInspect();
   }
 
   function renderFleetbar(){
-    const drives = sum("drives"), faults = sum("faults"), locates = sum("locates"), empty = sum("empty");
     const bar = $("#fleetbar");
     bar.innerHTML = "";
     bar.appendChild(chip(state.hosts.length, "hosts"));
-    bar.appendChild(chip(drives, "drives"));
-    bar.appendChild(chip(faults, "faults", faults>0?"warn":""));
-    bar.appendChild(chip(locates, "locating", locates>0?"loc":""));
-    bar.appendChild(chip(empty, "empty bays"));
+    bar.appendChild(chip(sum("drives"), "drives"));
+    const f=sum("faults"); bar.appendChild(chip(f, "faults", f>0?"warn":""));
+    bar.appendChild(chip(sum("empty"), "empty bays"));
+    const loc=sum("locates");
+    const sa=document.createElement("button");
+    sa.className="stopall"+(loc>0?" on":"");
+    sa.innerHTML=`<i></i>Stop all locating (<b class="mono">${loc}</b>)`;
+    sa.onclick=stopAll;
+    bar.appendChild(sa);
   }
   const sum = k => state.hosts.reduce((a,h)=>a+(h[k]||0),0);
   function chip(n, label, cls=""){
-    const d = document.createElement("div");
-    d.className = "chip "+cls;
-    d.innerHTML = `<b class="mono">${n}</b><span>${label}</span>`;
-    return d;
+    const d=document.createElement("div"); d.className="chip "+cls;
+    d.innerHTML=`<b class="mono">${n}</b><span>${label}</span>`; return d;
   }
 
   function hostCard(h){
-    const card = document.createElement("section");
-    card.className = "host";
-    const badge = h.online ? `<span class="badge up">online</span>` : `<span class="badge down">offline</span>`;
-    const seen = h.last_seen ? `updated ${rel(h.last_seen)}` : "";
-    card.innerHTML = `
+    const card=document.createElement("section"); card.className="host";
+    const badge=h.online?`<span class="badge up">online</span>`:`<span class="badge down">offline</span>`;
+    card.innerHTML=`
       <div class="hd">
         <span class="name">${esc(h.host)}</span>
         <span class="ctrl">${esc(h.controller||"")}</span>
         ${badge}
         <div class="spacer"></div>
-        <span class="mini"><b>${h.drives}</b> drives &middot;
-          <b style="color:${h.faults?'var(--amber)':'var(--t2)'}">${h.faults}</b> fault &middot;
-          <b style="color:${h.locates?'var(--blue)':'var(--t2)'}">${h.locates}</b> locating
-          <span class="seen mono" data-seen="${h.last_seen||''}"> &middot; ${seen}</span></span>
+        <span class="mini">${hostMini(h)}</span>
       </div>`;
-    const body = document.createElement("div");
-    body.className = "body";
-    for(const e of h.enclosures||[]) body.appendChild(cageEl(h, e));
+    const body=document.createElement("div"); body.className="body";
+    for(const e of h.enclosures||[]) body.appendChild(cageEl(h,e));
     card.appendChild(body);
     return card;
   }
+  const hostMini = h => `<b>${h.drives}</b> drives &middot;
+      <b style="color:${h.faults?'var(--amber)':'var(--green)'}">${h.faults}</b> fault &middot;
+      <b style="color:${h.locates?'var(--blue)':'var(--t2)'}">${h.locates}</b> locating
+      <span class="seen mono" data-seen="${h.last_seen||''}"> &middot; updated ${rel(h.last_seen)}</span>`;
 
-  function cageEl(h, e){
-    const wrap = document.createElement("div");
-    wrap.className = "cage";
-    wrap.innerHTML = `<div class="lbl">${esc(e.label||e.id)} <span class="lid mono">${esc(e.logical_id||"")}</span></div>`;
-    const bays = document.createElement("div");
-    bays.className = "bays";
-    const slots = (e.slots||[]).slice().sort((a,b)=>a.slot-b.slot);
-    for(const s of slots) bays.appendChild(bayEl(h, e, s));
-    wrap.appendChild(bays);
-    return wrap;
+  function cageEl(h,e){
+    const wrap=document.createElement("div"); wrap.className="cage";
+    wrap.innerHTML=`<div class="lbl">${esc(e.label||e.id)} <span class="lid mono">${esc(e.logical_id||"")}</span></div>`;
+    const bays=document.createElement("div"); bays.className="bays";
+    for(const s of (e.slots||[]).slice().sort((a,b)=>a.slot-b.slot)) bays.appendChild(bayEl(h,e,s));
+    wrap.appendChild(bays); return wrap;
   }
 
-  function bayEl(h, e, s){
-    const b = document.createElement("button");
-    b.type = "button";
-    b.id = bayId(h.host, e.logical_id, s.slot);
-    applyBay(b, h, e, s);
-    b.addEventListener("mouseenter", ev => showTip(ev, b._slot.host, e.logical_id, s.slot));
+  function bayEl(h,e,s){
+    const b=document.createElement("button"); b.type="button";
+    b.id=bayId(h.host,e.logical_id,s.slot);
+    applyBay(b,h,e,s);
+    b.addEventListener("mouseenter", ev=>showTip(ev,h.host,e.logical_id,s.slot));
     b.addEventListener("mousemove", moveTip);
     b.addEventListener("mouseleave", hideTip);
-    b.addEventListener("focus", ev => showTip(ev, b._slot.host, e.logical_id, s.slot, true));
-    b.addEventListener("blur", hideTip);
-    b.addEventListener("click", () => toggleLocate(h.host, e.logical_id, s));
+    b.addEventListener("click", ()=>{ hideTip(); openInspect(h.host,e.logical_id,s.slot); });
     return b;
   }
 
-  function applyBay(b, h, e, s){
-    b._slot = { host:h.host, encId:e.logical_id, slot:s.slot, data:s };
-    let cls = "bay " + (s.state||"unknown");
-    if(s.locate) cls += " locate";
-    b.className = cls;
-    const cap = s.size ? esc(s.size) : (s.present ? "" : "empty");
-    const tempTxt = (s.temp_c>0) ? `${esc(String(s.temp_c))}&deg;` : "";
-    b.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <span class="slotno mono">${s.slot}</span><span class="led"></span>
-      </div>
+  function applyBay(b,h,e,s){
+    let cls="bay "+(s.state||"unknown");
+    if(s.locate) cls+=" locate";
+    if(open && open.host===h.host && open.encId===e.logical_id && open.slot===s.slot) cls+=" open";
+    b.className=cls;
+    const hb=healthBits(s);
+    const hot=s.temp_c>=58;
+    const tempTxt=s.temp_c>0?`<span class="t${hot?' hot':''}">${esc(String(s.temp_c))}&deg;</span>`:"";
+    const healthLine=s.present
+      ? `<span class="st ${hb.cls}">${esc(hb.label)}</span>${tempTxt?` <span class="mut">&middot;</span> ${tempTxt}`:""}`
+      : `<span class="mut">empty</span>`;
+    b.innerHTML=`
+      <div class="top"><span class="slotno mono">${s.slot}</span><span class="led"></span></div>
       <div>
         <div class="dev">${esc(s.dev||"—")}</div>
-        <div class="cap">${cap}${cap&&tempTxt?" · ":""}${tempTxt}</div>
+        <div class="hl">${healthLine}</div>
       </div>`;
-    const lbl = `bay ${s.slot}, ${s.present?(s.dev+" "+(s.state==='fault'?'FAULT':'healthy')):'empty'}${s.locate?', locating':''}`;
-    b.setAttribute("aria-label", lbl);
-    b.title = "";
+    const aria=s.present
+      ? `bay ${s.slot}, ${esc(s.dev)}, ${s.fault?'fault '+esc(s.reason||''):'healthy'}, ${s.temp_c||'?'} celsius${s.locate?', locating':''}`
+      : `bay ${s.slot}, empty${s.locate?', locating':''}`;
+    b.setAttribute("aria-label", aria);
   }
 
-  function patchBay(host, encId, slot){
-    const f = findSlot(host, encId, slot.slot);
-    if(!f) { // structural change (new slot/host) - full render
-      return render();
-    }
-    const idx = f.e.slots.findIndex(x=>x.slot===slot.slot);
-    if(idx>=0) f.e.slots[idx] = slot; // replace in the model
-    const el = document.getElementById(bayId(host, encId, slot.slot));
-    if(el) applyBay(el, f.h, f.e, slot);
+  function patchBay(host,encId,slot){
+    const f=findSlot(host,encId,slot.slot);
+    if(!f) return render();
+    const idx=f.e.slots.findIndex(x=>x.slot===slot.slot);
+    if(idx>=0) f.e.slots[idx]=slot;
+    const el=document.getElementById(bayId(host,encId,slot.slot));
+    if(el) applyBay(el,f.h,f.e,slot);
+    if(open && open.host===host && open.encId===encId && open.slot===slot.slot) renderInspect();
   }
+  const bayId=(host,encId,slot)=>`bay::${host}::${encId}::${slot}`;
 
-  const bayId = (host, encId, slot) => `bay::${host}::${encId}::${slot}`;
-
-  // ---- locate ----
-  async function toggleLocate(host, encId, s){
-    const el = document.getElementById(bayId(host, encId, s.slot));
-    const seconds = s.locate ? 0 : state.locateDefault;
-    if(el) el.classList.add("pending");
-    try{
-      const r = await fetch("/api/locate", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ host, enclosure_id:encId, slot:s.slot, seconds })
-      });
-      if(!r.ok) throw new Error(await r.text());
-    }catch(err){
-      console.error("locate failed", err);
-      flashFoot("locate failed: " + err.message);
-    }finally{
-      if(el) setTimeout(()=>el.classList.remove("pending"), 400);
-    }
+  // ---- inspector (pinned, actionable) ----
+  function openInspect(host,encId,slot){
+    open={host,encId,slot};
+    $("#scrim").classList.add("show");
+    const ins=$("#inspect"); ins.classList.add("show");
+    renderInspect();
+    positionInspect();
+    // mark the open bay
+    const f=findSlot(host,encId,slot); if(f){const el=document.getElementById(bayId(host,encId,slot)); if(el)el.classList.add("open");}
   }
-
-  // ---- tooltip ----
-  const tip = $("#tip");
-  function showTip(ev, host, encId, slotNo){
-    const f = findSlot(host, encId, slotNo); if(!f) return;
-    const s = f.s;
-    const color = s.fault ? "var(--amber)" : (s.present ? "var(--green)" : "#333a49");
-    const rows = [];
-    const add = (k,v)=>{ if(v!==undefined && v!==null && v!=="" && v!=="-") rows.push(`<tr><td class="k">${k}</td><td class="v">${esc(String(v))}</td></tr>`); };
+  function closeInspect(){
+    if(open){ const el=document.getElementById(bayId(open.host,open.encId,open.slot)); if(el)el.classList.remove("open"); }
+    open=null;
+    $("#scrim").classList.remove("show");
+    $("#inspect").classList.remove("show");
+  }
+  function renderInspect(){
+    if(!open) return;
+    const f=findSlot(open.host,open.encId,open.slot);
+    const ins=$("#inspect");
+    if(!f){ ins.innerHTML=`<div class="ih"><b>Bay gone</b><button class="x" aria-label="Close">&times;</button></div>`; ins.querySelector(".x").onclick=closeInspect; return; }
+    const s=f.s;
+    const color=s.fault?"var(--amber)":(s.present?"var(--green)":"#333a49");
+    const rows=[];
+    const add=(k,v,vc="")=>{ if(v!==undefined&&v!==null&&v!==""&&v!=="-") rows.push(`<tr><td class="k">${k}</td><td class="v ${vc}">${esc(String(v))}</td></tr>`); };
+    add("Host", `${open.host}`);
     add("Bay", `${f.e.label||f.e.id} · slot ${s.slot}`);
     add("Device", s.dev);
     add("Model", s.model);
     add("Serial", s.serial);
     add("Size", s.size);
-    add("Temp", s.temp_c>0 ? s.temp_c+" °C" : "");
-    add("SMART", s.smart);
-    add("ZFS", s.pool ? `${s.zfs} (${s.pool})` : s.zfs);
-    if(s.locate && s.locate_until) add("Locating", "ends "+rel(s.locate_until));
-    tip.innerHTML = `<div class="th"><span class="led" style="background:${color};box-shadow:0 0 8px ${color}"></span>
-        <b>${s.present ? esc(s.dev) : "Empty bay"}</b></div>
-      <table>${rows.join("")}</table>
+    add("Temp", s.temp_c>0?s.temp_c+" °C":"", s.temp_c>=58?"hot":"");
+    add("SMART", s.smart, s.smart&&/fail/i.test(s.smart)?"bad":(s.smart&&s.smart!=="-"?"ok":""));
+    add("ZFS", s.pool?`${s.zfs} (${s.pool})`:s.zfs, s.zfs&&s.zfs!=="ONLINE"&&s.zfs!=="-"?"bad":(s.zfs==="ONLINE"?"ok":""));
+    const left = (s.locate && s.locate_until) ? secsLeft(s.locate_until) : 0;
+    let action;
+    if(s.locate){
+      action=`<button class="btn stop" id="locBtn"><span class="g"></span>Stop locating${left>0?` · <span class="mono">${left}s</span>`:""}</button>`;
+    }else{
+      action=`<button class="btn" id="locBtn"><span class="g"></span>Locate this bay${state.locateDefault?` · <span class="mono">${state.locateDefault}s</span>`:""}</button>`;
+    }
+    ins.innerHTML=`
+      <div class="ih"><span class="led" style="background:${color};box-shadow:0 0 8px ${color}"></span>
+        <b>${s.present?esc(s.dev):"Empty bay"}</b>
+        <button class="x" aria-label="Close">&times;</button></div>
+      <div class="body2"><table>${rows.join("")}</table></div>
       ${s.reason?`<div class="reason">⚠ ${esc(s.reason)}</div>`:""}
-      <div class="hint">click to ${s.locate?"stop locating":"locate this bay"}</div>`;
-    tip.classList.add("show");
-    moveTip(ev);
+      ${!s.present?`<div class="empty-note">No drive installed - you can still locate this bay to find it.</div>`:""}
+      <div class="act">${action}</div>`;
+    ins.querySelector(".x").onclick=closeInspect;
+    ins.querySelector("#locBtn").onclick=()=>toggleLocate(open.host,open.encId,s);
+  }
+  function positionInspect(){
+    if(!open) return;
+    const bay=document.getElementById(bayId(open.host,open.encId,open.slot));
+    const ins=$("#inspect");
+    const w=ins.offsetWidth||268, h=ins.offsetHeight||220, pad=8;
+    let x=innerWidth/2-w/2, y=innerHeight/2-h/2;
+    if(bay){ const r=bay.getBoundingClientRect();
+      x=r.left; y=r.bottom+pad;
+      if(x+w>innerWidth-pad) x=innerWidth-w-pad;
+      if(y+h>innerHeight-pad) y=r.top-h-pad;
+      if(y<pad) y=pad;
+      if(x<pad) x=pad;
+    }
+    ins.style.left=x+"px"; ins.style.top=y+"px";
+  }
+
+  // ---- locate ----
+  async function locate(host,encId,slot,seconds){
+    const el=document.getElementById(bayId(host,encId,slot)); if(el) el.classList.add("pending");
+    try{
+      const r=await fetch("/api/locate",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({host,enclosure_id:encId,slot,seconds})});
+      if(!r.ok) throw new Error((await r.text())||r.status);
+    }catch(err){ console.error("locate failed",err); flashFoot("locate failed: "+err.message); }
+    finally{ if(el) setTimeout(()=>el.classList.remove("pending"),400); }
+  }
+  function toggleLocate(host,encId,s){
+    return locate(host,encId,s.slot, s.locate?0:state.locateDefault);
+  }
+  async function stopAll(){
+    const items=allLocating();
+    if(!items.length) return;
+    flashFoot(`stopping ${items.length} locate${items.length>1?'s':''}…`);
+    await Promise.all(items.map(i=>locate(i.host,i.encId,i.slot,0)));
+  }
+
+  // ---- hover quick-peek ----
+  const tip=$("#tip");
+  function showTip(ev,host,encId,slotNo){
+    if(open) return; // inspector takes over
+    const f=findSlot(host,encId,slotNo); if(!f) return; const s=f.s;
+    const hb=healthBits(s);
+    tip.innerHTML = s.present
+      ? `<b style="color:var(--ink)">${esc(s.dev)}</b> &middot; <span class="${hb.cls==='ok'?'':''}" style="color:${s.fault?'var(--amber)':'var(--green)'}">${esc(hb.label)}</span>
+         ${s.temp_c>0?` &middot; ${s.temp_c}&deg;`:""}${s.model?`<br><span style="color:var(--t3)">${esc(s.model)}</span>`:""}<br><span style="color:var(--t4)">click for detail &amp; locate</span>`
+      : `<span style="color:var(--t3)">empty bay</span><br><span style="color:var(--t4)">click to locate</span>`;
+    tip.classList.add("show"); moveTip(ev);
   }
   function moveTip(ev){
-    const pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
-    let x=ev.clientX+pad, y=ev.clientY+pad;
+    if(open){ hideTip(); return; }
+    const pad=14,w=tip.offsetWidth,h=tip.offsetHeight;
+    let x=ev.clientX+pad,y=ev.clientY+pad;
     if(x+w>innerWidth-8) x=ev.clientX-w-pad;
     if(y+h>innerHeight-8) y=ev.clientY-h-pad;
     tip.style.left=x+"px"; tip.style.top=y+"px";
   }
   function hideTip(){ tip.classList.remove("show"); }
 
-  // ---- countdown ticker ----
+  // ---- tickers ----
   function updateCountdowns(){
     for(const h of state.hosts) for(const e of h.enclosures||[]) for(const s of e.slots||[]){
       if(s.locate && s.locate_until){
-        const el = document.getElementById(bayId(h.host, e.logical_id, s.slot));
-        if(el){ const cap = el.querySelector(".cap"); const left = secsLeft(s.locate_until);
-          if(cap && left>0) cap.textContent = `locate ${left}s`; }
+        const el=document.getElementById(bayId(h.host,e.logical_id,s.slot));
+        const left=secsLeft(s.locate_until);
+        if(el){ const hl=el.querySelector(".hl");
+          if(hl && left>0) hl.innerHTML=`<span class="st" style="color:var(--blue)">locate</span> <span class="mut">&middot;</span> <span class="t" style="color:var(--blue)">${left}s</span>`; }
       }
     }
-    // refresh "updated Xs ago"
-    document.querySelectorAll(".seen").forEach(el=>{
-      const ts = el.getAttribute("data-seen"); if(ts) el.textContent = " · updated "+rel(ts);
-    });
+    if(open) renderInspect();
+    document.querySelectorAll(".seen").forEach(el=>{const ts=el.getAttribute("data-seen"); if(ts) el.textContent=" · updated "+rel(ts);});
   }
-  setInterval(updateCountdowns, 1000);
+  setInterval(updateCountdowns,1000);
+  addEventListener("resize", ()=>{ if(open) positionInspect(); });
+  $("#scrim").addEventListener("click", closeInspect);
+  addEventListener("keydown", e=>{ if(e.key==="Escape") closeInspect(); });
 
   // ---- connection ----
-  function setConn(live){
-    state.connected = live;
-    const c = $("#conn");
-    c.className = "conn " + (live?"live":"down");
-    $("#connText").textContent = live ? "live" : "reconnecting…";
-  }
+  function setConn(live){ state.connected=live; const c=$("#conn"); c.className="conn "+(live?"live":"down"); $("#connText").textContent=live?"live":"reconnecting…"; }
   function connect(){
-    const es = new EventSource("/api/stream");
-    es.addEventListener("fleet", e => { const f=JSON.parse(e.data); state.hosts=f.hosts||[]; render(); });
-    es.addEventListener("host", e => { upsertHost(JSON.parse(e.data).host); render(); });
-    es.addEventListener("slot", e => { const ev=JSON.parse(e.data); patchBay(ev.host, ev.enclosure_id, ev.slot);
+    const es=new EventSource("/api/stream");
+    es.addEventListener("fleet", e=>{ state.hosts=JSON.parse(e.data).hosts||[]; render(); });
+    es.addEventListener("host", e=>{ upsertHost(JSON.parse(e.data).host); render(); });
+    es.addEventListener("slot", e=>{ const ev=JSON.parse(e.data); patchBay(ev.host,ev.enclosure_id,ev.slot);
       const h=hostByName(ev.host); if(h) recount(h); renderFleetbar(); refreshHostMini(h); });
-    es.onopen = () => setConn(true);
-    es.onerror = () => setConn(false); // EventSource auto-reconnects
+    es.onopen=()=>setConn(true); es.onerror=()=>setConn(false);
   }
-  function recount(h){
-    let d=0,f=0,l=0,em=0;
-    for(const e of h.enclosures||[]) for(const s of e.slots||[]){
-      s.present?d++:em++; if(s.fault)f++; if(s.locate)l++;
-    }
-    h.drives=d;h.faults=f;h.locates=l;h.empty=em;
-  }
-  function refreshHostMini(h){
-    if(!h) return;
-    const card = [...document.querySelectorAll(".host")].find(c=>c.querySelector(".name")?.textContent===h.host);
-    if(!card) return;
-    const mini = card.querySelector(".mini");
-    if(mini) mini.innerHTML = `<b>${h.drives}</b> drives &middot;
-      <b style="color:${h.faults?'var(--amber)':'var(--t2)'}">${h.faults}</b> fault &middot;
-      <b style="color:${h.locates?'var(--blue)':'var(--t2)'}">${h.locates}</b> locating
-      <span class="seen mono" data-seen="${h.last_seen||''}"> &middot; updated ${rel(h.last_seen)}</span>`;
-  }
+  function recount(h){ let d=0,f=0,l=0,em=0;
+    for(const e of h.enclosures||[]) for(const s of e.slots||[]){ s.present?d++:em++; if(s.fault)f++; if(s.locate)l++; }
+    h.drives=d;h.faults=f;h.locates=l;h.empty=em; }
+  function refreshHostMini(h){ if(!h) return;
+    const card=[...document.querySelectorAll(".host")].find(c=>c.querySelector(".name")?.textContent===h.host);
+    const mini=card&&card.querySelector(".mini"); if(mini) mini.innerHTML=hostMini(h); }
 
   // ---- util ----
-  function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-  function secsLeft(iso){ return Math.max(0, Math.round((new Date(iso)-Date.now())/1000)); }
-  function rel(iso){
-    if(!iso) return "";
-    const d=(Date.now()-new Date(iso))/1000;
-    if(d<0) return Math.round(-d)+"s";
-    if(d<60) return Math.round(d)+"s ago";
-    if(d<3600) return Math.round(d/60)+"m ago";
-    return Math.round(d/3600)+"h ago";
-  }
+  function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function secsLeft(iso){ return Math.max(0,Math.round((new Date(iso)-Date.now())/1000)); }
+  function rel(iso){ if(!iso) return ""; const d=(Date.now()-new Date(iso))/1000;
+    if(d<0) return Math.round(-d)+"s"; if(d<60) return Math.round(d)+"s ago";
+    if(d<3600) return Math.round(d/60)+"m ago"; return Math.round(d/3600)+"h ago"; }
   let footTimer;
   function flashFoot(msg){ const f=$("#foot"); f.textContent=msg; clearTimeout(footTimer); footTimer=setTimeout(()=>f.textContent="",4000); }
 
