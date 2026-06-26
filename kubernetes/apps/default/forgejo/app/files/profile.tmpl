@@ -72,124 +72,91 @@
 			</div>
 		</div>
 {{else}}
-		{{/* ============================================================
-		     PUBLIC VIEW - minimal profile card.
-		     Visitors get a single card: avatar, name, a full-activity
-		     contribution graph (counts only, never repo names) and a
-		     "work with me" link. No repo list, no tabs.
-		     ============================================================ */}}
+		{{/* PUBLIC VIEW - business card: identity, stats, contribution graph, stack. */}}
 		<style>
-			.ap-wrap{display:flex;justify-content:center;padding:clamp(16px,2.5vw,28px) 8px clamp(28px,5vw,52px);color-scheme:dark}
-			.ap-card{position:relative;overflow:hidden;width:100%;max-width:860px;
-				padding:clamp(24px,4vw,40px);border-radius:22px;
-				background:linear-gradient(180deg,#0e0f12 0%,#0a0b0d 100%);
-				border:1px solid rgba(255,255,255,.08);
-				box-shadow:0 1px 0 0 rgba(255,255,255,.04) inset,0 24px 60px -20px rgba(0,0,0,.8),0 8px 24px -12px rgba(0,0,0,.6);
-				animation:ap-in .55s cubic-bezier(.2,.8,.2,1) both}
-			.ap-glow{position:absolute;inset:-40% -10% auto -10%;height:340px;pointer-events:none;z-index:0;
-				background:radial-gradient(60% 100% at 50% 0%,rgba(57,211,83,.16),rgba(57,211,83,0) 70%)}
-			.ap-card>:not(.ap-glow){position:relative;z-index:1}
-			.ap-head{display:flex;align-items:center;gap:clamp(16px,3vw,22px)}
-			.ap-avatar img{width:clamp(72px,12vw,104px)!important;height:clamp(72px,12vw,104px)!important;
-				border-radius:50%;object-fit:cover;display:block;
-				border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px -8px rgba(0,0,0,.7)}
+			.ap-wrap{display:flex;justify-content:center;padding:clamp(16px,2.5vw,30px) 8px clamp(28px,5vw,52px);color-scheme:dark}
+			.ap-card{position:relative;overflow:hidden;width:100%;max-width:880px;padding:clamp(24px,4vw,40px);border-radius:24px;background:radial-gradient(125% 80% at 50% -12%,#14181d 0%,#0b0c0f 56%);border:1px solid rgba(255,255,255,.09);box-shadow:0 1px 0 0 rgba(255,255,255,.05) inset,0 30px 70px -24px rgba(0,0,0,.85),0 10px 28px -14px rgba(0,0,0,.65);animation:ap-in .6s cubic-bezier(.2,.8,.2,1) both}
+			.ap-glow{position:absolute;inset:-45% -20% auto -20%;height:440px;pointer-events:none;z-index:0;background:radial-gradient(50% 100% at 50% 0%,rgba(57,211,83,.20),rgba(57,211,83,0) 70%)}
+			.ap-glow2{position:absolute;right:-12%;top:-14%;width:420px;height:420px;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(56,189,248,.10),transparent 64%)}
+			.ap-card>:not(.ap-glow):not(.ap-glow2){position:relative;z-index:1}
+			.ap-head{display:flex;align-items:center;gap:clamp(16px,3vw,24px)}
+			.ap-avatar{flex:none}
+			.ap-avatar img{width:clamp(78px,12vw,110px)!important;height:clamp(78px,12vw,110px)!important;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(57,211,83,.4);box-shadow:0 0 0 4px rgba(57,211,83,.09),0 10px 26px -8px rgba(0,0,0,.8)}
 			.ap-id{min-width:0}
-			.ap-name{margin:0;font-size:clamp(21px,3.2vw,30px);font-weight:650;line-height:1.1;
-				letter-spacing:-.02em;color:#f2f3f5;text-wrap:balance}
-			.ap-handle{margin:4px 0 0;font-family:ui-monospace,"SFMono-Regular","JetBrains Mono",Menlo,monospace;
-				font-size:13.5px;color:rgba(242,243,245,.5)}
-			.ap-bio{margin:10px 0 0;font-size:14px;line-height:1.55;color:rgba(242,243,245,.66)}
-			.ap-bio p{margin:0}
-			.ap-bio a{color:rgba(242,243,245,.85);text-decoration:underline;text-underline-offset:2px}
-			.ap-tagline{margin:9px 0 0;font-size:14px;line-height:1.55;color:rgba(242,243,245,.64);max-width:54ch;text-wrap:balance}
-			.ap-stack{margin-top:clamp(20px,3.4vw,28px);padding-top:clamp(18px,3vw,22px);border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:11px}
-			.ap-stack-row{display:flex;gap:14px;align-items:flex-start}
-			.ap-stack-label{flex:0 0 78px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:rgba(242,243,245,.42);line-height:25px}
-			.ap-chips{display:flex;flex-wrap:wrap;gap:6px}
-			.ap-chip{font-size:12px;line-height:1;color:rgba(242,243,245,.8);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:6px 9px;white-space:nowrap;transition:border-color .18s cubic-bezier(.2,.8,.2,1),color .18s,background .18s}
-			.ap-chip:hover{border-color:rgba(57,211,83,.5);color:#eafff0;background:rgba(57,211,83,.09)}
+			.ap-name{margin:0;font-size:clamp(26px,3.9vw,37px);font-weight:700;line-height:1.04;letter-spacing:-.025em;color:#f4f5f7;text-wrap:balance}
+			.ap-role{margin:7px 0 0;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#39d353}
+			.ap-tagline{margin:10px 0 0;font-size:14.5px;line-height:1.55;color:rgba(244,245,247,.68);max-width:60ch;text-wrap:balance}
+
+			.ap-stats{margin-top:clamp(20px,3.4vw,28px);display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+			.ap-stat{position:relative;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 15px;overflow:hidden}
+			.ap-stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,rgba(57,211,83,.7),rgba(57,211,83,0))}
+			.ap-stat-num{font-size:clamp(23px,3.4vw,32px);font-weight:700;letter-spacing:-.02em;color:#f4f5f7;font-variant-numeric:tabular-nums;line-height:1;display:flex;align-items:center;gap:7px}
+			.ap-stat.hot .ap-stat-num{color:#39d353}
+			.ap-stat-lab{margin-top:7px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(244,245,247,.46)}
+			.ap-flame{width:17px;height:17px;flex:none}
 
 			.ap-graph{margin-top:clamp(22px,4vw,30px)}
 			.ap-heatmap{display:flex;flex-direction:column;gap:8px}
-			.ap-hm-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
-				scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+			.ap-hm-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
 			.ap-hm-scroll::-webkit-scrollbar{height:7px}
 			.ap-hm-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
 			.ap-hm-inner{display:inline-flex;flex-direction:column;gap:4px;--cell:11px;--gap:3px}
-			.ap-hm-months{display:grid;grid-auto-rows:13px;column-gap:var(--gap);
-				margin-left:calc(28px + var(--gap));
-				font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;color:rgba(242,243,245,.45)}
+			.ap-hm-months{display:grid;grid-auto-rows:13px;column-gap:var(--gap);margin-left:calc(28px + var(--gap));font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;color:rgba(244,245,247,.45)}
 			.ap-hm-months span{grid-row:1;white-space:nowrap;overflow:visible}
 			.ap-hm-main{display:flex;gap:var(--gap)}
-			.ap-hm-days{display:grid;grid-template-rows:repeat(7,var(--cell));row-gap:var(--gap);
-				width:28px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;color:rgba(242,243,245,.42)}
+			.ap-hm-days{display:grid;grid-template-rows:repeat(7,var(--cell));row-gap:var(--gap);width:28px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;color:rgba(244,245,247,.42)}
 			.ap-hm-days span{line-height:var(--cell);height:var(--cell)}
-			.ap-hm-grid{display:grid;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell);
-				grid-auto-flow:column;gap:var(--gap)}
-			.ap-cell{width:var(--cell);height:var(--cell);border-radius:3px;background:rgba(255,255,255,.05);
-				outline:1px solid rgba(255,255,255,.04);outline-offset:-1px;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
+			.ap-hm-grid{display:grid;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell);grid-auto-flow:column;gap:var(--gap)}
+			.ap-cell{width:var(--cell);height:var(--cell);border-radius:3px;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
 			.ap-cell[data-level="1"]{background:#0e4429}
 			.ap-cell[data-level="2"]{background:#006d32}
 			.ap-cell[data-level="3"]{background:#26a641}
 			.ap-cell[data-level="4"]{background:#39d353}
 			.ap-cell[data-future="1"]{background:transparent;outline:none}
 			.ap-cell:hover{transform:scale(1.35);outline-color:rgba(255,255,255,.35)}
-			.ap-hm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-				font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:12px;color:rgba(242,243,245,.5)}
-			.ap-hm-caption{font-variant-numeric:tabular-nums}
-			.ap-hm-caption b{color:#f2f3f5;font-weight:600}
+			.ap-hm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11.5px;color:rgba(244,245,247,.5)}
 			.ap-hm-legend{display:flex;align-items:center;gap:5px}
-			.ap-hm-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px}
+			.ap-hm-legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px}
 			.ap-hm-legend i[data-level="1"]{background:#0e4429}
 			.ap-hm-legend i[data-level="2"]{background:#006d32}
 			.ap-hm-legend i[data-level="3"]{background:#26a641}
 			.ap-hm-legend i[data-level="4"]{background:#39d353}
 			.ap-hm-skeleton{height:104px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.07),rgba(255,255,255,.04));background-size:200% 100%;animation:ap-shimmer 1.3s ease-in-out infinite}
-			.ap-hm-error{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:rgba(242,243,245,.4);padding:8px 0}
+			.ap-hm-error{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:rgba(244,245,247,.4);padding:8px 0}
 
-			.ap-foot{margin-top:clamp(24px,4vw,32px);padding-top:clamp(20px,3vw,24px);
-				border-top:1px solid rgba(255,255,255,.07);
-				display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-			.ap-foot-label{font-size:15px;color:rgba(242,243,245,.6)}
-			.ap-cta{position:relative;display:inline-flex;align-items:center;gap:6px;
-				font-size:15px;font-weight:600;color:#f2f3f5;text-decoration:none;
-				border-radius:6px;transition:color .2s cubic-bezier(.2,.8,.2,1)}
-			.ap-cta svg{transition:transform .2s cubic-bezier(.2,.8,.2,1)}
-			.ap-cta::after{content:"";position:absolute;left:0;right:auto;bottom:-3px;height:1.5px;width:0;
-				background:#39d353;transition:width .25s cubic-bezier(.2,.8,.2,1)}
-			.ap-cta:hover{color:#39d353}
-			.ap-cta:hover::after{width:calc(100% - 22px)}
-			.ap-cta:hover svg{transform:translate(2px,-2px)}
-			.ap-cta:active{transform:translateY(1px)}
-			.ap-cta:focus-visible{outline:none;box-shadow:0 0 0 2px #0a0b0d,0 0 0 4px #39d353}
+			.ap-tech{margin-top:clamp(22px,3.6vw,30px);padding-top:clamp(18px,3vw,22px);border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:12px}
+			.ap-tech-row{display:flex;gap:14px;align-items:flex-start}
+			.ap-tech-label{flex:0 0 80px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:rgba(244,245,247,.42);line-height:26px}
+			.ap-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+			.ap-badge{height:25px;display:block;border-radius:5px;transition:transform .16s cubic-bezier(.2,.8,.2,1),filter .16s;filter:saturate(.95)}
+			.ap-badge:hover{transform:translateY(-2px);filter:saturate(1.18)}
 
 			@keyframes ap-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 			@keyframes ap-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-			@media (max-width:540px){
-				.ap-head{flex-direction:column;text-align:center}
-				.ap-foot{justify-content:center}
-				.ap-stack-row{flex-direction:column;gap:5px}
-				.ap-stack-label{flex:none;line-height:1.6;margin-bottom:1px}
-			}
-			@media (prefers-reduced-motion:reduce){
-				.ap-card{animation:none}
-				.ap-cell,.ap-cta,.ap-cta svg,.ap-cta::after{transition:none}
-				.ap-hm-skeleton{animation:none}
-			}
+			@media (max-width:620px){.ap-stats{grid-template-columns:repeat(2,1fr)}}
+			@media (max-width:540px){.ap-head{flex-direction:column;text-align:center}.ap-tech-row{flex-direction:column;gap:6px}.ap-tech-label{flex:none;line-height:1.6}}
+			@media (prefers-reduced-motion:reduce){.ap-card{animation:none}.ap-cell,.ap-badge{transition:none}.ap-hm-skeleton{animation:none}}
 		</style>
 
 		<section class="ap-wrap">
-			<article class="ap-card" aria-label="{{.ContextUser.Name}} profile">
+			<article class="ap-card" aria-label="Andrei Iacob">
 				<div class="ap-glow" aria-hidden="true"></div>
+				<div class="ap-glow2" aria-hidden="true"></div>
 				<header class="ap-head">
 					<div class="ap-avatar">{{ctx.AvatarUtils.Avatar .ContextUser 256}}</div>
 					<div class="ap-id">
-						<h1 class="ap-name">{{if .ContextUser.FullName}}{{.ContextUser.FullName}}{{else}}{{.ContextUser.Name}}{{end}}</h1>
-						<p class="ap-handle">@{{.ContextUser.Name}}</p>
-						<p class="ap-tagline">CS student. I build for the web and self-host everything else.</p>
-						{{if .RenderedDescription}}<div class="ap-bio markup">{{.RenderedDescription}}</div>{{end}}
+						<h1 class="ap-name">Andrei Iacob</h1>
+						<p class="ap-role">CS Student &middot; Full-Stack &amp; Self-Hosted Infra</p>
+						<p class="ap-tagline">I build for the web and self-host everything else - a 30+ service Kubernetes homelab on Proxmox, run entirely through GitOps.</p>
 					</div>
 				</header>
+
+				<div class="ap-stats">
+					<div class="ap-stat"><div class="ap-stat-num" data-stat="total">0</div><div class="ap-stat-lab">Contributions</div></div>
+					<div class="ap-stat hot"><div class="ap-stat-num" data-stat="current"><svg class="ap-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>0</span></div><div class="ap-stat-lab">Current streak</div></div>
+					<div class="ap-stat"><div class="ap-stat-num" data-stat="longest">0</div><div class="ap-stat-lab">Longest streak</div></div>
+					<div class="ap-stat"><div class="ap-stat-num" data-stat="active">0</div><div class="ap-stat-lab">Active days</div></div>
+				</div>
 
 				<div class="ap-graph">
 					<div id="ap-heatmap" class="ap-heatmap" data-src="{{AppSubUrl}}/assets/data/heatmap.json" role="img" aria-label="Contribution activity over the last year">
@@ -197,25 +164,20 @@
 					</div>
 				</div>
 
-				<section class="ap-stack" aria-label="Tech stack">
-					<div class="ap-stack-row">
-						<span class="ap-stack-label">Languages</span>
-						<div class="ap-chips"><span class="ap-chip">TypeScript</span><span class="ap-chip">Python</span><span class="ap-chip">JavaScript</span><span class="ap-chip">Java</span><span class="ap-chip">C#</span><span class="ap-chip">C++</span><span class="ap-chip">Swift</span><span class="ap-chip">Shell</span></div>
+				<section class="ap-tech" aria-label="Tech stack">
+					<div class="ap-tech-row">
+						<span class="ap-tech-label">Languages</span>
+						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat-square&amp;logo=python&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&amp;logo=javascript&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="Java" src="https://img.shields.io/badge/Java-437291?style=flat-square&amp;logo=openjdk&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="C#" src="https://img.shields.io/badge/C%23-512BD4?style=flat-square&amp;logo=csharp&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="C++" src="https://img.shields.io/badge/C++-00599C?style=flat-square&amp;logo=cplusplus&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Swift" src="https://img.shields.io/badge/Swift-F05138?style=flat-square&amp;logo=swift&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Shell" src="https://img.shields.io/badge/Shell-4EAA25?style=flat-square&amp;logo=gnubash&amp;logoColor=white"></div>
 					</div>
-					<div class="ap-stack-row">
-						<span class="ap-stack-label">Infra</span>
-						<div class="ap-chips"><span class="ap-chip">Kubernetes</span><span class="ap-chip">Proxmox</span><span class="ap-chip">Flux CD</span><span class="ap-chip">Talos</span><span class="ap-chip">Docker</span><span class="ap-chip">Cilium</span><span class="ap-chip">WireGuard</span><span class="ap-chip">Cloudflare</span></div>
+					<div class="ap-tech-row">
+						<span class="ap-tech-label">Infra</span>
+						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="Kubernetes" src="https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&amp;logo=kubernetes&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Proxmox" src="https://img.shields.io/badge/Proxmox-E57000?style=flat-square&amp;logo=proxmox&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Flux CD" src="https://img.shields.io/badge/Flux_CD-5468FF?style=flat-square&amp;logo=flux&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Talos Linux" src="https://img.shields.io/badge/Talos_Linux-FF7300?style=flat-square&amp;logo=linux&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&amp;logo=docker&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Cilium" src="https://img.shields.io/badge/Cilium-F8C517?style=flat-square&amp;logo=cilium&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="WireGuard" src="https://img.shields.io/badge/WireGuard-88171A?style=flat-square&amp;logo=wireguard&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Cloudflare" src="https://img.shields.io/badge/Cloudflare-F38020?style=flat-square&amp;logo=cloudflare&amp;logoColor=white"></div>
 					</div>
-					<div class="ap-stack-row">
-						<span class="ap-stack-label">Stack</span>
-						<div class="ap-chips"><span class="ap-chip">React</span><span class="ap-chip">Next.js</span><span class="ap-chip">Node.js</span><span class="ap-chip">.NET</span><span class="ap-chip">PostgreSQL</span><span class="ap-chip">Redis</span><span class="ap-chip">Grafana</span><span class="ap-chip">Tailwind</span></div>
+					<div class="ap-tech-row">
+						<span class="ap-tech-label">Stack</span>
+						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="React" src="https://img.shields.io/badge/React-61DAFB?style=flat-square&amp;logo=react&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=flat-square&amp;logo=nextdotjs&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Node.js" src="https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt=".NET" src="https://img.shields.io/badge/.NET-512BD4?style=flat-square&amp;logo=dotnet&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&amp;logo=postgresql&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&amp;logo=redis&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Grafana" src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&amp;logo=grafana&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Tailwind" src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&amp;logo=tailwindcss&amp;logoColor=white"></div>
 					</div>
 				</section>
-
-				<footer class="ap-foot">
-					<span class="ap-foot-label">Work with me at</span>
-					<a class="ap-cta" href="https://andrei.iacob.co.uk" target="_blank" rel="noopener noreferrer">andrei.iacob.co.uk<svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 11l6-6M6 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-				</footer>
 			</article>
 		</section>
 
@@ -224,22 +186,41 @@
 			var root=document.getElementById('ap-heatmap');
 			if(!root)return;
 			var src=root.getAttribute('data-src');
+			var REDUCED=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 			function lvl(c){if(c<=0)return 0;if(c<3)return 1;if(c<7)return 2;if(c<15)return 3;return 4;}
-			function key(d){return d.toISOString().slice(0,10);} // UTC date, matches the UTC-bucketed JSON
+			function key(d){return d.toISOString().slice(0,10);}
 			var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 			function err(){root.innerHTML='<div class="ap-hm-error">Activity graph unavailable.</div>';}
 			fetch(src+'?t='+Math.floor(Date.now()/3600000),{cache:'no-cache'})
 				.then(function(r){if(!r.ok)throw 0;return r.json();})
-				.then(render).catch(err);
+				.then(function(data){render(data);stats(data);}).catch(err);
+
+			function countUp(el,val){
+				if(REDUCED){el.textContent=val.toLocaleString();return;}
+				var start=null;
+				function step(ts){if(start===null)start=ts;var p=Math.min((ts-start)/950,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(e*val).toLocaleString();if(p<1)requestAnimationFrame(step);}
+				requestAnimationFrame(step);
+			}
+			function setStat(name,val){var el=document.querySelector('[data-stat="'+name+'"]');if(!el)return;var out=el.querySelector('span')||el;countUp(out,val);}
+			function stats(data){
+				var arr=(data.days||[]).map(function(d){return d.date;});
+				var set={};arr.forEach(function(d){set[d]=1;});
+				var active=arr.length,total=data.total||0;
+				var sorted=arr.slice().sort();
+				var longest=0,run=0,prev=null;
+				sorted.forEach(function(ds){var d=Date.parse(ds+'T00:00:00Z');if(prev!==null&&(d-prev)===86400000){run++;}else{run=1;}if(run>longest)longest=run;prev=d;});
+				var cur=0,t=new Date();t.setUTCHours(0,0,0,0);
+				if(!set[key(t)])t.setUTCDate(t.getUTCDate()-1);
+				while(set[key(t)]){cur++;t.setUTCDate(t.getUTCDate()-1);}
+				setStat('total',total);setStat('current',cur);setStat('longest',longest);setStat('active',active);
+			}
 
 			function render(data){
 				var counts={};(data.days||[]).forEach(function(d){counts[d.date]=d.count;});
-				var total=data.total||0;
 				var today=new Date();today.setUTCHours(0,0,0,0);
-				var end=new Date(today);end.setUTCDate(end.getUTCDate()+(6-end.getUTCDay())); // Saturday this week (UTC)
+				var end=new Date(today);end.setUTCDate(end.getUTCDate()+(6-end.getUTCDay()));
 				var WEEKS=53;
-				var start=new Date(end);start.setUTCDate(start.getUTCDate()-(WEEKS*7-1)); // Sunday, 53 weeks back (UTC)
-
+				var start=new Date(end);start.setUTCDate(start.getUTCDate()-(WEEKS*7-1));
 				var inner=document.createElement('div');inner.className='ap-hm-inner';
 				var months=document.createElement('div');months.className='ap-hm-months';
 				months.style.gridTemplateColumns='repeat('+WEEKS+',var(--cell))';
@@ -247,47 +228,25 @@
 				var days=document.createElement('div');days.className='ap-hm-days';
 				['','Mon','','Wed','','Fri',''].forEach(function(t){var s=document.createElement('span');s.textContent=t;days.appendChild(s);});
 				var grid=document.createElement('div');grid.className='ap-hm-grid';
-
-				var cur=new Date(start),col=0,lastMonth=-1;
+				var cur=new Date(start),lastMonth=-1;
 				for(var i=0;i<WEEKS*7;i++){
-					if(cur.getUTCDay()===0){ // start of a column = Sunday
-						col=Math.floor(i/7);
-						var m=cur.getUTCMonth();
-						if(m!==lastMonth){
-							// only label if this column has room before the next and isn't the very last sliver
-							var sp=document.createElement('span');sp.textContent=MON[m];
-							sp.style.gridColumnStart=(col+1);
-							months.appendChild(sp);lastMonth=m;
-						}
-					}
-					var cell=document.createElement('div');cell.className='ap-cell';
-					var k=key(cur);
-					if(cur>today){
-						cell.setAttribute('data-future','1');
-					}else{
-						var c=counts[k]||0;
-						cell.setAttribute('data-level',lvl(c));
-						cell.title=(c===0?'No contributions':(c+' contribution'+(c>1?'s':'')))+' on '+k;
-					}
-					grid.appendChild(cell);
-					cur.setUTCDate(cur.getUTCDate()+1);
+					if(cur.getUTCDay()===0){var col=Math.floor(i/7);var m=cur.getUTCMonth();if(m!==lastMonth){var sp=document.createElement('span');sp.textContent=MON[m];sp.style.gridColumnStart=(col+1);months.appendChild(sp);lastMonth=m;}}
+					var cell=document.createElement('div');cell.className='ap-cell';var k=key(cur);
+					if(cur>today){cell.setAttribute('data-future','1');}else{var c=counts[k]||0;cell.setAttribute('data-level',lvl(c));cell.title=(c===0?'No contributions':(c+' contribution'+(c>1?'s':'')))+' on '+k;}
+					grid.appendChild(cell);cur.setUTCDate(cur.getUTCDate()+1);
 				}
-
 				main.appendChild(days);main.appendChild(grid);
 				var foot=document.createElement('div');foot.className='ap-hm-foot';
-				var cap=document.createElement('span');cap.className='ap-hm-caption';
-				cap.innerHTML='<b>'+total.toLocaleString()+'</b> contribution'+(total===1?'':'s')+' in the last year';
+				var cap=document.createElement('span');cap.textContent='GitHub + Forgejo, last 12 months';
 				var leg=document.createElement('span');leg.className='ap-hm-legend';
 				leg.appendChild(document.createTextNode('Less'));
 				[0,1,2,3,4].forEach(function(L){var i=document.createElement('i');if(L)i.setAttribute('data-level',L);leg.appendChild(i);});
 				leg.appendChild(document.createTextNode('More'));
 				foot.appendChild(cap);foot.appendChild(leg);
-
 				inner.appendChild(months);inner.appendChild(main);
-				var scroll=document.createElement('div');scroll.className='ap-hm-scroll';
-				scroll.appendChild(inner);
+				var scroll=document.createElement('div');scroll.className='ap-hm-scroll';scroll.appendChild(inner);
 				root.innerHTML='';root.appendChild(scroll);root.appendChild(foot);
-				scroll.scrollLeft=scroll.scrollWidth; // show most recent weeks first on mobile
+				scroll.scrollLeft=scroll.scrollWidth;
 			}
 		})();
 		</script>
