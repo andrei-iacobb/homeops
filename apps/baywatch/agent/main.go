@@ -62,7 +62,17 @@ type agent struct {
 	cur         *Snapshot            // latest published snapshot
 	locateUntil map[string]time.Time // compKey -> expiry
 
+	applied map[string]ledState // compKey -> last LED state written to hardware
+	cycle   int                 // reconcile counter (for full-sync / re-assert)
+
 	kick chan struct{} // request an immediate reconcile
+}
+
+// ledState is the bi-color/locate state the agent has driven onto a bay.
+type ledState struct {
+	ok    bool // green - present & healthy
+	fault bool // amber - ZFS/SMART fault
+	ident bool // blue  - locate
 }
 
 func main() {
@@ -78,6 +88,7 @@ func main() {
 		health:      newHealthCache(),
 		hub:         newHub(),
 		locateUntil: map[string]time.Time{},
+		applied:     map[string]ledState{},
 		kick:        make(chan struct{}, 1),
 	}
 
@@ -167,6 +178,12 @@ func (a *agent) reconcile() {
 	healthByDev := a.health.snapshot(devsOf(comps))
 	now := time.Now()
 
+	// fullSync (first cycle) writes every bit so any stale LED is corrected;
+	// reassert (every ~60s) re-affirms the desired "on" bits to heal drift.
+	fullSync := a.cycle == 0
+	reassert := a.cycle%20 == 0
+	a.cycle++
+
 	// Build enclosure grouping + friendly labels (rear vs numbered front boxes).
 	encOrder := []string{}        // enclosure names in stable order
 	encComps := map[string][]int{} // encName -> indexes into comps
@@ -215,24 +232,18 @@ func (a *agent) reconcile() {
 				bad, reason = dh.bad()
 			}
 
-			// Desired LED state, then write only on change (single writer).
+			// Desired bi-color/locate state for this bay:
+			//   green (ok)  = drive present and healthy
+			//   amber(fault)= drive present and unhealthy
+			//   blue (ident)= a time-boxed locate is active
+			// The agent is the single writer; we diff against the last-applied
+			// state and only shell out to sg_ses on a real change (plus the
+			// full-sync / periodic re-assert), so the backplane is never spammed.
 			desiredFault := bad
+			desiredOK := present && !bad
 			desiredLocate := a.locateActive(key, now)
-			if c.fault != desiredFault {
-				if e := setFault(c.compDir, desiredFault); e != nil {
-					log.Printf("setFault %s slot %d: %v", name, c.slot, e)
-				} else {
-					log.Printf("fault %s slot %d (%s) -> %v %s", name, c.slot, devOr(c.dev), desiredFault, reason)
-					c.fault = desiredFault
-				}
-			}
-			if c.locate != desiredLocate {
-				if e := setLocate(c.compDir, desiredLocate); e != nil {
-					log.Printf("setLocate %s slot %d: %v", name, c.slot, e)
-				} else {
-					c.locate = desiredLocate
-				}
-			}
+			want := ledState{ok: desiredOK, fault: desiredFault, ident: desiredLocate}
+			a.applyLEDs(c, want, fullSync, reassert, reason)
 
 			state := StateHealthy
 			switch {
@@ -283,6 +294,34 @@ func (a *agent) reconcile() {
 
 	for _, ev := range events {
 		a.hub.pub(sseFrame("slot", ev))
+	}
+}
+
+// applyLEDs drives the green/amber/blue bits for one bay via sg_ses, writing a
+// bit only when it changes (plus full-sync on first cycle and a periodic
+// re-assert of the "on" bits to heal drift). On a write error it keeps the old
+// applied value so the next cycle retries.
+func (a *agent) applyLEDs(c *rawComp, want ledState, fullSync, reassert bool, reason string) {
+	key := compKey(c.logicalID, c.slot)
+	prev := a.applied[key]
+	apply := func(field string, was, w bool) bool {
+		if w == was && !fullSync && !(reassert && w) {
+			return was
+		}
+		if err := setLED(c.sgDev, c.slot, field, w); err != nil {
+			log.Printf("setLED %s slot %d %s=%v: %v", c.encName, c.slot, field, w, err)
+			return was // retry next cycle
+		}
+		if w != was {
+			log.Printf("led %s slot %d (%s) %s -> %v %s", c.encName, c.slot, devOr(c.dev), field, w, reason)
+		}
+		return w
+	}
+	// Clear green before asserting amber (and vice-versa) by ordering ok first.
+	a.applied[key] = ledState{
+		ok:    apply(ledOK, prev.ok, want.ok),
+		fault: apply(ledFault, prev.fault, want.fault),
+		ident: apply(ledIdent, prev.ident, want.ident),
 	}
 }
 

@@ -24,9 +24,15 @@ writer** of every caddy LED (it replaces the old `drive-health-leds.timer`).
 ## Components
 
 - `agent/` - `bw-agent`, a dependency-free static Go daemon. Reconcile loop reads
-  SES sysfs + `zpool status` + `smartctl`, drives the amber fault LED (ZFS not
-  ONLINE / errors, or SMART failing) and the blue locate LED (time-boxed), writing
-  sysfs only on change. Serves REST + SSE on `:9099` with bearer-token auth.
+  SES topology (sysfs) + `zpool status` + `smartctl`, and drives the caddy LEDs via
+  `sg_ses` on the enclosure's scsi_generic device:
+  - **green** (`ok` bit) - drive present & healthy
+  - **amber** (`fault` bit) - ZFS not-ONLINE / errors, or SMART failing
+  - **blue** (`ident` bit) - time-boxed locate
+  It diffs against last-applied state and only shells out on a real change (plus a
+  full-sync on start and a periodic re-assert). NOTE: contrary to common forum
+  folklore, the HPE Gen9 H240 / P440ar backplanes *do* honor `sg_ses --set=ok`
+  (green) in HBA mode - verified live. Serves REST + SSE on `:9099`, bearer auth.
 - `ui/` - `bw-ui`, a static Go binary that aggregates both agents over the LAN,
   serves the embedded SVG-chassis frontend (`ui/static/index.html`), fans changes
   to browsers over SSE, and proxies time-boxed locate requests.
