@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BayWatch - drive bay health</title>
+<style>
+  :root{
+    --bg:#0c0e14; --panel:rgba(22,26,35,.72); --panel2:#1c212d; --ink:#e8ebf2;
+    --t2:#aab2c2; --t3:#7c869a; --t4:#586074; --line:#252b3a; --line2:#323a4d;
+    --green:#34d399; --amber:#f59e0b; --blue:#3b82f6; --grey:#4b5563; --red:#ef4444;
+    --acc:#7c9cff;
+    --radius:13px;
+  }
+  *{box-sizing:border-box}
+  html{color-scheme:dark}
+  body{margin:0;background:
+      radial-gradient(1100px 600px at 80% -10%, #15203a55, transparent),
+      radial-gradient(900px 500px at -10% 10%, #1a162e44, transparent),
+      var(--bg);
+    color:var(--ink);min-height:100vh;
+    font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  main{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
+
+  /* header */
+  header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(150deg,#3b82f6,#7c9cff);
+    display:grid;place-items:center;box-shadow:0 0 22px #3b82f655}
+  .logo i{width:11px;height:11px;border-radius:50%;background:#0c0e14;box-shadow:0 0 0 3px #ffffff22 inset}
+  h1{font-size:18px;font-weight:650;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--t3);font-size:12px;margin-top:1px}
+  .spacer{flex:1}
+  .conn{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--t2);
+    border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--panel2)}
+  .conn .dot{width:8px;height:8px;border-radius:50%;background:var(--grey)}
+  .conn.live .dot{background:var(--green);box-shadow:0 0 9px var(--green);animation:breathe 2.4s ease-in-out infinite}
+  .conn.down .dot{background:var(--red);box-shadow:0 0 9px var(--red)}
+  @keyframes breathe{50%{opacity:.45}}
+
+  /* fleet summary chips */
+  .fleetbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:20px}
+  .chip{display:flex;align-items:baseline;gap:7px;border:1px solid var(--line);border-radius:10px;
+    padding:8px 13px;background:var(--panel2)}
+  .chip b{font-size:16px;font-weight:650}
+  .chip span{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+  .chip.warn b{color:var(--amber)} .chip.loc b{color:var(--blue)}
+
+  /* host card */
+  .host{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);margin-bottom:18px;overflow:hidden}
+  .host > .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .host .name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .host .ctrl{font-size:12px;color:var(--t3)}
+  .badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--line2)}
+  .badge.up{color:var(--green);border-color:#1f5d47;background:#0f2a20}
+  .badge.down{color:var(--red);border-color:#5d2424;background:#2a1212}
+  .mini{font-size:11.5px;color:var(--t3)}
+  .mini b{color:var(--t2);font-weight:600}
+  .body{padding:6px 18px 18px}
+
+  /* cage */
+  .cage{margin-top:14px}
+  .cage .lbl{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--t3);
+    text-transform:uppercase;letter-spacing:.06em;margin:0 2px 8px}
+  .cage .lbl .lid{color:var(--t4);font-size:10.5px}
+  .bays{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* a bay = a drive caddy */
+  .bay{position:relative;width:54px;height:64px;border:1px solid var(--line2);border-radius:7px;
+    background:linear-gradient(180deg,#10141d,#0b0e15);cursor:pointer;padding:6px 6px 5px;
+    display:flex;flex-direction:column;justify-content:space-between;text-align:left;
+    color:var(--t2);font:inherit;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+  .bay:hover{transform:translateY(-2px);border-color:#3c465c;box-shadow:0 6px 18px #0008}
+  .bay:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .bay .slotno{font-size:10px;color:var(--t4);line-height:1}
+  .bay .dev{font-size:10px;color:var(--t3);line-height:1.1;font-family:ui-monospace,Menlo,monospace}
+  .bay .led{width:12px;height:12px;border-radius:50%;background:var(--grey);align-self:flex-start}
+  .bay .cap{font-size:9.5px;color:var(--t4);font-family:ui-monospace,Menlo,monospace;
+    font-variant-numeric:tabular-nums;line-height:1}
+
+  .bay.healthy .led{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .bay.healthy{border-color:#1e4736}
+  .bay.fault .led{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  .bay.fault{border-color:#7a5512;background:linear-gradient(180deg,#1d160a,#0b0e15)}
+  .bay.empty{opacity:.6;background:repeating-linear-gradient(135deg,#0c0f17,#0c0f17 6px,#0e121b 6px,#0e121b 12px)}
+  .bay.empty .led{background:#333a49;box-shadow:none}
+  .bay.locate{border-color:var(--blue)}
+  .bay.locate .led{background:var(--blue);box-shadow:0 0 12px var(--blue);animation:pulse 1.1s ease-in-out infinite}
+  .bay.locate::after{content:"";position:absolute;inset:-1px;border-radius:7px;border:1px solid var(--blue);
+    animation:pulse 1.1s ease-in-out infinite;pointer-events:none}
+  .bay .ring{display:none}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .bay.pending{opacity:.55;pointer-events:none}
+
+  /* tooltip */
+  #tip{position:fixed;z-index:50;max-width:280px;pointer-events:none;opacity:0;transform:translateY(4px);
+    transition:opacity .1s ease,transform .1s ease;
+    background:#0b0e15;border:1px solid var(--line2);border-radius:10px;padding:11px 13px;
+    box-shadow:0 12px 40px #000a;font-size:12px}
+  #tip.show{opacity:1;transform:translateY(0)}
+  #tip .th{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  #tip .th .led{width:9px;height:9px;border-radius:50%}
+  #tip .th b{font-size:12.5px}
+  #tip table{border-collapse:collapse;width:100%}
+  #tip td{padding:1.5px 0;vertical-align:top}
+  #tip td.k{color:var(--t3);padding-right:12px;white-space:nowrap}
+  #tip td.v{color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;text-align:right}
+  #tip .reason{margin-top:7px;color:var(--amber);font-size:11.5px}
+  #tip .hint{margin-top:8px;padding-top:7px;border-top:1px solid var(--line);color:var(--t4);font-size:11px}
+
+  /* legend + states */
+  .legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--t3);font-size:12px;margin:8px 2px 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:10px;height:10px;border-radius:50%}
+  .empty-state{border:1px dashed var(--line2);border-radius:var(--radius);padding:40px;text-align:center;color:var(--t3)}
+  .empty-state h3{color:var(--t2);margin:0 0 6px;font-size:15px}
+  .foot{margin-top:26px;color:var(--t4);font-size:11.5px;text-align:center}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="brand">
+      <div class="logo"><i></i></div>
+      <div>
+        <h1>BayWatch</h1>
+        <div class="sub">drive-bay health &amp; locator</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id="conn" class="conn"><span class="dot"></span><span id="connText">connecting</span></div>
+  </header>
+
+  <div class="fleetbar" id="fleetbar"></div>
+  <div id="hosts"></div>
+  <div class="legend">
+    <span><i style="background:var(--green);box-shadow:0 0 7px var(--green)"></i>healthy</span>
+    <span><i style="background:var(--amber);box-shadow:0 0 7px var(--amber)"></i>fault (ZFS / SMART)</span>
+    <span><i style="background:var(--blue);box-shadow:0 0 7px var(--blue)"></i>locate</span>
+    <span><i style="background:#333a49"></i>empty bay</span>
+    <span style="color:var(--t4)">click a bay to locate &middot; hover for drive detail</span>
+  </div>
+  <div class="foot mono" id="foot"></div>
+</main>
+
+<div id="tip"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s, r=document) => r.querySelector(s);
+  const state = { hosts: [], locateDefault: 120, connected: false };
+  const ledColor = { healthy:"var(--green)", fault:"var(--amber)", empty:"#333a49", unknown:"var(--grey)" };
+
+  // ---- data helpers ----
+  const hostByName = n => state.hosts.find(h => h.host === n);
+  function upsertHost(h){
+    const i = state.hosts.findIndex(x => x.host === h.host);
+    if (i >= 0) state.hosts[i] = h; else state.hosts.push(h);
+    state.hosts.sort((a,b)=>a.host<b.host?-1:1);
+  }
+  function findSlot(host, encId, slotNo){
+    const h = hostByName(host); if(!h) return null;
+    for(const e of h.enclosures||[]) if(e.logical_id===encId)
+      for(const s of e.slots||[]) if(s.slot===slotNo) return {h,e,s};
+    return null;
+  }
+
+  // ---- rendering ----
+  function render(){
+    renderFleetbar();
+    const root = $("#hosts");
+    if(!state.hosts.length){
+      root.innerHTML = `<div class="empty-state"><h3>No host agents reporting</h3>
+        <div>Waiting for a bw-agent to connect. Check the agents are running on the Proxmox hosts.</div></div>`;
+      return;
+    }
+    root.innerHTML = "";
+    for(const h of state.hosts) root.appendChild(hostCard(h));
+    updateCountdowns();
+  }
+
+  function renderFleetbar(){
+    const drives = sum("drives"), faults = sum("faults"), locates = sum("locates"), empty = sum("empty");
+    const bar = $("#fleetbar");
+    bar.innerHTML = "";
+    bar.appendChild(chip(state.hosts.length, "hosts"));
+    bar.appendChild(chip(drives, "drives"));
+    bar.appendChild(chip(faults, "faults", faults>0?"warn":""));
+    bar.appendChild(chip(locates, "locating", locates>0?"loc":""));
+    bar.appendChild(chip(empty, "empty bays"));
+  }
+  const sum = k => state.hosts.reduce((a,h)=>a+(h[k]||0),0);
+  function chip(n, label, cls=""){
+    const d = document.createElement("div");
+    d.className = "chip "+cls;
+    d.innerHTML = `<b class="mono">${n}</b><span>${label}</span>`;
+    return d;
+  }
+
+  function hostCard(h){
+    const card = document.createElement("section");
+    card.className = "host";
+    const badge = h.online ? `<span class="badge up">online</span>` : `<span class="badge down">offline</span>`;
+    const seen = h.last_seen ? `updated ${rel(h.last_seen)}` : "";
+    card.innerHTML = `
+      <div class="hd">
+        <span class="name">${esc(h.host)}</span>
+        <span class="ctrl">${esc(h.controller||"")}</span>
+        ${badge}
+        <div class="spacer"></div>
+        <span class="mini"><b>${h.drives}</b> drives &middot;
+          <b style="color:${h.faults?'var(--amber)':'var(--t2)'}">${h.faults}</b> fault &middot;
+          <b style="color:${h.locates?'var(--blue)':'var(--t2)'}">${h.locates}</b> locating
+          <span class="seen mono" data-seen="${h.last_seen||''}"> &middot; ${seen}</span></span>
+      </div>`;
+    const body = document.createElement("div");
+    body.className = "body";
+    for(const e of h.enclosures||[]) body.appendChild(cageEl(h, e));
+    card.appendChild(body);
+    return card;
+  }
+
+  function cageEl(h, e){
+    const wrap = document.createElement("div");
+    wrap.className = "cage";
+    wrap.innerHTML = `<div class="lbl">${esc(e.label||e.id)} <span class="lid mono">${esc(e.logical_id||"")}</span></div>`;
+    const bays = document.createElement("div");
+    bays.className = "bays";
+    const slots = (e.slots||[]).slice().sort((a,b)=>a.slot-b.slot);
+    for(const s of slots) bays.appendChild(bayEl(h, e, s));
+    wrap.appendChild(bays);
+    return wrap;
+  }
+
+  function bayEl(h, e, s){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.id = bayId(h.host, e.logical_id, s.slot);
+    applyBay(b, h, e, s);
+    b.addEventListener("mouseenter", ev => showTip(ev, b._slot.host, e.logical_id, s.slot));
+    b.addEventListener("mousemove", moveTip);
+    b.addEventListener("mouseleave", hideTip);
+    b.addEventListener("focus", ev => showTip(ev, b._slot.host, e.logical_id, s.slot, true));
+    b.addEventListener("blur", hideTip);
+    b.addEventListener("click", () => toggleLocate(h.host, e.logical_id, s));
+    return b;
+  }
+
+  function applyBay(b, h, e, s){
+    b._slot = { host:h.host, encId:e.logical_id, slot:s.slot, data:s };
+    let cls = "bay " + (s.state||"unknown");
+    if(s.locate) cls += " locate";
+    b.className = cls;
+    const cap = s.size ? esc(s.size) : (s.present ? "" : "empty");
+    const tempTxt = (s.temp_c>0) ? `${esc(String(s.temp_c))}&deg;` : "";
+    b.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span class="slotno mono">${s.slot}</span><span class="led"></span>
+      </div>
+      <div>
+        <div class="dev">${esc(s.dev||"—")}</div>
+        <div class="cap">${cap}${cap&&tempTxt?" · ":""}${tempTxt}</div>
+      </div>`;
+    const lbl = `bay ${s.slot}, ${s.present?(s.dev+" "+(s.state==='fault'?'FAULT':'healthy')):'empty'}${s.locate?', locating':''}`;
+    b.setAttribute("aria-label", lbl);
+    b.title = "";
+  }
+
+  function patchBay(host, encId, slot){
+    const f = findSlot(host, encId, slot.slot);
+    if(!f) { // structural change (new slot/host) - full render
+      return render();
+    }
+    const idx = f.e.slots.findIndex(x=>x.slot===slot.slot);
+    if(idx>=0) f.e.slots[idx] = slot; // replace in the model
+    const el = document.getElementById(bayId(host, encId, slot.slot));
+    if(el) applyBay(el, f.h, f.e, slot);
+  }
+
+  const bayId = (host, encId, slot) => `bay::${host}::${encId}::${slot}`;
+
+  // ---- locate ----
+  async function toggleLocate(host, encId, s){
+    const el = document.getElementById(bayId(host, encId, s.slot));
+    const seconds = s.locate ? 0 : state.locateDefault;
+    if(el) el.classList.add("pending");
+    try{
+      const r = await fetch("/api/locate", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ host, enclosure_id:encId, slot:s.slot, seconds })
+      });
+      if(!r.ok) throw new Error(await r.text());
+    }catch(err){
+      console.error("locate failed", err);
+      flashFoot("locate failed: " + err.message);
+    }finally{
+      if(el) setTimeout(()=>el.classList.remove("pending"), 400);
+    }
+  }
+
+  // ---- tooltip ----
+  const tip = $("#tip");
+  function showTip(ev, host, encId, slotNo){
+    const f = findSlot(host, encId, slotNo); if(!f) return;
+    const s = f.s;
+    const color = s.fault ? "var(--amber)" : (s.present ? "var(--green)" : "#333a49");
+    const rows = [];
+    const add = (k,v)=>{ if(v!==undefined && v!==null && v!=="" && v!=="-") rows.push(`<tr><td class="k">${k}</td><td class="v">${esc(String(v))}</td></tr>`); };
+    add("Bay", `${f.e.label||f.e.id} · slot ${s.slot}`);
+    add("Device", s.dev);
+    add("Model", s.model);
+    add("Serial", s.serial);
+    add("Size", s.size);
+    add("Temp", s.temp_c>0 ? s.temp_c+" °C" : "");
+    add("SMART", s.smart);
+    add("ZFS", s.pool ? `${s.zfs} (${s.pool})` : s.zfs);
+    if(s.locate && s.locate_until) add("Locating", "ends "+rel(s.locate_until));
+    tip.innerHTML = `<div class="th"><span class="led" style="background:${color};box-shadow:0 0 8px ${color}"></span>
+        <b>${s.present ? esc(s.dev) : "Empty bay"}</b></div>
+      <table>${rows.join("")}</table>
+      ${s.reason?`<div class="reason">⚠ ${esc(s.reason)}</div>`:""}
+      <div class="hint">click to ${s.locate?"stop locating":"locate this bay"}</div>`;
+    tip.classList.add("show");
+    moveTip(ev);
+  }
+  function moveTip(ev){
+    const pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
+    let x=ev.clientX+pad, y=ev.clientY+pad;
+    if(x+w>innerWidth-8) x=ev.clientX-w-pad;
+    if(y+h>innerHeight-8) y=ev.clientY-h-pad;
+    tip.style.left=x+"px"; tip.style.top=y+"px";
+  }
+  function hideTip(){ tip.classList.remove("show"); }
+
+  // ---- countdown ticker ----
+  function updateCountdowns(){
+    for(const h of state.hosts) for(const e of h.enclosures||[]) for(const s of e.slots||[]){
+      if(s.locate && s.locate_until){
+        const el = document.getElementById(bayId(h.host, e.logical_id, s.slot));
+        if(el){ const cap = el.querySelector(".cap"); const left = secsLeft(s.locate_until);
+          if(cap && left>0) cap.textContent = `locate ${left}s`; }
+      }
+    }
+    // refresh "updated Xs ago"
+    document.querySelectorAll(".seen").forEach(el=>{
+      const ts = el.getAttribute("data-seen"); if(ts) el.textContent = " · updated "+rel(ts);
+    });
+  }
+  setInterval(updateCountdowns, 1000);
+
+  // ---- connection ----
+  function setConn(live){
+    state.connected = live;
+    const c = $("#conn");
+    c.className = "conn " + (live?"live":"down");
+    $("#connText").textContent = live ? "live" : "reconnecting…";
+  }
+  function connect(){
+    const es = new EventSource("/api/stream");
+    es.addEventListener("fleet", e => { const f=JSON.parse(e.data); state.hosts=f.hosts||[]; render(); });
+    es.addEventListener("host", e => { upsertHost(JSON.parse(e.data).host); render(); });
+    es.addEventListener("slot", e => { const ev=JSON.parse(e.data); patchBay(ev.host, ev.enclosure_id, ev.slot);
+      const h=hostByName(ev.host); if(h) recount(h); renderFleetbar(); refreshHostMini(h); });
+    es.onopen = () => setConn(true);
+    es.onerror = () => setConn(false); // EventSource auto-reconnects
+  }
+  function recount(h){
+    let d=0,f=0,l=0,em=0;
+    for(const e of h.enclosures||[]) for(const s of e.slots||[]){
+      s.present?d++:em++; if(s.fault)f++; if(s.locate)l++;
+    }
+    h.drives=d;h.faults=f;h.locates=l;h.empty=em;
+  }
+  function refreshHostMini(h){
+    if(!h) return;
+    const card = [...document.querySelectorAll(".host")].find(c=>c.querySelector(".name")?.textContent===h.host);
+    if(!card) return;
+    const mini = card.querySelector(".mini");
+    if(mini) mini.innerHTML = `<b>${h.drives}</b> drives &middot;
+      <b style="color:${h.faults?'var(--amber)':'var(--t2)'}">${h.faults}</b> fault &middot;
+      <b style="color:${h.locates?'var(--blue)':'var(--t2)'}">${h.locates}</b> locating
+      <span class="seen mono" data-seen="${h.last_seen||''}"> &middot; updated ${rel(h.last_seen)}</span>`;
+  }
+
+  // ---- util ----
+  function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function secsLeft(iso){ return Math.max(0, Math.round((new Date(iso)-Date.now())/1000)); }
+  function rel(iso){
+    if(!iso) return "";
+    const d=(Date.now()-new Date(iso))/1000;
+    if(d<0) return Math.round(-d)+"s";
+    if(d<60) return Math.round(d)+"s ago";
+    if(d<3600) return Math.round(d/60)+"m ago";
+    return Math.round(d/3600)+"h ago";
+  }
+  let footTimer;
+  function flashFoot(msg){ const f=$("#foot"); f.textContent=msg; clearTimeout(footTimer); footTimer=setTimeout(()=>f.textContent="",4000); }
+
+  // ---- boot ----
+  fetch("/api/config").then(r=>r.json()).then(c=>{ if(c.locate_default) state.locateDefault=c.locate_default; }).catch(()=>{});
+  connect();
+})();
+</script>
+</body>
+</html>

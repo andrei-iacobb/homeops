@@ -63,3 +63,17 @@ tasks:
     cmds:
       - docker build -t ghcr.io/andrei-iacobb/truenas-exporter:latest .
       - docker push ghcr.io/andrei-iacobb/truenas-exporter:latest
+
+  monitoring:build-baywatch:
+    desc: Build and push the BayWatch UI image (static Go, no Docker needed via ko)
+    dir: '{{.ROOT_DIR}}/apps/baywatch/ui'
+    cmds:
+      - KO_DOCKER_REPO=ghcr.io/andrei-iacobb/baywatch ko build --bare -t latest --platform=linux/amd64 .
+
+  baywatch:deploy-agents:
+    desc: Cross-compile bw-agent and (re)install it on both Proxmox hosts
+    dir: '{{.ROOT_DIR}}/apps/baywatch'
+    cmds:
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /tmp/bw-agent ./agent
+      - for ip in 192.168.1.150 192.168.1.100; do scp -q /tmp/bw-agent deploy/baywatch-agent.service deploy/install-agent.sh root@$ip:/tmp/; done
+      - echo "Now run install-agent.sh on each host with BW_TOKEN + BW_CONTROLLER set (see apps/baywatch/README.md)"

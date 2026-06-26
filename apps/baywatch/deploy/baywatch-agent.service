@@ -1,0 +1,26 @@
+[Unit]
+Description=BayWatch host agent (SES drive-bay health + locate LEDs)
+Documentation=https://baywatch.iacob.uk
+After=network-online.target zfs.target
+Wants=network-online.target
+# Stop hammering restarts if the host is fundamentally broken (e.g. /sys missing).
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/baywatch/agent.env
+ExecStart=/usr/local/sbin/bw-agent
+Restart=on-failure
+RestartSec=5
+# Root is required to write the SES LED sysfs files and run smartctl/zpool.
+# Keep sandboxing light so /sys (enclosure LEDs) and /dev (smartctl) stay reachable.
+NoNewPrivileges=yes
+ProtectHome=yes
+# Bound resource use so a token holder can't exhaust fds via SSE stream spam.
+LimitNOFILE=4096
+LimitNPROC=512
+
+[Install]
+WantedBy=multi-user.target
