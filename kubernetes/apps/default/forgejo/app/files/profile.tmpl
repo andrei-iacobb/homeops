@@ -101,6 +101,13 @@
 			.ap-bio{margin:10px 0 0;font-size:14px;line-height:1.55;color:rgba(242,243,245,.66)}
 			.ap-bio p{margin:0}
 			.ap-bio a{color:rgba(242,243,245,.85);text-decoration:underline;text-underline-offset:2px}
+			.ap-tagline{margin:9px 0 0;font-size:14px;line-height:1.55;color:rgba(242,243,245,.64);max-width:54ch;text-wrap:balance}
+			.ap-stack{margin-top:clamp(20px,3.4vw,28px);padding-top:clamp(18px,3vw,22px);border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:11px}
+			.ap-stack-row{display:flex;gap:14px;align-items:flex-start}
+			.ap-stack-label{flex:0 0 78px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:rgba(242,243,245,.42);line-height:25px}
+			.ap-chips{display:flex;flex-wrap:wrap;gap:6px}
+			.ap-chip{font-size:12px;line-height:1;color:rgba(242,243,245,.8);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:6px 9px;white-space:nowrap;transition:border-color .18s cubic-bezier(.2,.8,.2,1),color .18s,background .18s}
+			.ap-chip:hover{border-color:rgba(57,211,83,.5);color:#eafff0;background:rgba(57,211,83,.09)}
 
 			.ap-graph{margin-top:clamp(22px,4vw,30px)}
 			.ap-heatmap{display:flex;flex-direction:column;gap:8px}
@@ -161,6 +168,8 @@
 			@media (max-width:540px){
 				.ap-head{flex-direction:column;text-align:center}
 				.ap-foot{justify-content:center}
+				.ap-stack-row{flex-direction:column;gap:5px}
+				.ap-stack-label{line-height:1.5}
 			}
 			@media (prefers-reduced-motion:reduce){
 				.ap-card{animation:none}
@@ -177,6 +186,7 @@
 					<div class="ap-id">
 						<h1 class="ap-name">{{if .ContextUser.FullName}}{{.ContextUser.FullName}}{{else}}{{.ContextUser.Name}}{{end}}</h1>
 						<p class="ap-handle">@{{.ContextUser.Name}}</p>
+						<p class="ap-tagline">CS student. I build for the web and self-host everything else.</p>
 						{{if .RenderedDescription}}<div class="ap-bio markup">{{.RenderedDescription}}</div>{{end}}
 					</div>
 				</header>
@@ -186,6 +196,21 @@
 						<div class="ap-hm-skeleton"></div>
 					</div>
 				</div>
+
+				<section class="ap-stack" aria-label="Tech stack">
+					<div class="ap-stack-row">
+						<span class="ap-stack-label">Languages</span>
+						<div class="ap-chips"><span class="ap-chip">TypeScript</span><span class="ap-chip">Python</span><span class="ap-chip">JavaScript</span><span class="ap-chip">Java</span><span class="ap-chip">C#</span><span class="ap-chip">C++</span><span class="ap-chip">Swift</span><span class="ap-chip">Shell</span></div>
+					</div>
+					<div class="ap-stack-row">
+						<span class="ap-stack-label">Infra</span>
+						<div class="ap-chips"><span class="ap-chip">Kubernetes</span><span class="ap-chip">Proxmox</span><span class="ap-chip">Flux CD</span><span class="ap-chip">Talos</span><span class="ap-chip">Docker</span><span class="ap-chip">Cilium</span><span class="ap-chip">WireGuard</span><span class="ap-chip">Cloudflare</span></div>
+					</div>
+					<div class="ap-stack-row">
+						<span class="ap-stack-label">Stack</span>
+						<div class="ap-chips"><span class="ap-chip">React</span><span class="ap-chip">Next.js</span><span class="ap-chip">Node.js</span><span class="ap-chip">.NET</span><span class="ap-chip">PostgreSQL</span><span class="ap-chip">Redis</span><span class="ap-chip">Grafana</span><span class="ap-chip">Tailwind</span></div>
+					</div>
+				</section>
 
 				<footer class="ap-foot">
 					<span class="ap-foot-label">Work with me at</span>
