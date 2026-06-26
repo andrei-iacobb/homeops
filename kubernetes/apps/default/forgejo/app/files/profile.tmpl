@@ -203,7 +203,7 @@
 			}
 			function setStat(name,val){var el=document.querySelector('[data-stat="'+name+'"]');if(!el)return;var out=el.querySelector('span')||el;countUp(out,val);}
 			function stats(data){
-				var arr=(data.days||[]).map(function(d){return d.date;});
+				var arr=(data.days||[]).filter(function(d){return d.count>0;}).map(function(d){return d.date;});
 				var set={};arr.forEach(function(d){set[d]=1;});
 				var active=arr.length,total=data.total||0;
 				var sorted=arr.slice().sort();
