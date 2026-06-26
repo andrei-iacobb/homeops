@@ -1,0 +1,75 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: baywatch
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: baywatch
+  interval: 1h
+  values:
+    controllers:
+      baywatch:
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: ghcr.io/andrei-iacobb/baywatch
+              tag: latest
+            env:
+              BW_BIND: ":8080"
+              # Each bw-agent on a bare-metal Proxmox host (LAN, token-auth).
+              BW_AGENTS: "DL380G9=http://192.168.1.150:9099,DL360G9=http://192.168.1.100:9099"
+              BW_LOCATE_DEFAULT: "120"
+              BW_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: baywatch-secret
+                    key: BW_TOKEN
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: 8080
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 64Mi
+    defaultPodOptions:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    route:
+      app:
+        hostnames: ["baywatch.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8080

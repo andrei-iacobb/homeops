@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BayWatch - Drive-Bay Health &amp; Locator - Plan</title>
+<style>
+  :root{
+    --bg:#0e1016; --panel:#161a23; --panel2:#1c212d; --ink:#e6e9ef; --mut:#9aa3b2;
+    --line:#262c3a; --green:#34d399; --amber:#f59e0b; --blue:#3b82f6; --grey:#4b5563;
+    --red:#ef4444; --acc:#7c9cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  main{max-width:780px;margin:0 auto;padding:42px 22px 90px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
+  h2{font-size:19px;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--line);letter-spacing:-.01em}
+  h3{font-size:15px;margin:20px 0 6px;color:#c9d2e3}
+  p{margin:10px 0}
+  .sub{color:var(--mut);margin:0 0 18px}
+  code{background:#0b0d13;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;color:#cbd5e1}
+  pre{background:#0b0d13;border:1px solid var(--line);border-radius:9px;padding:14px 16px;overflow:auto;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cbd5e1}
+  .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mut);vertical-align:middle}
+  .tag.ok{color:var(--green);border-color:#1f5d47}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600}
+  .led{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:middle;box-shadow:0 0 7px currentColor}
+  .g{color:var(--green);background:var(--green)} .a{color:var(--amber);background:var(--amber)}
+  .b{color:var(--blue);background:var(--blue)} .e{color:var(--grey);background:var(--grey);box-shadow:none}
+  ul{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  details{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 14px;margin:12px 0}
+  summary{cursor:pointer;font-weight:600;padding:8px 0;color:#c9d2e3}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .pill{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-left:6px}
+  .who{font-size:11px;color:var(--acc);font-weight:600}
+  blockquote{margin:10px 0;padding:8px 14px;border-left:3px solid var(--acc);color:var(--mut);background:var(--panel2);border-radius:0 8px 8px 0}
+  .chassis{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .bay{width:30px;height:42px;border:1px solid var(--line);border-radius:4px;background:#0b0d13;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:9px;color:var(--mut)}
+  .bay i{width:8px;height:8px;border-radius:50%;display:block}
+  hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .small{font-size:12.5px;color:var(--mut)}
+  input[type=checkbox]{accent-color:var(--acc);margin-right:6px}
+</style>
+</head>
+<body>
+<main>
+
+<h1>BayWatch <span class="tag ok">PLAN</span></h1>
+<p class="sub">A self-hosted drive-bay health &amp; locator dashboard for the HPE Gen9 fleet (DL380 + DL360, Smart HBA / P440ar in HBA mode). Live LED-accurate chassis view, ZFS+SMART health, click-to-locate. Drafted from a three-model design pass (Codex - architecture, Gemini - UX/visualization, Cursor - risk/MVP), reconciled against the real hardware.</p>
+
+<div class="card">
+<strong>Where this came from.</strong> We already proved (live, on both servers) that the caddy <span class="led a"></span>amber fault and <span class="led b"></span>blue locate LEDs <em>are</em> controllable in HBA mode via the kernel SES interface, and a systemd health service is deployed that lights amber on unhealthy drives. This plan turns that proven engine into a real app with a web UI.
+</div>
+
+<h2>1 - The one constraint that shapes everything</h2>
+<p>The LED hardware lives on the <strong>bare-metal Proxmox hosts</strong>. The Kubernetes cluster runs as Talos <em>VMs on those hosts</em>, so a pod cannot see <code>/sys/class/enclosure</code> or <code>/dev/sg*</code>. Therefore the system is necessarily <strong>two-tier</strong>:</p>
+<pre>
+   browser ──https──&gt;  [ BayWatch UI ]                         (Kubernetes pod, *.iacob.uk)
+                         aggregator + SVG chassis + SSE
+                              │  LAN (Cilium → 192.168.1.x)
+              ┌───────────────┴────────────────┐
+        https/token                      https/token
+              ▼                                ▼
+   [ bw-agent @ DL380 ]              [ bw-agent @ DL360 ]       (systemd, root, bare metal)
+   owns SES + health + LEDs          owns SES + health + LEDs
+   /sys/class/enclosure, sg_ses      zpool, smartctl
+</pre>
+<p class="small">The agent is the only thing that touches hardware. The K8s app is a pretty, aggregating window onto the agents - if it dies, the health LEDs keep working.</p>
+
+<h2>2 - Key design decisions <span class="pill">the load-bearing ones</span></h2>
+
+<h3>D1 - Anchor bays on the SES element, not the block device <span class="who">(resolves Cursor's #1 risk)</span></h3>
+<p>Cursor's sharpest point: mapping a bay via its current <code>/dev/sdX</code> breaks exactly when a drive dies or is pulled - the moment you most need to find it. The hardware gives us a better anchor, and we <strong>verified it live</strong>:</p>
+<ul>
+<li>Every bay is a stable SES <strong>element</strong> with a fixed <code>slot</code> number, under an enclosure with a unique <code>logical_id</code> (e.g. <code>0x50014380435ccf80</code>).</li>
+<li>An <em>empty</em> bay still exists as a controllable element - we saw DL380 enc <code>2:0:8:0</code> slot 6 report <code>status: not installed</code> yet remain lightable. <strong>So we can locate a dead/pulled drive's bay.</strong></li>
+<li>The <code>slot</code> attribute also fixes the silkscreen mismatch we hit (elements 4-7 → physical slots 8,7,6,5).</li>
+</ul>
+<blockquote>Anchor = <code>(enclosure logical_id, slot)</code> for the bay/LED. Correlate the <em>drive</em> in it by serial/WWN for health + labels. A persisted <code>element ↔ last-seen serial</code> map means a vanished ZFS member still resolves to a physical bay.</blockquote>
+
+<h3>D2 - One writer per host owns all SES writes <span class="who">(resolves Cursor's concurrency race)</span></h3>
+<p>The current systemd health script and a locate feature would otherwise race on the same SES bits (health write clobbers the locate bit every 60s). Fix: <strong>fold health polling + locate into a single <code>bw-agent</code> daemon</strong> that holds desired LED state in memory and reconciles it atomically. The old timer/script is retired into the agent.</p>
+
+<h3>D3 - Security: LAN-bound, token-auth, writes limited to time-boxed locate <span class="who">(Cursor's #1 concern, pragmatic middle)</span></h3>
+<p>Cursor is right that a root HTTP daemon on the hypervisor is real attack surface. For a trusted home LAN the pragmatic stance:</p>
+<ul>
+<li>Agent binds to the host LAN IP only; bearer-token auth (shared secret in a K8s Secret).</li>
+<li>Reads are cheap; the <em>only</em> mutating endpoint is <code>locate</code>, and it is <strong>time-boxed</strong> (auto-clears, e.g. 60-300s) so nothing can pin a blue LED or wedge state.</li>
+<li>Fault/health LEDs are computed solely by the agent from ZFS+SMART - never settable from the network.</li>
+<li>Documented harder option for later: drop the HTTP write path entirely and have the pod invoke locate over an SSH forced-command key. <span class="small">(Deferred - token+LAN is enough for v1.)</span></li>
+</ul>
+
+<h3>D4 - The health engine stays independent of the UI</h3>
+<p>The agent's reconcile loop is self-contained: hardware truth = ZFS + SMART, evaluated on the host. The K8s app going down, or a network partition, never affects whether a failing drive shows amber. The UI degrades gracefully with a <em>data-freshness</em> badge.</p>
+
+<h2>3 - Visualization: generated SVG chassis <span class="who">(Gemini's rec, option A)</span></h2>
+<p>Three options weighed: (A) an SVG schematic generated from the real SES topology, (B) HPE product photos, (C) hybrid. <strong>Pick A.</strong> It is accurate (driven by live <code>slot</code> data), scalable, themeable to the glassmorphism Homepage vibe, and carries no copyright baggage. Photos can't map bays reliably and look wrong the moment a layout differs.</p>
+<p>Each bay is a cell that renders one of four states, hover = drive detail (model/serial/size/temp/SMART/ZFS vdev), click = locate toggle:</p>
+<div class="chassis">
+  <span class="bay"><i class="g"></i></span><span class="bay"><i class="g"></i></span>
+  <span class="bay"><i class="a"></i></span><span class="bay"><i class="g"></i></span>
+  <span class="bay"><i class="b"></i></span><span class="bay"><i class="g"></i></span>
+  <span class="bay"><i class="e"></i></span><span class="bay"><i class="g"></i></span>
+</div>
+<p class="small">
+<span class="led g"></span>healthy &nbsp; <span class="led a"></span>fault (ZFS/SMART) &nbsp; <span class="led b"></span>locate (pulsing) &nbsp; <span class="led e"></span>empty bay. Locate pulses; everything respects <code>prefers-reduced-motion</code>.
+</p>
+<p>The real fleet layout the SVG must render (discovered live):</p>
+<table>
+<tr><th>Server</th><th>Cages (enclosures)</th><th>Bays</th></tr>
+<tr><td>DL380 Gen9</td><td>3 × 8-bay front cages (H240, boxes 1-3) + 1 × 2-bay rear cage (H240ar)</td><td>25 populated / 26 slots (1 empty)</td></tr>
+<tr><td>DL360 Gen9</td><td>1 × 8-bay front cage (P440ar)</td><td>8</td></tr>
+</table>
+
+<h2>4 - Prior art <span class="who">(Gemini)</span></h2>
+<p>Nothing off-the-shelf does this combination (bay visualization + live SMART/ZFS + interactive locate + self-hosted homelab aesthetic, vendor-neutral over SES):</p>
+<table>
+<tr><th>Tool</th><th>Does</th><th>Gap for us</th></tr>
+<tr><td>ledmon / ledctl</td><td>SES/SGPIO fault+locate from mdraid</td><td>CLI only, mdraid-centric (we're ZFS), no UI</td></tr>
+<tr><td>TrueNAS enclosure view</td><td>Slick live bay map + identify</td><td>Locked to TrueNAS/iX hardware</td></tr>
+<tr><td>45Drives Houston</td><td>Cockpit-based disk UI</td><td>Proprietary, their chassis only</td></tr>
+<tr><td>HPE iLO / SSA</td><td>Native locate</td><td>SSA refuses LED control in HBA mode (we hit this)</td></tr>
+</table>
+<p class="small">Conclusion: a small custom app is justified - the value is the vendor-neutral SES path + your exact fleet + your aesthetic.</p>
+
+<h2>5 - Shape of the build <span class="who">(Codex, trimmed to Cursor's MVP)</span></h2>
+<h3>Stack</h3>
+<ul>
+<li><strong>bw-agent</strong>: single static <strong>Go</strong> binary + systemd unit. No runtime deps, trivial to drop on Proxmox. Reconcile loop (poll ZFS+SMART, diff, apply SES), REST + SSE, token auth.</li>
+<li><strong>bw-ui</strong>: single <strong>Go</strong> binary serving an embedded SVG/JS frontend (one container image, app-template friendly). Aggregates agents over the LAN, streams changes to the browser via SSE. Deployed via bjw-s <code>app-template</code> HelmRelease + Gateway API HTTPRoute on <code>baywatch.iacob.uk</code> (envoy-internal), optionally behind Authentik.</li>
+</ul>
+<h3>"Events from the controller"</h3>
+<p>SES has no push. The agent fast-polls (~2-5s), diffs, and emits only <em>changes</em> upstream over SSE; a <code>udev</code> watch triggers an immediate refresh on drive insert/remove. To the browser it feels event-driven.</p>
+<details>
+<summary>API sketch</summary>
+<pre>bw-agent
+  GET  /v1/enclosures        → cages, slots, drive identity, health, led state
+  GET  /v1/stream            → SSE: {slot, state} change events
+  POST /v1/locate            → {enclosure_id, slot, seconds} (time-boxed, auto-clear)
+  GET  /v1/healthz
+bw-ui (K8s)
+  GET  /api/fleet            → merged snapshot of both agents
+  GET  /api/stream           → fan-in SSE to browser
+  POST /api/locate           → proxied to the owning agent</pre>
+</details>
+
+<h2>6 - Phasing</h2>
+<h3>MVP <span class="pill">~1 week, real value, low blast radius</span></h3>
+<ul>
+<li><input type="checkbox"> <code>bw-agent</code> on both hosts: reconcile health→amber (port the proven logic), expose read API + SSE, one time-boxed <code>locate</code> endpoint, token auth, LAN-bound.</li>
+<li><input type="checkbox"> Persist the <code>(enclosure_id, slot) ↔ serial</code> map; handle empty/missing bays.</li>
+<li><input type="checkbox"> <code>bw-ui</code>: read-only live SVG chassis for both servers, hover details, click-to-locate with countdown.</li>
+<li><input type="checkbox"> Deploy <code>bw-ui</code> via app-template at <code>baywatch.iacob.uk</code>; add to Homepage.</li>
+</ul>
+<h3>v1</h3>
+<ul>
+<li><input type="checkbox"> udev hot-plug, locate leases + conflict handling, data-freshness badges, audit log of LED writes.</li>
+<li><input type="checkbox"> Drive detail drawer (temp trend, SMART attributes, ZFS vdev/pool), per-cage health summary.</li>
+</ul>
+<h3>v2 <span class="pill">defer unless wanted</span></h3>
+<ul>
+<li><input type="checkbox"> Authentik SSO, mTLS or SSH-forced-command write path, Prometheus metrics, alert routing, "blink-on-failure" auto-locate.</li>
+</ul>
+
+<h2>7 - Risks carried forward <span class="who">(Cursor)</span></h2>
+<table>
+<tr><th>#</th><th>Risk</th><th>Mitigation in this plan</th></tr>
+<tr><td>1</td><td>Root daemon attack surface on hypervisor</td><td>D3: LAN-bound, token, writes = time-boxed locate only; SSH option later</td></tr>
+<tr><td>2</td><td>Mapping breaks on pulled/dead drive</td><td>D1: anchor on SES element/slot (proven to persist when empty)</td></tr>
+<tr><td>3</td><td>Health vs locate SES write race</td><td>D2: single-writer agent, atomic reconcile</td></tr>
+<tr><td>4</td><td>Stale UI hiding a real failure</td><td>D4: health independent of UI + freshness badge</td></tr>
+<tr><td>5</td><td>SES LED state lost on enclosure power loss</td><td>Documented limitation; agent re-asserts on boot</td></tr>
+</table>
+
+<h2>8 - Decisions for Andrei</h2>
+<ul>
+<li><strong>Name</strong>: "BayWatch" (placeholder) - keep or rename?</li>
+<li><strong>Scope now</strong>: build the MVP, or stop at this plan?</li>
+<li><strong>Auth</strong>: leave behind envoy-internal only, or wire Authentik SSO from day one?</li>
+<li><strong>Locate default timeout</strong>: 60s? 5min?</li>
+</ul>
+
+<details>
+<summary>Appendix - live fleet topology snapshot (reference for the SVG layout)</summary>
+<pre>DL380G9
+  enc 0:0:3:0 (H240ar, rear cage)  logical_id 0x50014380431497d0
+     slot3=sda  slot4=sdb
+  enc 1:0:9:0 (H240, box)          logical_id 0x50014380435cc910
+     slot1..8 = sdc sdd sde sdf / sdj sdi sdh sdg
+  enc 2:0:8:0 (H240, box)          logical_id 0x50014380435ccf80
+     slot1..8 = sdk sdl sdm sdn / sdq sdp [EMPTY] sdo
+  enc 3:0:9:0 (H240, box)          logical_id 0x50014380435cc940
+     slot1..8 = sdr sds sdt sdu / sdy sdx sdw sdv
+DL360G9
+  enc 0:0:9:0 (P440ar)             logical_id 0x5001438034cae4a0
+     slot1..8 = sda sdb sdc sdd sde sdf sdg sdh
+(note: within each 8-bay cage, SES element index 4-7 maps to physical slots 8,7,6,5)</pre>
+</details>
+
+<hr>
+<p class="small">Generated engine already live: <code>/usr/local/sbin/drive-health-leds.sh</code> + systemd timer on both hosts. This plan supersedes that script by folding it into <code>bw-agent</code>.</p>
+
+</main>
+</body>
+</html>
