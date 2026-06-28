@@ -42,5 +42,6 @@ resources:
   - ./wallos/ks.yaml
   - ./mealie/ks.yaml
   - ./solis-charge/ks.yaml
+  - ./fanwatch/ks.yaml
   - ./slate/ks.yaml
   - ./forgejo-runner/ks.yaml
