@@ -19,9 +19,12 @@ Env vars (read at startup):
     ILO_PASS           shared iLO password
     ILO_PASS_<LABEL>   per-host password override (e.g. ILO_PASS_DL360)
     PORT               HTTP listen port (default 8080)
-    POLL_SECONDS       thermal poll cadence (default 15)
+    POLL_SECONDS       thermal poll cadence (default 12)
     IML_POLL_SECONDS   IML event-log poll cadence (default 180)
-    HISTORY_POINTS     samples kept per target (default 480 ~= 2h at 15s)
+    HISTORY_POINTS     samples kept per target (default 480 ~= 1.6h at 12s)
+
+Abnormal fan-ramp events are persisted to /data/events.jsonl and degrade to
+in-memory only if /data is not writable.
 """
 
 import base64
@@ -55,7 +58,7 @@ def _parse_targets(raw):
 ILO_USER = os.environ.get("ILO_USER", "Administrator")
 ILO_PASS = os.environ.get("ILO_PASS", "")
 PORT = int(os.environ.get("PORT", "8080"))
-POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "15"))
+POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "12"))
 IML_POLL_SECONDS = int(os.environ.get("IML_POLL_SECONDS", "180"))
 HISTORY_POINTS = int(os.environ.get("HISTORY_POINTS", "480"))
 TARGETS = _parse_targets(os.environ.get("ILO_TARGETS", ""))
@@ -65,6 +68,19 @@ IML_FETCH_COUNT = 15          # only fetch the last N IML members
 IML_SLEEP = 0.3               # polite delay between member fetches
 HTTP_TIMEOUT = 10
 MAX_RETRIES = 3
+
+# Abnormal fan-ramp detection
+BASELINE_WINDOW_S = 600       # ~10 min rolling window for baseline
+BASELINE_MIN_SAMPLES = 5      # below this, baseline = current sample
+RAMP_FLOOR = 40               # ignore ramps below this maxfan %
+RAMP_ABS_DELTA = 12           # abnormal if maxfan >= baseline + this ...
+RAMP_REL_MULT = 1.35          # ... or maxfan >= round(baseline * this)
+RAMP_CLEAR_DELTA = 8          # episode ends below baseline + this ...
+RAMP_CLEAR_SAMPLES = 2        # ... for this many consecutive samples
+MAX_EVENTS = 200              # keep at most this many ramp events
+
+DATA_DIR = "/data"
+EVENTS_FILE = os.path.join(DATA_DIR, "events.jsonl")
 
 _SSL_CTX = ssl._create_unverified_context()
 
@@ -81,7 +97,8 @@ _lock = threading.Lock()
 
 # state[label] = {
 #   host, online, maxfan, fans, drivers, temps, events,
-#   history (deque), last_thermal_ok, last_iml_ok
+#   history (deque), last_thermal_ok, last_iml_ok,
+#   active_event (event dict or None), below_count (int)
 # }
 _state = {}
 for _label, _host in TARGETS:
@@ -96,7 +113,14 @@ for _label, _host in TARGETS:
         "history": deque(maxlen=HISTORY_POINTS),
         "last_thermal_ok": 0,
         "last_iml_ok": 0,
+        "active_event": None,
+        "below_count": 0,
     }
+
+# Abnormal fan-ramp events, newest appended at end. Guarded by _lock.
+_events = []
+_event_seq = 0
+_persist_ok = True
 
 
 # --------------------------------------------------------------------------- #
@@ -193,6 +217,202 @@ def _compute_drivers(temps):
 
 
 # --------------------------------------------------------------------------- #
+# Abnormal fan-ramp detection + event persistence
+# --------------------------------------------------------------------------- #
+
+def _median(vals):
+    s = sorted(vals)
+    n = len(s)
+    if n == 0:
+        return 0
+    mid = n // 2
+    if n % 2:
+        return s[mid]
+    return (s[mid - 1] + s[mid]) / 2.0
+
+
+def _score_all_sensors(temps):
+    """All Enabled sensors as {name, c, crit, score, state}, sorted by score
+    desc (None scores last)."""
+    scored = []
+    for t in temps:
+        if t["state"] != "Enabled":
+            continue
+        c, crit = t["c"], t["crit"]
+        if c is not None and crit and crit > 0:
+            score = round(c / float(crit), 3)
+        else:
+            score = None
+        scored.append({"name": t["name"], "c": c, "crit": crit,
+                       "score": score, "state": t["state"]})
+    scored.sort(key=lambda x: x["score"] if x["score"] is not None else -1.0,
+                reverse=True)
+    return scored
+
+
+def _suspected_driver(scored):
+    """Top non-HD-Max sensor by score. If only HD Max sensors read high,
+    return that one flagged as neutralized so it stays visible."""
+    for s in scored:
+        if s["score"] is None:
+            continue
+        if _is_hd_max(s["name"]):
+            continue
+        return {"name": s["name"], "c": s["c"], "crit": s["crit"], "score": s["score"]}
+    for s in scored:
+        if s["score"] is None:
+            continue
+        if _is_hd_max(s["name"]):
+            return {"name": s["name"], "c": s["c"], "crit": s["crit"],
+                    "note": "neutralized HD sensor still reading high"}
+    return None
+
+
+def _capture_snapshot(ev, fans, temps, iml_events):
+    """Fill/refresh the at-peak diagnostic snapshot on an event."""
+    scored = _score_all_sensors(temps)
+    ev["fans_at_peak"] = list(fans)
+    ev["sensors_at_peak"] = scored
+    ev["suspected_driver"] = _suspected_driver(scored)
+    ev["iml_at_peak"] = list(iml_events)
+
+
+def _driver_str(d):
+    if not d:
+        return "none"
+    if d.get("score") is not None:
+        return "%s %s/%s (%.2f)" % (d["name"], d["c"], d["crit"], d["score"])
+    return "%s %s/%s (%s)" % (d["name"], d.get("c"), d.get("crit"),
+                              d.get("note", "-"))
+
+
+def _events_save():
+    """Rewrite /data/events.jsonl from the in-memory list. Lock held by caller.
+    Silent no-op if persistence is unavailable."""
+    if not _persist_ok:
+        return
+    try:
+        tmp = EVENTS_FILE + ".tmp"
+        with open(tmp, "w") as f:
+            for ev in _events:
+                f.write(json.dumps(ev) + "\n")
+        os.replace(tmp, EVENTS_FILE)
+    except Exception:  # noqa: BLE001 - degrade to in-memory
+        pass
+
+
+def _events_trim():
+    if len(_events) > MAX_EVENTS:
+        del _events[:-MAX_EVENTS]
+
+
+def _events_init():
+    """At startup: check /data writability, load existing events.jsonl."""
+    global _persist_ok, _event_seq
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        probe = os.path.join(DATA_DIR, ".write_test")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except Exception:  # noqa: BLE001
+        _persist_ok = False
+    try:
+        if os.path.exists(EVENTS_FILE):
+            with open(EVENTS_FILE) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        _events.append(json.loads(line))
+                    except Exception:  # noqa: BLE001
+                        pass
+    except Exception:  # noqa: BLE001
+        pass
+    # close any dangling active events from a previous run (we lost live state)
+    for ev in _events:
+        if ev.get("end_ts") is None:
+            ev["end_ts"] = ev.get("start_ts")
+    _events_trim()
+    for ev in _events:
+        try:
+            _event_seq = max(_event_seq, int(ev.get("id", 0)))
+        except (TypeError, ValueError):
+            pass
+    mode = "persisting to %s" % EVENTS_FILE if _persist_ok else "in-memory only"
+    print("fanwatch ramp-events: loaded %d, %s" % (len(_events), mode), flush=True)
+
+
+def _detect_ramp(label, host, now, maxfan, fans, temps):
+    """Per-poll abnormal-ramp detection + episode debounce. Lock held by
+    caller. Called BEFORE the current sample is appended to history so the
+    baseline window excludes it."""
+    global _event_seq
+    st = _state[label]
+    recent = [h["maxfan"] for h in st["history"] if h["t"] >= now - BASELINE_WINDOW_S]
+    if len(recent) >= BASELINE_MIN_SAMPLES:
+        baseline = _median(recent)
+    else:
+        baseline = maxfan
+    threshold = max(baseline + RAMP_ABS_DELTA, round(baseline * RAMP_REL_MULT))
+    abnormal = maxfan >= RAMP_FLOOR and maxfan >= threshold
+
+    ev = st["active_event"]
+
+    if ev is None:
+        if abnormal:
+            _event_seq += 1
+            ev = {
+                "id": _event_seq,
+                "server": label,
+                "host": host,
+                "start_ts": int(now),
+                "end_ts": None,
+                "peak_maxfan": maxfan,
+                "baseline": int(round(baseline)),
+                "duration_s": 0,
+                "fans_at_peak": [],
+                "suspected_driver": None,
+                "sensors_at_peak": [],
+                "iml_at_peak": [],
+            }
+            _capture_snapshot(ev, fans, temps, st["events"])
+            st["active_event"] = ev
+            st["below_count"] = 0
+            _events.append(ev)
+            _events_trim()
+            _events_save()
+            print("RAMP-EVENT start server=%s maxfan=%d%% baseline=%d%% driver=%s"
+                  % (label, maxfan, ev["baseline"], _driver_str(ev["suspected_driver"])),
+                  flush=True)
+        return
+
+    # episode active: refresh snapshot on a new peak
+    if maxfan > ev["peak_maxfan"]:
+        ev["peak_maxfan"] = maxfan
+        _capture_snapshot(ev, fans, temps, st["events"])
+    ev["duration_s"] = int(now - ev["start_ts"])
+
+    if maxfan < ev["baseline"] + RAMP_CLEAR_DELTA:
+        st["below_count"] += 1
+    else:
+        st["below_count"] = 0
+
+    if st["below_count"] >= RAMP_CLEAR_SAMPLES:
+        ev["end_ts"] = int(now)
+        ev["duration_s"] = int(now - ev["start_ts"])
+        st["active_event"] = None
+        st["below_count"] = 0
+        _events_save()
+        print("RAMP-EVENT end   server=%s peak=%d%% duration=%ds driver=%s"
+              % (label, ev["peak_maxfan"], ev["duration_s"],
+                 _driver_str(ev["suspected_driver"])), flush=True)
+    else:
+        _events_save()
+
+
+# --------------------------------------------------------------------------- #
 # Pollers
 # --------------------------------------------------------------------------- #
 
@@ -212,6 +432,8 @@ def _thermal_poller(label, host):
                 st["temps"] = temps
                 st["drivers"] = drivers
                 st["last_thermal_ok"] = now
+                # detect ramp using history BEFORE appending current sample
+                _detect_ramp(label, host, now, maxfan, fans, temps)
                 st["history"].append({"t": int(now), "maxfan": maxfan})
         except Exception:  # noqa: BLE001
             with _lock:
@@ -270,6 +492,21 @@ def _start_pollers():
 # State snapshot for the API
 # --------------------------------------------------------------------------- #
 
+def _recent_events_for(label):
+    """Last 5 ramp events for a target, newest first, compact form."""
+    matched = [e for e in _events if e.get("server") == label]
+    out = []
+    for e in reversed(matched[-5:]):
+        d = e.get("suspected_driver") or {}
+        out.append({
+            "id": e.get("id"),
+            "start_ts": e.get("start_ts"),
+            "peak_maxfan": e.get("peak_maxfan"),
+            "suspected_driver": d.get("name"),
+        })
+    return out
+
+
 def _snapshot():
     with _lock:
         out = {"ts": int(time.time()), "targets": {}}
@@ -283,8 +520,15 @@ def _snapshot():
                 "temps": list(st["temps"]),
                 "history": list(st["history"]),
                 "events": list(st["events"]),
+                "active_event": st["active_event"] is not None,
+                "recent_events": _recent_events_for(label),
             }
     return out
+
+
+def _events_snapshot():
+    with _lock:
+        return {"events": list(reversed(_events))}
 
 
 # --------------------------------------------------------------------------- #
@@ -378,6 +622,39 @@ INDEX_HTML = r"""<!DOCTYPE html>
   .ev.crit .sev { color: var(--red); } .ev.warn .sev { color: var(--amber); } .ev.ok .sev { color: var(--muted); }
   .empty { color: var(--muted); font-size: 12px; padding: 6px 0; }
   .offline-note { color: var(--amber); font-size: 11px; }
+  .badge-ramp { font-size: 10px; font-weight: 600; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--red); border: 1px solid rgba(229,83,75,.5);
+    background: rgba(229,83,75,.12); padding: 1px 7px; border-radius: 6px;
+    animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .badge-ramp, .active-pulse { animation: none; } }
+  section.evtpanel { margin-top: 26px; }
+  section.evtpanel > h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+  section.evtpanel .hint { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .evt { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .evt > summary { list-style: none; cursor: pointer; display: grid;
+    grid-template-columns: 150px 70px 64px 70px 1fr; gap: 10px; align-items: center;
+    padding: 10px 12px; font-size: 12.5px; }
+  .evt > summary::-webkit-details-marker { display: none; }
+  .evt > summary:hover { background: var(--panel2); }
+  .evt .evt-when { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .evt .evt-srv { font-weight: 600; }
+  .evt .evt-peak { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .evt .evt-peak.green { color: var(--green); } .evt .evt-peak.amber { color: var(--amber); }
+  .evt .evt-peak.red { color: var(--red); }
+  .evt .evt-dur { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .evt .evt-drv { color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .active-pulse { color: var(--red); font-weight: 600; animation: pulse 1.6s ease-in-out infinite; }
+  .evt-body { padding: 4px 12px 14px; border-top: 1px solid var(--line); background: var(--panel2); }
+  table.peaksens { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.peaksens th { text-align: left; color: var(--muted); font-weight: 500;
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px;
+    padding: 6px 8px 5px 0; border-bottom: 1px solid var(--line); }
+  table.peaksens td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line);
+    vertical-align: middle; }
+  table.peaksens td.name { white-space: nowrap; max-width: 200px; overflow: hidden;
+    text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -388,6 +665,11 @@ INDEX_HTML = r"""<!DOCTYPE html>
   </header>
   <div class="updated" id="updated">loading...</div>
   <div class="grid" id="grid"></div>
+  <section class="evtpanel">
+    <h2>Abnormal fan events</h2>
+    <div class="hint">Diagnostic snapshots captured whenever fans ramp above baseline. Click a row to expand.</div>
+    <div id="events-panel"><div class="empty">loading...</div></div>
+  </section>
 </div>
 <script>
 function fanClass(v){ return v > 70 ? "red" : (v >= 40 ? "amber" : "green"); }
@@ -482,6 +764,7 @@ function card(label, t){
     + '<div class="chead">'
     +   '<span class="label">'+esc(label)+'</span>'
     +   '<span class="host">'+esc(t.host)+'</span>'
+    +   (t.active_event ? '<span class="badge-ramp">RAMP ACTIVE</span>' : '')
     +   '<span class="dot '+(t.online ? "on" : "off")+'"></span>'
     + '</div>'
     + '<div class="fanrow">'
@@ -511,6 +794,80 @@ function render(data){
   document.getElementById("updated").textContent = "updated " + d.toLocaleTimeString();
 }
 
+// ---- abnormal fan events panel ----
+function durStr(e){
+  if(e.end_ts == null){ return '<span class="active-pulse">active</span>'; }
+  var s = e.duration_s || 0;
+  return s >= 60 ? (Math.floor(s/60)+'m '+(s%60)+'s') : (s+'s');
+}
+function driverLabel(d){
+  if(!d){ return '<span style="color:var(--muted)">no scored driver</span>'; }
+  var base = esc(d.name);
+  if(d.score != null){ return base+' '+d.c+'/'+d.crit+'C ('+Math.round(d.score*100)+'%)'; }
+  if(d.note){ return base+' <span class="tag neutral">'+esc(d.note)+'</span>'; }
+  return base;
+}
+function peakSensorTable(sensors){
+  if(!sensors || !sensors.length){ return '<div class="empty">no sensor data captured</div>'; }
+  var rows = sensors.map(function(s){
+    var hd = /hd max/i.test(s.name || "");
+    var tag = hd ? '<span class="tag neutral">neutralized</span>'
+      : (s.state === "Absent" ? '<span class="tag absent">absent</span>' : '');
+    var barHtml = "";
+    if(s.score != null && !hd){
+      var pct = Math.max(0, Math.min(100, s.score*100));
+      barHtml = '<div class="bar"><i style="width:'+pct.toFixed(0)+'%;background:'+barColor(s.score)+'"></i></div>';
+    }
+    return '<tr>'
+      + '<td class="name" title="'+esc(s.name)+'">'+esc(s.name)+'</td>'
+      + '<td class="num">'+(s.c == null ? "-" : s.c+"C")+'</td>'
+      + '<td class="num">'+(s.crit == null ? "-" : s.crit+"C")+'</td>'
+      + '<td class="num">'+(s.score == null ? "-" : Math.round(s.score*100)+"%")+'</td>'
+      + '<td>'+barHtml+' '+tag+'</td>'
+      + '</tr>';
+  }).join("");
+  return '<table class="peaksens"><thead><tr>'
+    + '<th>sensor</th><th class="num">read</th><th class="num">crit</th>'
+    + '<th class="num">score</th><th>load</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function eventBlock(e){
+  var when = new Date(e.start_ts*1000).toLocaleString();
+  var peak = e.peak_maxfan;
+  var pc = peak > 70 ? "red" : (peak >= 40 ? "amber" : "green");
+  return '<details class="evt" data-id="'+esc(e.id)+'"'+(e.end_ts == null ? ' open' : '')+'>'
+    + '<summary>'
+    +   '<span class="evt-when">'+esc(when)+'</span>'
+    +   '<span class="evt-srv">'+esc(e.server)+'</span>'
+    +   '<span class="evt-peak '+pc+'">'+peak+'%</span>'
+    +   '<span class="evt-dur">'+durStr(e)+'</span>'
+    +   '<span class="evt-drv">'+driverLabel(e.suspected_driver)+'</span>'
+    + '</summary>'
+    + '<div class="evt-body">'
+    +   '<div class="secthead">sensors at peak (maxfan '+peak+'%, baseline '+e.baseline+'%)</div>'
+    +   peakSensorTable(e.sensors_at_peak)
+    +   '<div class="secthead">IML at peak</div>'
+    +   '<div class="events">'+eventRows(e.iml_at_peak)+'</div>'
+    + '</div>'
+    + '</details>';
+}
+function renderEvents(data){
+  var panel = document.getElementById("events-panel");
+  var events = (data && data.events) || [];
+  if(!events.length){
+    panel.innerHTML = '<div class="empty">no abnormal fan events recorded</div>';
+    return;
+  }
+  // remember which rows the user had expanded, restore after re-render
+  var openIds = {};
+  panel.querySelectorAll("details.evt[open]").forEach(function(d){
+    openIds[d.getAttribute("data-id")] = true;
+  });
+  panel.innerHTML = events.map(eventBlock).join("");
+  panel.querySelectorAll("details.evt").forEach(function(d){
+    if(openIds[d.getAttribute("data-id")]){ d.open = true; }
+  });
+}
+
 function tick(){
   fetch("/api/state", {cache: "no-store"})
     .then(function(r){ return r.json(); })
@@ -518,6 +875,10 @@ function tick(){
     .catch(function(){
       document.getElementById("updated").textContent = "fetch failed - retrying";
     });
+  fetch("/api/events", {cache: "no-store"})
+    .then(function(r){ return r.json(); })
+    .then(renderEvents)
+    .catch(function(){});
 }
 tick();
 setInterval(tick, 10000);
@@ -554,6 +915,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, INDEX_HTML, "text/html; charset=utf-8")
             elif self.path.startswith("/api/state"):
                 self._send(200, json.dumps(_snapshot()), "application/json")
+            elif self.path.startswith("/api/events"):
+                self._send(200, json.dumps(_events_snapshot()), "application/json")
             elif self.path == "/healthz":
                 self._send(200, "ok", "text/plain")
             else:
@@ -568,6 +931,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    _events_init()
     _start_pollers()
     httpd = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     labels = ", ".join("%s=%s" % (l, h) for l, h in TARGETS) or "(none)"

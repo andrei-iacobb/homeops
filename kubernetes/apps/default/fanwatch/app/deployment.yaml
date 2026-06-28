@@ -27,7 +27,7 @@ spec:
             - name: PORT
               value: "8080"
             - name: POLL_SECONDS
-              value: "30"
+              value: "15"
             - name: ILO_TARGETS
               value: "DL360=192.168.1.175,DL380=192.168.1.180"
             - name: ILO_USER
@@ -57,7 +57,12 @@ spec:
           volumeMounts:
             - name: app
               mountPath: /app
+            - name: data
+              mountPath: /data
       volumes:
         - name: app
           configMap:
             name: fanwatch-code
+        - name: data
+          persistentVolumeClaim:
+            claimName: fanwatch-data
