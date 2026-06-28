@@ -27,7 +27,7 @@ spec:
             - name: PORT
               value: "8080"
             - name: POLL_SECONDS
-              value: "15"
+              value: "4"
             - name: ILO_TARGETS
               value: "DL360=192.168.1.175,DL380=192.168.1.180"
             - name: ILO_USER
