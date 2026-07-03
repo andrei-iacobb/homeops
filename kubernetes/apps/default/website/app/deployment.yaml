@@ -45,6 +45,16 @@ spec:
                 secretKeyRef:
                   name: website-secret
                   key: REDIS_PASSWORD
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: website-secret
+                  key: GITHUB_TOKEN
+            - name: FORGEJO_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: website-secret
+                  key: FORGEJO_TOKEN
           livenessProbe:
             httpGet:
               path: /health
