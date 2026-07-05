@@ -1,4 +1,20 @@
 ---
+# Block the Vaultwarden admin panel from the public internet. The panel is
+# token-protected already, but there's no reason to expose the admin login to
+# internet brute-force. /admin is served ONLY on the internal gateway below;
+# on the external route it returns a plain 404 via an Envoy direct-response.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: vaultwarden-admin-block
+spec:
+  directResponse:
+    statusCode: 404
+    contentType: text/plain
+    body:
+      type: Inline
+      inline: "404 page not found"
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -10,6 +26,35 @@ spec:
       sectionName: https
   hostnames:
     - vault.iacob.co.uk
+  rules:
+    # More-specific path wins: /admin externally -> 404 (no backend).
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /admin
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.envoyproxy.io
+            kind: HTTPRouteFilter
+            name: vaultwarden-admin-block
+    # Everything else -> the vaultwarden service as before.
+    - backendRefs:
+        - name: vaultwarden
+          port: 80
+---
+# Internal-only route: full access including /admin from the LAN (*.iacob.uk).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vaultwarden-internal
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - vault.iacob.uk
   rules:
     - backendRefs:
         - name: vaultwarden
