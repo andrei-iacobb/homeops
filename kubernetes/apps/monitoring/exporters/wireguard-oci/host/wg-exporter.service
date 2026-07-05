@@ -1,0 +1,14 @@
+[Unit]
+Description=WireGuard Prometheus exporter (read-only, serves :9586)
+After=network-online.target wg-quick@oci.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/wg-exporter.py
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

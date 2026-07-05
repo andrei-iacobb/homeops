@@ -1,0 +1,17 @@
+---
+# Headless service with NO selector: the exporter runs on the DL360 Proxmox host
+# (192.168.1.100:9586), not as an in-cluster pod, so endpoints are defined manually
+# in endpoints.yaml. The ServiceMonitor scrapes through this Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: wireguard-oci-exporter
+  labels:
+    app: wireguard-oci-exporter
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9586
+      targetPort: 9586
+      protocol: TCP

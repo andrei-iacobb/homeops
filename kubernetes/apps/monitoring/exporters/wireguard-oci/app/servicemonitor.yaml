@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: wireguard-oci-exporter
+  labels:
+    app: wireguard-oci-exporter
+spec:
+  selector:
+    matchLabels:
+      app: wireguard-oci-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
