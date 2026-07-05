@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodically pull homeops repo for claude-triager
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

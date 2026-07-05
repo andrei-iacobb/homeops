@@ -1,0 +1,240 @@
+# HOMELAB KUBERNETES SRE TRIAGER - DISCORD MESSAGE TEMPLATES (PROPOSE-EXECUTE-VERIFY MODEL)
+
+## MESSAGE STYLE GUIDE
+
+This guide reflects the PROPOSE-EXECUTE-VERIFY model where:
+- Claude PROPOSES actions (read-only investigation)
+- Bot EXECUTES validated proposals
+- Bot reports outcomes to Discord
+
+**Lead with emoji status:**
+  ✅ SELF_HEALED (alert resolved on its own, Claude took no action)
+  ⚪ NOISE (not actionable or known-flaky, Claude took no action)
+  ✔️ SIMPLE_FIXED (Claude proposed, bot executed, bot verified recovery)
+  🔴 DEEP_ESCALATE (Claude found a problem requiring human decision; no action taken by bot)
+
+- **Keep it SHORT (2-4 lines max).** No logs, no JSON, no play-by-play.
+- **One-line root cause statement.** Clear and specific.
+- **For DEEP_ESCALATE only:**
+  - Add explicit "⚠️ Downtime risk: <none|low|high>" line
+  - Suggest ONE actionable command or step for human to run (in a code block)
+  - Let the human decide
+
+---
+
+## TEMPLATE 1: SELF_HEALED
+
+**When to use:** Alert has already resolved without any action. Transient blip, pod completed successfully, app restarted itself.
+
+**Who sends the message:** Claude (via Discord integration)
+
+Examples:
+
+✅ PrometheusDiskSpaceWarning. Transient spike already resolved. No action taken.
+
+✅ backup-job pod completed successfully. Alert resolved. No triager action needed.
+
+✅ qBittorrent pod crashed and restarted; now Running and healthy. Self-recovered.
+
+---
+
+## TEMPLATE 2: NOISE
+
+**When to use:** Alert is not actionable, known-flaky, or an acceptable expected spike. Human already knows about it.
+
+**Who sends the message:** Claude (via Discord integration)
+
+Examples:
+
+⚪ KubernetesPodNotHealthy on a node that's being drained. Expected during maintenance.
+
+⚪ PrometheusTargetDown (Alertmanager scrape). Brief network hiccup, target is healthy. Known-flaky alert.
+
+⚪ HighCPUUsage during scheduled volsync backup. Expected spike. No action needed.
+
+---
+
+## TEMPLATE 3: SIMPLE_FIXED
+
+**When to use:** Claude proposed a whitelisted action, bot executed it, bot verified recovery. This message is sent AFTER the bot completes.
+
+**Who sends the message:** Bot (after executing Claude's proposal and verifying recovery)
+
+**Message structure:**
+- ✔️ status emoji
+- One-line action summary (what bot executed)
+- Result (pod healthy, workload recovered, etc.)
+
+Examples:
+
+✔️ sabnzbd deployment restarted. Pod now Running, healthy.
+
+✔️ prowlarr pod stuck in Terminating deleted. StatefulSet recreated healthy replica.
+
+✔️ homepage HelmRelease reconciled. Status: Healthy, all pods Running.
+
+✔️ Prometheus scrape stuck pod deleted. New pod started and scraping.
+
+---
+
+## TEMPLATE 4: DEEP_ESCALATE
+
+**When to use:** Claude found a problem that requires human decision, config change, or deeper investigation. Claude DID NOT propose action (or proposed_action is null). Bot will NOT execute anything.
+
+**Who sends the message:** Claude (via Discord integration)
+
+**Message structure:**
+- 🔴 status emoji
+- One-line root cause statement
+- Explicit "⚠️ Downtime risk: <none|low|high>" line
+- ONE suggested command or investigation step for human (in code block)
+- Optional: brief context (e.g., "likely...") if helpful
+
+Examples:
+
+🔴 paperless pod OOMKilled multiple times. ⚠️ Downtime risk: high.
+Config file or indexing process exceeded 2GB memory limit. Investigate:
+`kubectl -n default exec -it paperless-xxx -- du -sh /usr/src/paperless/consume`
+
+🔴 immich-server pod stuck in ImagePullBackOff. ⚠️ Downtime risk: medium.
+Image `ghcr.io/home-operations/immich-server:1.99.0` may not exist or is private. Check:
+`kubectl -n default describe pod immich-server-xxx | grep -A5 Events`
+
+🔴 n8n pods waiting for PostgreSQL connections. ⚠️ Downtime risk: high.
+Likely database max_connections limit hit or connection pool misconfigured. Check:
+`kubectl -n databases logs -f postgres-primary-0 | grep connections`
+
+🔴 sonarr HelmRelease in ReconcileError. ⚠️ Downtime risk: low (pod still running).
+HelmChart fetch failed (likely git ref or chart version issue). Run:
+`flux get hr -n media sonarr --verbose`
+
+🔴 New immich-server pod cannot schedule (Pending). ⚠️ Downtime risk: high.
+Single node at 94% CPU, 87% memory. No room for new replica. Assess:
+`kubectl top nodes && kubectl describe node home-cluster`
+
+🔴 Protected namespace query (databases/volsync). ⚠️ Downtime risk: varies.
+Triager cannot auto-fix protected namespaces. Manual check required:
+`kubectl -n <namespace> describe pod <pod-name> && kubectl -n <namespace> logs <pod-name>`
+
+---
+
+## TEMPLATE 5: AUTO-FIX DISABLED ESCALATION
+
+**When to use:** The alert came with disable_autofixes=true. Claude MUST escalate, regardless of alert type.
+
+**Who sends the message:** Claude (via Discord integration)
+
+**Message structure:**
+- 🔴 status emoji
+- Brief statement that auto-fix is disabled
+- Root cause (same as if it would have been SIMPLE_FIXED)
+- Suggested action for human (the command Claude would have proposed)
+
+Examples:
+
+🔴 sabnzbd pod CrashLoopBackOff. ⚠️ Downtime risk: medium. Auto-fix disabled.
+(Would normally restart deployment. Manual action required.)
+`kubectl -n media rollout restart deployment sabnzbd`
+
+🔴 prometheus scrape pod stuck in Terminating. ⚠️ Downtime risk: low. Auto-fix disabled.
+(Would normally delete pod. Manual action required.)
+`kubectl -n monitoring delete pod prometheus-scrape-xxx`
+
+---
+
+## TONE EXAMPLES (DO and DON'T)
+
+**DO (terse, actionable):**
+- "✔️ Restarted sabnzbd deployment. Pod healthy."
+- "🔴 OOMKilled. Downtime risk: high. → `kubectl ... du -sh /config`"
+- "⚪ Transient spike. No action."
+- "✔️ Flux reconcile triggered. HelmRelease now Healthy."
+
+**DON'T (verbose, play-by-play, logs):**
+- "The sabnzbd pod was in CrashLoopBackOff state. Checking logs I found error: SIGKILL due to OOM. I then executed kubectl -n media rollout restart deployment sabnzbd. The pod came back up and now it is in a Running state. I checked the logs again and no more errors."
+- "🔴 [kubectl describe output pasted here in full]"
+- "The prometheus target is down because of a network hiccup observed in the events log which shows..."
+
+KEEP IT SHORT. Human reads Discord on a phone.
+
+---
+
+## DISCORD FORMAT REFERENCE
+
+**Emoji meanings (consistent across all messages):**
+- ✅ = Self-healed (no action needed, issue resolved on its own)
+- ⚪ = Noise (not actionable, expected, or known-flaky)
+- ✔️ = Simple fixed (bot executed, verified healthy)
+- 🔴 = Escalation (human decision/action required, bot did not act)
+
+**Downtime risk (ESCALATION ONLY):**
+- "none" = service continues running, no user impact
+- "low" = brief impact or partial degradation expected
+- "high" = service unavailable or critical function blocked
+
+**Length:** 2-4 lines max. Each line is a distinct thought. Use line breaks generously.
+
+---
+
+## WORKFLOW EXAMPLES
+
+### Example 1: Self-healed transient spike
+
+Prometheus: "HighCPUUsage alert (99%)" → Claude investigates → Pod CPU already back to 45% → Classification: SELF_HEALED
+
+Discord (Claude → via integration):
+✅ HighCPUUsage. Pod CPU spike resolved (was 99%, now 45%). No action needed.
+
+---
+
+### Example 2: Simple fix - pod restart
+
+Prometheus: "KubernetesPodNotHealthy (sonarr-0)" → Claude investigates → Pod CrashLoopBackOff, 5 restarts → Classification: SIMPLE_FIXED
+
+Claude proposes:
+{
+  "classification": "SIMPLE_FIXED",
+  "proposed_action": {
+    "command": "kubectl -n media rollout restart deployment sonarr",
+    "namespace": "media",
+    "kind": "deployment",
+    "name": "sonarr",
+    "verify": "kubectl get pods -n media -l app=sonarr"
+  }
+}
+
+Bot executes → verifies → Discord (Bot sends):
+✔️ sonarr deployment restarted. Pod now Running, healthy.
+
+---
+
+### Example 3: Escalation - OOM risk
+
+Prometheus: "KubernetesContainerOomKiller (paperless)" → Claude investigates → Pod repeatedly OOMKilled → Limit is 2GB but disk/config bloat → Classification: DEEP_ESCALATE
+
+Claude proposes nothing (proposed_action: null). Discord (Claude → via integration):
+🔴 paperless pod OOMKilled. ⚠️ Downtime risk: high.
+Memory limit (2GB) insufficient. Config or consume directory too large. Check:
+`kubectl -n default exec paperless-xxx -- du -sh /usr/src/paperless/consume /root/.config`
+
+---
+
+### Example 4: Escalation - Protected namespace
+
+Prometheus: "PostgresDatabaseDown" (databases namespace) → Claude investigates → DB pod issues → Classification: DEEP_ESCALATE (protected namespace, cannot propose action)
+
+Discord (Claude → via integration):
+🔴 PostgreSQL pod unreachable. ⚠️ Downtime risk: high. Protected namespace.
+Cannot auto-fix. Check pod and logs:
+`kubectl -n databases describe pod postgres-primary-0 && kubectl -n databases logs postgres-primary-0`
+
+---
+
+### Example 5: Auto-fix disabled
+
+Prometheus: "alert", with disable_autofixes=true → Claude investigates, would normally SIMPLE_FIXED → Classification: DEEP_ESCALATE (because auto-fix disabled)
+
+Claude proposes nothing (proposed_action: null). Discord (Claude → via integration):
+🔴 sonarr pod CrashLoopBackOff. ⚠️ Downtime risk: medium. Auto-fix disabled.
+Manual action required:
+`kubectl -n media rollout restart deployment sonarr`
