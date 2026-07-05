@@ -40,31 +40,31 @@ data:
         DO \$\$
         BEGIN
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'immich') THEN
-                CREATE USER immich WITH PASSWORD '${IMMICH_DB_PASSWORD}';
+                CREATE USER immich WITH PASSWORD '$${IMMICH_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'vaultwarden') THEN
-                CREATE USER vaultwarden WITH PASSWORD '${VAULTWARDEN_DB_PASSWORD}';
+                CREATE USER vaultwarden WITH PASSWORD '$${VAULTWARDEN_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'outline') THEN
-                CREATE USER outline WITH PASSWORD '${OUTLINE_DB_PASSWORD}';
+                CREATE USER outline WITH PASSWORD '$${OUTLINE_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'gitea') THEN
-                CREATE USER gitea WITH PASSWORD '${GITEA_DB_PASSWORD}';
+                CREATE USER gitea WITH PASSWORD '$${GITEA_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'paperless') THEN
-                CREATE USER paperless WITH PASSWORD '${PAPERLESS_DB_PASSWORD}';
+                CREATE USER paperless WITH PASSWORD '$${PAPERLESS_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authentik') THEN
-                CREATE USER authentik WITH PASSWORD '${AUTHENTIK_DB_PASSWORD}';
+                CREATE USER authentik WITH PASSWORD '$${AUTHENTIK_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'vikunja') THEN
-                CREATE USER vikunja WITH PASSWORD '${VIKUNJA_DB_PASSWORD}';
+                CREATE USER vikunja WITH PASSWORD '$${VIKUNJA_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'informate') THEN
-                CREATE USER informate WITH PASSWORD '${INFORMATE_DB_PASSWORD}';
+                CREATE USER informate WITH PASSWORD '$${INFORMATE_DB_PASSWORD}';
             END IF;
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'firefly') THEN
-                CREATE USER firefly WITH PASSWORD '${FIREFLY_DB_PASSWORD}';
+                CREATE USER firefly WITH PASSWORD '$${FIREFLY_DB_PASSWORD}';
             END IF;
         END
         \$\$;
