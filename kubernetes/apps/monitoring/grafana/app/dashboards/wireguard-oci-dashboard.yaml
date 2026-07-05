@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wireguard-oci-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  wireguard-oci.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["wireguard", "oci", "tunnel"],
+      "time": { "from": "now-6h", "to": "now" },
+      "title": "WireGuard - Oracle Cloud Tunnel",
+      "uid": "wireguard-oci",
+      "templating": { "list": [] },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Tunnel",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [ { "expr": "wireguard_peer_up{interface=\"oci\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "red" }, { "value": 1, "color": "green" } ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Last handshake",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "targets": [ { "expr": "time() - wireguard_peer_latest_handshake_seconds{interface=\"oci\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "mode": "absolute", "steps": [
+            { "value": null, "color": "green" }, { "value": 180, "color": "yellow" }, { "value": 300, "color": "red" }
+          ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Total received",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "targets": [ { "expr": "wireguard_peer_received_bytes_total{interface=\"oci\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "unit": "bytes", "color": { "mode": "fixed", "fixedColor": "blue" } } }
+        },
+        {
+          "type": "stat",
+          "title": "Total sent",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "targets": [ { "expr": "wireguard_peer_sent_bytes_total{interface=\"oci\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "unit": "bytes", "color": { "mode": "fixed", "fixedColor": "purple" } } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Throughput (per second)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 4 },
+          "targets": [
+            { "expr": "rate(wireguard_peer_received_bytes_total{interface=\"oci\"}[5m])", "legendFormat": "Received", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+            { "expr": "rate(wireguard_peer_sent_bytes_total{interface=\"oci\"}[5m])", "legendFormat": "Sent", "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "drawStyle": "line", "fillOpacity": 12, "lineWidth": 2, "gradientMode": "opacity" } } },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+        }
+      ]
+    }

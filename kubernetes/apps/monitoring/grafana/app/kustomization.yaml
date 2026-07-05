@@ -7,3 +7,4 @@ resources:
   - dashboards/adguard-dashboard.yaml
   - dashboards/ilo-dashboard.yaml
   - dashboards/proxmox-dashboard.yaml
+  - dashboards/wireguard-oci-dashboard.yaml
