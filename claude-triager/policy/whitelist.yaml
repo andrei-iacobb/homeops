@@ -91,14 +91,18 @@ guardrails:
   max_autofixes_per_hour: 5
   recurrence_escalate_threshold: 2
   post_fix_verification_timeout_seconds: 60
-  confidence_threshold: 0.90
+  # Tiered: the bar to ACT on a reversible whitelisted action is moderate (bot verifies
+  # + rate-limits + only 3 non-protected namespaces), so prefer fixing over escalating.
+  # The high bar applies to deciding whether something is whitelisted/safe at all.
+  confidence_threshold_to_act: 0.75
+  confidence_threshold_is_it_safe: 0.90
   autofixes_disable_signal: "disable_autofixes=true or TRIAGER_AUTOFIXES_DISABLED env"
 
 # Escalation rules
 escalation:
   on_disable: "If disable_autofixes=true or TRIAGER_AUTOFIXES_DISABLED env, Claude MUST return DEEP_ESCALATE with proposed_action: null"
   on_recurrence: "If same alert >2x in 1 hour after successful fix, escalate (don't retry)"
-  on_uncertainty: "If confidence < 90%, escalate (don't propose)"
+  on_uncertainty: "Escalate only if you can't confidently place the fix on the whitelist, or it needs a spec/config change, or it's a protected namespace. A reversible whitelisted fix at >=75% confidence should be ACTED on, not escalated."
   on_protected_namespace: "Always escalate (no proposals in protected namespaces)"
 
 # Output contract (Claude PROPOSES, bot EXECUTES + VERIFIES)

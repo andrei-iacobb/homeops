@@ -17,12 +17,14 @@ from discord.ext import commands
 # Configure logging
 log_file = os.getenv('LOG_FILE', '/var/log/triager.log')
 Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+# Only a FileHandler here: the systemd unit already appends stdout+stderr to the same
+# log file (StandardOutput/StandardError=append:), so adding a StreamHandler duplicated
+# every line in the file. FileHandler alone keeps single, clean lines under systemd.
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
     handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
+        logging.FileHandler(log_file)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -536,8 +538,21 @@ Investigate the cluster state using read-only kubectl. End with the JSON result 
                 result = await self.claude.invoke(prompt)
 
             if not result:
-                await message.reply("Error: Claude invocation failed. Check logs.")
-                logger.error(f"Failed to get claude result for alert {fingerprint}")
+                # Claude invocation failed (usually a transient usage-limit/API blip). Don't
+                # spam the channel with an error per alert. But DON'T go fully silent either:
+                # if Claude is persistently down the triager is blind, and the human needs to
+                # know. Post ONE "degraded" ping per cooldown window (global sentinel key),
+                # then stay quiet - alerts are still visible in-channel meanwhile.
+                logger.error(f"Failed to get claude result for alert {fingerprint} (Claude invocation failed)")
+                DEGRADED_KEY = "__triager_degraded__"
+                if not await self.limiter.escalation_suppressed(DEGRADED_KEY, cooldown_h):
+                    owner_id = os.getenv('OWNER_USER_ID')
+                    ping = f"<@{owner_id}> " if owner_id else ""
+                    await message.reply(
+                        f"{ping}⚠️ Triager degraded - Claude unreachable, so recent alerts aren't being "
+                        f"auto-triaged. Likely a transient usage/API limit; check manually if it persists. "
+                        f"_(muted {cooldown_h:g}h)_"[:2000])
+                    await self.limiter.record_escalation(DEGRADED_KEY)
                 return
 
             # Validate result
