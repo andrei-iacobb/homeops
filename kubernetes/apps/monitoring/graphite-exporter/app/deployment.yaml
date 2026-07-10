@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: graphite-exporter
-          image: prom/graphite-exporter:v0.16.0
+          image: prom/graphite-exporter:v0.17.0
           ports:
             - name: metrics
               containerPort: 9108
