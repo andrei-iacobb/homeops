@@ -27,7 +27,7 @@ data:
           "title": "Spend today (all agents)",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
-          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true } ],
           "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
           "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
         },
@@ -36,7 +36,7 @@ data:
           "title": "Spend this week (all agents)",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
-          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"week\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"week\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true } ],
           "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
           "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
         },
@@ -45,7 +45,7 @@ data:
           "title": "Combined burn rate",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
-          "targets": [ { "expr": "sum(ai_agent_burn_rate_dollars_per_hour)", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "targets": [ { "expr": "sum(ai_agent_burn_rate_dollars_per_hour)", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true } ],
           "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "custom": {} },
           "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
         },
@@ -54,7 +54,7 @@ data:
           "title": "Tokens today (all agents)",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
-          "targets": [ { "expr": "sum(ai_agent_tokens_total{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "targets": [ { "expr": "sum(ai_agent_tokens_total{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true } ],
           "fieldConfig": { "defaults": { "unit": "short" } },
           "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
         },
