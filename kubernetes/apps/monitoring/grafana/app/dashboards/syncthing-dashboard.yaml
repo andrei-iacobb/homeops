@@ -1,0 +1,121 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: syncthing-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  syncthing.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["syncthing", "sync", "dev"],
+      "time": { "from": "now-6h", "to": "now" },
+      "title": "Syncthing - Cross-Machine Sync",
+      "uid": "syncthing",
+      "templating": { "list": [] },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Hub",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "targets": [ { "expr": "up{job=\"syncthing\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "red" }, { "value": 1, "color": "green" } ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Arch Desktop",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "targets": [ { "expr": "up{job=\"syncthing-arch\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "red" }, { "value": 1, "color": "green" } ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Andrei's Macbook",
+          "description": "Laptop - expected to show DOWN when asleep/off/off-network. Not a real outage.",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "targets": [ { "expr": "up{job=\"syncthing-mac\"}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": { "defaults": { "mappings": [
+            { "type": "value", "options": { "0": { "text": "OFFLINE", "color": "yellow" }, "1": { "text": "UP", "color": "green" } } }
+          ], "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "yellow" }, { "value": 1, "color": "green" } ] } } }
+        },
+        {
+          "type": "stat",
+          "title": "Active Connections (hub)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "targets": [ { "expr": "sum(syncthing_connections_active{job=\"syncthing\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "options": { "colorMode": "value", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "stat",
+          "title": "Folders Need-Sync (bytes)",
+          "description": "Non-zero means an active sync backlog on the hub",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "targets": [ { "expr": "sum(syncthing_model_folder_summary{job=\"syncthing\", type=\"needBytes\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "fieldConfig": { "defaults": { "unit": "bytes", "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "green" }, { "value": 1, "color": "yellow" } ] } } },
+          "options": { "colorMode": "value", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Protocol throughput (hub, per device)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [
+            { "expr": "sum(rate(syncthing_protocol_sent_bytes_total{job=\"syncthing\"}[5m])) by (device)", "legendFormat": "sent - {{device}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+            { "expr": "sum(rate(syncthing_protocol_recv_bytes_total{job=\"syncthing\"}[5m])) by (device)", "legendFormat": "recv - {{device}}", "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "Bps", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 } } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Folder need-bytes over time (hub)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [
+            { "expr": "syncthing_model_folder_summary{job=\"syncthing\", type=\"needBytes\"}", "legendFormat": "{{folder}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 } } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Folder scan/pull activity (hub)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "targets": [
+            { "expr": "sum(rate(syncthing_model_folder_scans_total{job=\"syncthing\"}[15m])) by (folder)", "legendFormat": "scans - {{folder}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } },
+            { "expr": "sum(rate(syncthing_model_folder_pulls_total{job=\"syncthing\"}[15m])) by (folder)", "legendFormat": "pulls - {{folder}}", "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 } } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Conflicts (all folders)",
+          "description": "Any non-zero value means a sync conflict occurred and needs manual resolution",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "targets": [
+            { "expr": "syncthing_model_folder_conflicts_total{job=\"syncthing\"}", "legendFormat": "{{folder}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 }, "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "green" }, { "value": 1, "color": "red" } ] } } }
+        }
+      ]
+    }
