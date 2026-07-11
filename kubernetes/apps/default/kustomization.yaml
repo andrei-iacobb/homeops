@@ -37,6 +37,7 @@ resources:
   - ./glance/ks.yaml
   - ./holden-systems/ks.yaml
   - ./actual-budget/ks.yaml
+  - ./syncthing/ks.yaml
   - ./firefly-iii/ks.yaml
   - ./firefly-importer/ks.yaml
   - ./wallos/ks.yaml

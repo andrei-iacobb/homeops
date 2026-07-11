@@ -1,0 +1,72 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: syncthing
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: syncthing
+  interval: 1h
+  values:
+    controllers:
+      syncthing:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: syncthing/syncthing
+              tag: latest
+            env:
+              PUID: "1000"
+              PGID: "1000"
+              TZ: Europe/London
+              STGUIADDRESS: "0.0.0.0:8384"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities: { drop: ["ALL"] }
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          gui:
+            port: 8384
+          sync-tcp:
+            port: 22000
+            protocol: TCP
+          sync-udp:
+            port: 22000
+            protocol: UDP
+          discovery:
+            port: 21027
+            protocol: UDP
+    persistence:
+      config:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 200Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /var/syncthing
+    route:
+      app:
+        hostnames: ["syncthing.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 8384
