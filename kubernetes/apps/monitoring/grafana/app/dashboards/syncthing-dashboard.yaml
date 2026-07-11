@@ -70,7 +70,7 @@ data:
           "description": "Non-zero means an active sync backlog on the hub",
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
-          "targets": [ { "expr": "sum(syncthing_model_folder_summary{job=\"syncthing\", type=\"needBytes\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "targets": [ { "expr": "sum(syncthing_model_folder_summary{job=\"syncthing\", scope=\"need\", type=\"bytes\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
           "fieldConfig": { "defaults": { "unit": "bytes", "thresholds": { "mode": "absolute", "steps": [ { "value": null, "color": "green" }, { "value": 1, "color": "yellow" } ] } } },
           "options": { "colorMode": "value", "graphMode": "none", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
         },
@@ -91,7 +91,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
           "targets": [
-            { "expr": "syncthing_model_folder_summary{job=\"syncthing\", type=\"needBytes\"}", "legendFormat": "{{folder}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+            { "expr": "syncthing_model_folder_summary{job=\"syncthing\", scope=\"need\", type=\"bytes\"}", "legendFormat": "{{folder}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
           ],
           "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 } } }
         },
