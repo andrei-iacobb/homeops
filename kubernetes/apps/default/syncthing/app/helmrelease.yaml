@@ -30,13 +30,18 @@ spec:
               limits:
                 memory: 2Gi
             securityContext:
-              allowPrivilegeEscalation: false
+              allowPrivilegeEscalation: true
               readOnlyRootFilesystem: false
-              capabilities: { drop: ["ALL"] }
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
-        seccompProfile: { type: RuntimeDefault }
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        supplementalGroups: [1000]
     service:
       app:
         ports:
