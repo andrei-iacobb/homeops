@@ -9,3 +9,4 @@ resources:
   - dashboards/proxmox-dashboard.yaml
   - dashboards/wireguard-oci-dashboard.yaml
   - dashboards/syncthing-dashboard.yaml
+  - dashboards/ai-agents-dashboard.yaml

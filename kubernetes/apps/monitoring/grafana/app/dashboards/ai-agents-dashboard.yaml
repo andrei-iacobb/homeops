@@ -1,0 +1,106 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-agents-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  ai-agents.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["ai", "tokmon", "claude", "codex", "cursor"],
+      "time": { "from": "now-24h", "to": "now" },
+      "title": "AI Agents - Usage & Spend",
+      "uid": "ai-agents",
+      "templating": { "list": [] },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Spend today (all agents)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "stat",
+          "title": "Spend this week (all agents)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "targets": [ { "expr": "sum(ai_agent_cost_dollars{window=\"week\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "stat",
+          "title": "Combined burn rate",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+          "targets": [ { "expr": "sum(ai_agent_burn_rate_dollars_per_hour)", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "custom": {} },
+          "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "stat",
+          "title": "Tokens today (all agents)",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+          "targets": [ { "expr": "sum(ai_agent_tokens_total{window=\"today\"})", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } } ],
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "options": { "colorMode": "value", "graphMode": "area", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Cost today, per agent",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [
+            { "expr": "ai_agent_cost_dollars{window=\"today\"}", "legendFormat": "{{name}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Burn rate, per agent",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [
+            { "expr": "ai_agent_burn_rate_dollars_per_hour", "legendFormat": "{{name}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } }
+        },
+        {
+          "type": "bargauge",
+          "title": "Quota usage (session / weekly / etc)",
+          "description": "Percent used of each billing-window quota - watch for anything near 100%",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "targets": [
+            { "expr": "ai_agent_quota_used_percent", "legendFormat": "{{name}} - {{metric}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "instant": true }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [
+            { "value": null, "color": "green" }, { "value": 50, "color": "yellow" }, { "value": 75, "color": "orange" }, { "value": 90, "color": "red" }
+          ] } } },
+          "options": { "displayMode": "gradient", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "timeseries",
+          "title": "Tokens today, per agent",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "targets": [
+            { "expr": "ai_agent_tokens_total{window=\"today\"}", "legendFormat": "{{name}}", "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 } } }
+        }
+      ]
+    }

@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sys-dashboard-arch
+  labels:
+    app: sys-dashboard-arch
+spec:
+  selector:
+    matchLabels:
+      app: sys-dashboard-arch
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

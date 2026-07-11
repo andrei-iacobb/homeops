@@ -11,3 +11,4 @@ resources:
   - ilo/ilo-dl380/app
   - wireguard-oci/app
   - syncthing/app
+  - sys-dashboard/app
