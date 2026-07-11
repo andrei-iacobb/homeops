@@ -1,0 +1,33 @@
+---
+# Headless services with NO selector: these Syncthing instances run on
+# external hosts (Andrei's Macbook, the Arch desktop), not as in-cluster
+# pods, so endpoints are defined manually in endpoints-external.yaml.
+# The ServiceMonitor scrapes through these Services. Same pattern as
+# monitoring/exporters/wireguard-oci.
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing-mac
+  labels:
+    app: syncthing-mac
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 8384
+      targetPort: 8384
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing-arch
+  labels:
+    app: syncthing-arch
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 8384
+      targetPort: 8384
+      protocol: TCP

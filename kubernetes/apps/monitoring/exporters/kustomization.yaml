@@ -10,3 +10,4 @@ resources:
   - ilo/ilo-dl360/app
   - ilo/ilo-dl380/app
   - wireguard-oci/app
+  - syncthing/app

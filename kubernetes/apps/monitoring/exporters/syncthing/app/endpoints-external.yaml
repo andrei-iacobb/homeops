@@ -1,0 +1,39 @@
+---
+# Manual endpoints for Syncthing running on external hosts. Must share
+# the Service name for the ServiceMonitor to scrape them.
+#
+# NOTE: Andrei's Macbook is a laptop, not an always-on host - the
+# syncthing-mac target will show as "down" in Prometheus whenever the
+# Mac is asleep/off/off-network. This is expected, not a real outage;
+# don't alert on it the way syncthing-arch or syncthing-hub down would be.
+#
+# NOTE: the Mac's 192.168.1.102 is a DHCP-assigned address, not a static
+# reservation - if the router ever reassigns it, this IP must be updated
+# manually (Endpoints objects don't support DNS hostnames, only IPs).
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: syncthing-mac
+  labels:
+    app: syncthing-mac
+subsets:
+  - addresses:
+      - ip: 192.168.1.102
+    ports:
+      - name: metrics
+        port: 8384
+        protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: syncthing-arch
+  labels:
+    app: syncthing-arch
+subsets:
+  - addresses:
+      - ip: 192.168.1.23
+    ports:
+      - name: metrics
+        port: 8384
+        protocol: TCP

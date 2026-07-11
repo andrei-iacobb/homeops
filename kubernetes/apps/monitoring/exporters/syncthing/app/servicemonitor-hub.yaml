@@ -1,0 +1,23 @@
+---
+# Scrapes the in-cluster Syncthing hub's native /metrics endpoint directly
+# (it's a real k8s Service with a pod selector already created by the
+# syncthing HelmRelease in default/syncthing - no exporter needed, Syncthing
+# ships Prometheus metrics natively on its GUI/API port).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: syncthing-hub
+  labels:
+    app: syncthing-hub
+spec:
+  namespaceSelector:
+    matchNames:
+      - default
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: syncthing
+      app.kubernetes.io/instance: syncthing
+  endpoints:
+    - port: gui
+      interval: 30s
+      path: /metrics
