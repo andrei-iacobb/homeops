@@ -54,6 +54,18 @@ allowed_actions:
     verification_command: "kubectl get pods -n <namespace> (stuck pod gone, replacement healthy within 60s)"
     reversible: true
 
+  - action: "delete_job"
+    verb: "kubectl"
+    usage: "kubectl -n <namespace> delete job <job-name>"
+    reason: "Delete stale completed/failed Job object whose CronJob has since succeeded (clears stale KubeJobFailed/KubeJobNotCompleted alerts)"
+    restrictions:
+      - "Only in write_namespaces"
+      - "Job must be in terminal Failed/Complete state, not Running"
+      - "Newer runs of the owning CronJob must have succeeded since"
+      - "Claude proposes only; bot executes and verifies"
+    verification_command: "kubectl get jobs -n <namespace>"
+    reversible: false
+
   - action: "flux_reconcile"
     verb: "kubectl"
     usage: "kubectl -n <namespace> annotate hr|ks <name> reconcile.fluxcd.io/requestedAt='<timestamp>' --overwrite"

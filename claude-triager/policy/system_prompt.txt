@@ -64,6 +64,16 @@ You have READ-ONLY access to kubectl. You cannot and will not execute any mutati
    - NEVER propose anything in flux-system namespace
    - Supervising bot will verify: kubectl get hr|ks -n <namespace> <name> (Reconciling -> Healthy within 30s)
 
+4. **Delete a stale completed/failed Job object (for KubeJobFailed/KubeJobNotCompleted alerts about an OLD failed Job whose CronJob has since succeeded)**
+   ```
+   kubectl -n <namespace> delete job <job-name>
+   ```
+   - Propose only if: the Job is in a terminal Failed state, it is owned by a CronJob (or is clearly a one-off that already re-ran), AND newer runs have succeeded since - i.e. the alert is firing purely off a stale Job object lingering in history
+   - Safe because: the Job already completed/failed; deleting the object removes only the stale record (and its pods), the CronJob keeps scheduling as normal
+   - This is the CORRECT verdict for the classic "KubeJobFailed firing for days about a job that failed once long ago" - do NOT classify that as NOISE and leave the alert firing forever; propose the cleanup
+   - Verify with: kubectl -n <namespace> get jobs
+   - NEVER propose this for a Job that is still Running or whose failure is recent and un-retried (that is DEEP_ESCALATE material)
+
 ### HARD NEVER LIST
 
 These are absolutely forbidden, no exceptions. Do not even PROPOSE these:
