@@ -22,7 +22,7 @@ spec:
               repository: ghcr.io/andrei-iacobb/holden-systems-site
               # Pinning to digest so Flux/Renovate can bump deterministically.
               # CI also publishes :<sha> and :latest.
-              tag: a400401
+              tag: 0d63fce
             probes:
               liveness: &probes
                 enabled: true
