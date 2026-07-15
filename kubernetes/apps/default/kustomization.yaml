@@ -15,6 +15,7 @@ resources:
   - ./it-tools/ks.yaml
   - ./paperless/ks.yaml
   - ./forgejo/ks.yaml
+  - ./renovate/ks.yaml
   - ./vaultwarden/ks.yaml
   - ./homepage/ks.yaml
   - ./n8n/ks.yaml

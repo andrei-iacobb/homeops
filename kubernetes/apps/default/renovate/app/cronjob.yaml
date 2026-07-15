@@ -1,0 +1,63 @@
+---
+# Self-hosted Renovate running against Forgejo (git.iacob.co.uk) - replaces the
+# Mend-hosted GitHub App as part of the Forgejo-primary experiment.
+# Dry-run first: flip RENOVATE_DRY_RUN to null/remove once output looks right.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate
+spec:
+  schedule: "15 * * * *" # hourly
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3000
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 12021
+            runAsGroup: 12021
+            fsGroup: 12021
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: renovate
+              image: ghcr.io/renovatebot/renovate:41
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: renovate-secret
+              env:
+                - name: RENOVATE_PLATFORM
+                  value: gitea
+                - name: RENOVATE_ENDPOINT
+                  value: https://git.iacob.co.uk/api/v1
+                - name: RENOVATE_REPOSITORIES
+                  value: andrei/homeops
+                - name: RENOVATE_AUTODISCOVER
+                  value: "false"
+                - name: RENOVATE_GIT_AUTHOR
+                  value: "Renovate Bot <renovate@iacob.co.uk>"
+                - name: RENOVATE_DRY_RUN
+                  value: "full" # remove to go live
+                - name: LOG_LEVEL
+                  value: info
+                - name: RENOVATE_BASE_DIR
+                  value: /tmp/renovate
+              volumeMounts:
+                - name: work
+                  mountPath: /tmp/renovate
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 2Gi
+          volumes:
+            - name: work
+              emptyDir:
+                sizeLimit: 5Gi
