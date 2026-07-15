@@ -11,12 +11,8 @@
   ],
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
-  // Renovate doesn't merge directly - it posts "/automerge" and the
-  // renovate-automerge workflow merges with Andrei's PAT so merge commits
-  // count on his contribution graph.
-  platformAutomerge: false,
-  automergeType: "pr-comment",
-  automergeComment: "/automerge",
+  // Self-hosted Renovate on Forgejo merges its own PRs natively.
+  platformAutomerge: true,
   suppressNotifications: ["prEditedNotification", "prIgnoreNotification"],
   ignorePaths: ["**/*.sops.*"],
   flux: {

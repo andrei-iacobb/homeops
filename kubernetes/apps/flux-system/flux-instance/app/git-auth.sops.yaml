@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: flux-git-auth
+  namespace: flux-system
+stringData:
+  username: ENC[AES256_GCM,data:YCMkOQU/,iv:DRRtxSORqHHlnuoHrmg9IyM1Ye8uANafSUyR1F/QGxQ=,tag:jKgf6Fr9DChuRkbjyCHbLQ==,type:str]
+  password: ENC[AES256_GCM,data:/i7mSNjwlxRbUMUvUzDQ+DY/4e0gEkjEsW59czXhz8+0kvReGyVKow==,iv:lbijbvr1LEtsvDkSrbA/p/6HOByNYK3wccrkWt3+/FI=,tag:DNavLHSVobQgNyGL/ouiFA==,type:str]
+sops:
+  age:
+    - enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiZHd2K2tpNlJBR25MbjZp
+        bUtudUd6a21GZ3FtQ1k3eXgzcE1xekRUK0RzCmV1ZlZRM3pqT0pTRFUxb3dWSUpJ
+        WjAyeWgrQWxmcVc2WXE3T09xbjlOMEkKLS0tIFlCKzFEZlNreFl5bUpVcENjVnZM
+        Z0Z1NGlVSFR5ZmtDdHV2N1duZkhFS0kKOtniEyzIDaJ6LZnIj3zp07GbThtCXeX6
+        o+LPsOZsWZEnQpAOYOEx4QjBM+L6dOXTKnN6ZxILfXdPaBZ0+U6zBA==
+        -----END AGE ENCRYPTED FILE-----
+      recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+  encrypted_regex: ^(data|stringData)$
+  lastmodified: "2026-07-15T12:36:58Z"
+  mac: ENC[AES256_GCM,data:Eh/9KkM0WSF7KUEB/brUkzy0wcASFnWy8E0ncJzfA4HjFLFv2AaSXivwpw0W+ObLaqSL/GwvWuX0XPKm+LbJ8T2mbCC1UDPmny3xBd60fiipdrt0qHqZHqdQEmJwxhk4FIFRxXp5XXnxbNSfvNF6s1xHznbG3ZShfUvhGmyrrds=,iv:vQy87mGSQhPNGggYD+xKFFl9lRkmJsqSF2unAqiPECE=,tag:FUOE089L1TnIKFFikN9/kQ==,type:str]
+  mac_only_encrypted: true
+  version: 3.13.2

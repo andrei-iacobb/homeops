@@ -21,9 +21,12 @@ spec:
         - notification-controller
       sync:
         kind: GitRepository
-        url: "https://github.com/andrei-iacobb/homeops.git"
+        # Forgejo-primary (2026-07-15): Flux pulls from Forgejo; GitHub is a
+        # ff-only mirror pushed by .forgejo/workflows/push-to-github.yaml.
+        url: "https://git.iacob.co.uk/andrei/homeops.git"
         ref: "refs/heads/main"
         path: kubernetes/flux/cluster
+        pullSecret: flux-git-auth
       commonMetadata:
         labels:
           app.kubernetes.io/name: flux
