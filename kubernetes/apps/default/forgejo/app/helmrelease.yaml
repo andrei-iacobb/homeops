@@ -62,7 +62,7 @@ spec:
           app:
             image:
               repository: codeberg.org/forgejo/forgejo
-              tag: 15.0.4
+              tag: 15.0.5
             env:
               USER_UID:
                 valueFrom:
