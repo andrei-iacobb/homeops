@@ -17,5 +17,5 @@ resources:
   - alloy/ks.yaml
   - uptime-kuma/ks.yaml
   - scrutiny/ks.yaml
-  - baywatch/ks.yaml
+  - bays/ks.yaml
   # - graphite-exporter/ks.yaml

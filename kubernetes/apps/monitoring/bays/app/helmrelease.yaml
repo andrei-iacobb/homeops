@@ -2,15 +2,15 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: baywatch
+  name: bays
 spec:
   chartRef:
     kind: OCIRepository
-    name: baywatch
+    name: bays
   interval: 1h
   values:
     controllers:
-      baywatch:
+      bays:
         strategy: RollingUpdate
         containers:
           app:
@@ -25,7 +25,7 @@ spec:
               BW_TOKEN:
                 valueFrom:
                   secretKeyRef:
-                    name: baywatch-secret
+                    name: bays-secret
                     key: BW_TOKEN
             probes:
               liveness: &probes
@@ -64,7 +64,7 @@ spec:
             port: 8080
     route:
       app:
-        hostnames: ["baywatch.iacob.uk"]
+        hostnames: ["bays.iacob.uk"]
         parentRefs:
           - name: envoy-internal
             namespace: network

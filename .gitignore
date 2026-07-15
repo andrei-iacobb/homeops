@@ -53,3 +53,5 @@ logs/
 claude.md
 issues.md
 test.md
+.stfolder/
+.stignore

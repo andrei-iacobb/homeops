@@ -581,9 +581,9 @@ data:
           icon: scrutiny.svg
           href: https://scrutiny.iacob.uk
           description: SMART disk monitoring
-      - BayWatch:
+      - Bays:
           icon: mdi-harddisk
-          href: https://baywatch.iacob.uk
+          href: https://bays.iacob.uk
           description: Drive-bay LEDs & locate
       - Plausible:
           icon: plausible.svg
