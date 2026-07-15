@@ -185,7 +185,7 @@ func (a *agent) reconcile() {
 	a.cycle++
 
 	// Build enclosure grouping + friendly labels (rear vs numbered front boxes).
-	encOrder := []string{}        // enclosure names in stable order
+	encOrder := []string{}         // enclosure names in stable order
 	encComps := map[string][]int{} // encName -> indexes into comps
 	encLID := map[string]string{}
 	for i, c := range comps {
@@ -230,6 +230,9 @@ func (a *agent) reconcile() {
 			reason := ""
 			if present {
 				bad, reason = dh.bad()
+				if forceBad[c.dev] {
+					bad, reason = true, "forced:test"
+				}
 			}
 
 			// Desired bi-color/locate state for this bay:
@@ -239,7 +242,9 @@ func (a *agent) reconcile() {
 			// The agent is the single writer; we diff against the last-applied
 			// state and only shell out to sg_ses on a real change (plus the
 			// full-sync / periodic re-assert), so the backplane is never spammed.
-			desiredFault := bad
+			// Blink the amber LED on fault (toggle each reconcile cycle,
+			// ~BW_POLL on / ~BW_POLL off) instead of holding it solid.
+			desiredFault := bad && a.cycle%2 == 1
 			desiredOK := present && !bad
 			desiredLocate := a.locateActive(key, now)
 			want := ledState{ok: desiredOK, fault: desiredFault, ident: desiredLocate}
@@ -249,7 +254,7 @@ func (a *agent) reconcile() {
 			switch {
 			case !present:
 				state = StateEmpty
-			case desiredFault:
+			case bad:
 				state = StateFault
 			}
 
@@ -259,7 +264,7 @@ func (a *agent) reconcile() {
 				EnclosureID: c.logicalID,
 				Present:     present,
 				State:       state,
-				Fault:       desiredFault,
+				Fault:       bad,
 				Locate:      desiredLocate,
 				LocateUntil: a.locateExpiry(key, now),
 				Dev:         c.dev,
@@ -274,6 +279,13 @@ func (a *agent) reconcile() {
 			}
 			enc.Slots = append(enc.Slots, slot)
 
+			if p, ok := prev[key]; !ok || p.Fault != bad {
+				if bad {
+					log.Printf("fault %s slot %d (%s) amber blink ON %s", c.encName, c.slot, devOr(c.dev), reason)
+				} else if ok {
+					log.Printf("fault %s slot %d (%s) cleared", c.encName, c.slot, devOr(c.dev))
+				}
+			}
 			if changed(prev[key], slot) {
 				events = append(events, SlotEvent{Host: a.cfg.HostLabel, EnclosureID: c.logicalID, Slot: slot})
 			}
@@ -312,7 +324,8 @@ func (a *agent) applyLEDs(c *rawComp, want ledState, fullSync, reassert bool, re
 			log.Printf("setLED %s slot %d %s=%v: %v", c.encName, c.slot, field, w, err)
 			return was // retry next cycle
 		}
-		if w != was {
+		if w != was && field != ledFault {
+			// fault blinks every cycle; its transitions are logged in reconcile()
 			log.Printf("led %s slot %d (%s) %s -> %v %s", c.encName, c.slot, devOr(c.dev), field, w, reason)
 		}
 		return w

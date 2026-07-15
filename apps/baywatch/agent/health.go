@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -21,6 +22,18 @@ type driveHealth struct {
 	Serial   string // drive serial
 	Size     string // human size, e.g. 1.6T
 }
+
+// forceBad lists devs (comma-separated in BW_FORCE_BAD, e.g. "sdh,sdx") treated
+// as faulted - test hook to verify the amber blink path on healthy hardware.
+var forceBad = func() map[string]bool {
+	m := map[string]bool{}
+	for _, d := range strings.Split(os.Getenv("BW_FORCE_BAD"), ",") {
+		if d = strings.TrimSpace(d); d != "" {
+			m[d] = true
+		}
+	}
+	return m
+}()
 
 // bad reports whether this drive should light its amber fault LED.
 func (h driveHealth) bad() (bool, string) {
