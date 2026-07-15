@@ -22,7 +22,7 @@ spec:
             runAsGroup: 0
           containers:
             - name: recyclarr
-              image: ghcr.io/recyclarr/recyclarr:8.6.0
+              image: ghcr.io/recyclarr/recyclarr:8.7.0
               # recyclarr exits 1 when a sync succeeds but emits warnings (e.g. it
               # replaced existing custom formats) - that is not a failure, but it made
               # Kubernetes mark the Job Failed and spam KubeJobFailed alerts. Treat
