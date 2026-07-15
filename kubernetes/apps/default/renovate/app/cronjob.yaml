@@ -26,7 +26,7 @@ spec:
             seccompProfile: { type: RuntimeDefault }
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:41
+              image: ghcr.io/renovatebot/renovate:43
               imagePullPolicy: IfNotPresent
               envFrom:
                 - secretRef:
