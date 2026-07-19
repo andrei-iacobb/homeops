@@ -20,6 +20,7 @@ spec:
             env:
               TZ: Europe/London
               DOCKER_ENABLE_SECURITY: "false"
+              SECURITY_ENABLELOGIN: "false"
             probes:
               startup:
                 enabled: true
