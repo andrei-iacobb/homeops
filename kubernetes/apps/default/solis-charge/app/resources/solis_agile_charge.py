@@ -23,6 +23,7 @@ Up to 3 charge slots and 3 discharge slots. Unused slots are cleared.
 import json
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -113,6 +114,70 @@ def hass_service(domain, service, data, timeout=10):
         "POST", f"{HASS_URL}/api/services/{domain}/{service}",
         payload=data, timeout=timeout,
     )
+
+
+# ---------- Storage mode guard ----------
+
+# Timed charge/discharge slots are DEAD LETTERS unless the inverter's energy
+# storage control switch is in a mode with timed charge enabled. Discovered
+# 2026-07-23: the register had silently flipped to an unmapped value (HASS
+# select showed "unknown") for 10+ days - slots were programmed perfectly,
+# battery ignored them, 567 kWh bought from grid that month. Guard every run.
+STORAGE_MODE_ENTITY = "select.solis_energy_storage_control_switch"
+REQUIRED_STORAGE_MODE = os.environ.get("REQUIRED_STORAGE_MODE", "Self-Use")
+
+
+def ensure_storage_mode():
+    """Verify the inverter is in the required storage mode; fix it if not.
+
+    The solis_modbus select only reflects a write after its next poll cycle
+    (~60s observed), so poll for confirmation. Exit non-zero if the mode
+    cannot be confirmed - the job failure makes the problem visible instead
+    of silently programming slots the inverter will ignore.
+    """
+    state = hass_get_optional(STORAGE_MODE_ENTITY)
+    if state is None:
+        print(f"ERROR: {STORAGE_MODE_ENTITY} does not exist in HASS - "
+              f"solis integration missing/renamed. Cannot verify storage "
+              f"mode; slots may be ignored. Investigate.")
+        sys.exit(4)
+    mode = state.get("state")
+    if mode == REQUIRED_STORAGE_MODE:
+        print(f"Storage mode check: {mode} - OK")
+        return
+    if mode == "unavailable":
+        print(f"ERROR: {STORAGE_MODE_ENTITY} is 'unavailable' - solis "
+              f"integration cannot reach the inverter. Not writing. "
+              f"Investigate.")
+        sys.exit(4)
+    options = state.get("attributes", {}).get("options", [])
+    if options and REQUIRED_STORAGE_MODE not in options:
+        print(f"ERROR: required mode '{REQUIRED_STORAGE_MODE}' is not one "
+              f"of the select's options {options}. Config mistake.")
+        sys.exit(4)
+
+    print(f"WARNING: storage mode is '{mode}', expected "
+          f"'{REQUIRED_STORAGE_MODE}'. Timed charge slots are ignored in "
+          f"this mode. Attempting to fix...")
+    hass_service("select", "select_option", {
+        "entity_id": STORAGE_MODE_ENTITY,
+        "option": REQUIRED_STORAGE_MODE,
+    }, timeout=30)
+    deadline = time.monotonic() + 180
+    while time.monotonic() < deadline:
+        time.sleep(15)
+        try:
+            state = hass_get_optional(STORAGE_MODE_ENTITY)
+        except Exception as e:  # transient HA blip - keep polling
+            print(f"  poll error (transient, retrying): {e}")
+            continue
+        mode = state.get("state") if state else None
+        if mode == REQUIRED_STORAGE_MODE:
+            print(f"Storage mode fixed: now '{mode}'.")
+            return
+    print(f"ERROR: storage mode still '{mode}' after write + 180s. "
+          f"Inverter will NOT act on charge slots. Investigate.")
+    sys.exit(4)
 
 
 # ---------- Octopus data ----------
@@ -518,6 +583,10 @@ def main():
     verify_inverter_clock()
     print()
 
+    # 0.5. Verify the storage mode actually honours timed charge slots.
+    ensure_storage_mode()
+    print()
+
     # 1. Free electricity (Power-ups) - top priority charge windows.
     free_sessions = get_free_electricity_sessions()
     if free_sessions:
@@ -550,8 +619,11 @@ def main():
     )
     print(f"  {cheap_count} cheap slots (<={MAX_RATE*100:.0f}p), "
           f"{len(rates) - cheap_count} expensive slots")
-    print(f"  Grid-charge window: {CHARGE_WINDOW_START}-{CHARGE_WINDOW_END} UK local "
-          f"(overnight only) -> {eligible_count} cheap slot(s) eligible to charge")
+    window_desc = ("24h - no time restriction"
+                   if CHARGE_WINDOW_START == CHARGE_WINDOW_END
+                   else f"{CHARGE_WINDOW_START}-{CHARGE_WINDOW_END} UK local")
+    print(f"  Grid-charge window: {window_desc} "
+          f"-> {eligible_count} cheap slot(s) eligible to charge")
     print(f"  Rate range: {min(r['value_inc_vat'] for r in rates)*100:.1f}p "
           f"- {max(r['value_inc_vat'] for r in rates)*100:.1f}p")
     print()
