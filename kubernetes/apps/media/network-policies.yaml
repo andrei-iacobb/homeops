@@ -25,9 +25,10 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
-    # Plex/Jellyfin direct access from LAN clients
+    # Plex/Jellyfin direct access from LAN clients + UniFi WireGuard VPN clients
     - fromCIDR:
         - 192.168.1.0/24
+        - 192.168.2.0/24
     # Kubelet health probes
     - fromEntities:
         - host
