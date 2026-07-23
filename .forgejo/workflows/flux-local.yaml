@@ -1,7 +1,12 @@
 ---
-# Flux manifest validation. flux-local was sunsetted upstream (2026); replaced by
-# flate (github.com/home-operations/flate), the maintained drop-in. Runs as a
-# self-contained container image on the Forgejo dind runner - bundles helm/kustomize.
+# Flux manifest validation. flux-local (allenporter) was sunsetted upstream in
+# 2026; replaced by flate (github.com/home-operations/flate), the maintained
+# drop-in that bundles helm/kustomize in one container image.
+#
+# The runner uses docker-in-docker: the dind daemon cannot see $GITHUB_WORKSPACE,
+# so a plain `docker run -v "$GITHUB_WORKSPACE":...` mounts an empty dir. Instead
+# we clone into a named docker volume (which dind owns) and run flate against it.
+# --cache-dir /tmp keeps flate's cache off the unwritable default (/.cache).
 name: "Flux Local"
 
 on:
@@ -11,6 +16,11 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
   cancel-in-progress: true
+
+env:
+  FLATE_IMAGE: ghcr.io/home-operations/flate:latest
+  GIT_IMAGE: alpine/git:latest
+  CLUSTER_PATH: kubernetes/flux/cluster
 
 jobs:
   pre-job:
@@ -34,25 +44,22 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Run flate test
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          set +e
-          OUT=$(docker run --rm -v "$GITHUB_WORKSPACE":/w \
-            ghcr.io/home-operations/flate:latest \
-            test all --path /w/kubernetes/flux/cluster --cache-dir /tmp/flate-cache --no-progress 2>&1)
-          CODE=$?
-          echo "$OUT"
-          echo "::flate-exit::$CODE"
-          BODY=$(printf '### flate test debug (exit %s)\n```\n%s\n```' "$CODE" "$(echo "$OUT" | tail -35)")
-          jq -n --arg b "$BODY" '{body:$b}' | curl -s -X POST \
-            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments" \
-            -H "Authorization: token $TOKEN" -H "Content-Type: application/json" -d @- >/dev/null || true
-          exit $CODE
+          set -eo pipefail
+          VOL="flate-${GITHUB_RUN_ID}-test"
+          docker volume create "$VOL" >/dev/null
+          trap 'docker volume rm "$VOL" >/dev/null 2>&1 || true' EXIT
+          CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
+          docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
+            clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
+          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
+            test all --path "/w/pr/${CLUSTER_PATH}" --cache-dir /tmp/flate-cache --no-progress
 
   diff:
     name: Flux Local Diff
@@ -62,28 +69,38 @@ jobs:
     continue-on-error: true
     if: ${{ needs.pre-job.outputs.any_changed == 'true' }}
     steps:
-      - name: Checkout Pull Request Branch
-        uses: actions/checkout@v4
-        with:
-          path: pull
-
-      - name: Checkout Default Branch
-        uses: actions/checkout@v4
-        with:
-          ref: "${{ github.event.repository.default_branch }}"
-          path: default
-
       - name: Run flate diff
         continue-on-error: true
-        uses: docker://ghcr.io/home-operations/flate:latest
-        with:
-          args: >-
-            diff all
-            --path /github/workspace/pull/kubernetes/flux/cluster
-            --path-orig /github/workspace/default/kubernetes/flux/cluster
-            --cache-dir /tmp/flate-cache
-            --output gitea
-            --no-progress
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          set -eo pipefail
+          VOL="flate-${GITHUB_RUN_ID}-diff"
+          docker volume create "$VOL" >/dev/null
+          trap 'docker volume rm "$VOL" >/dev/null 2>&1 || true' EXIT
+          CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
+          docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
+            clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
+          docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
+            clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
+          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
+            diff all \
+            --path "/w/pr/${CLUSTER_PATH}" \
+            --path-orig "/w/base/${CLUSTER_PATH}" \
+            --cache-dir /tmp/flate-cache \
+            --output gitea --no-progress | tee diff.out || true
+          if [ -s diff.out ]; then
+            BODY=$(printf '### Flux Diff\n```diff\n%s\n```' "$(head -c 60000 diff.out)")
+            jq -n --arg b "$BODY" '{body:$b}' | curl -s -X POST \
+              "${SERVER}/api/v1/repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+              -d @- >/dev/null || true
+          fi
 
   flux-local-status:
     name: Flux Local Success
