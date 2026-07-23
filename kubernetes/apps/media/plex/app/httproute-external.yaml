@@ -1,0 +1,19 @@
+---
+# Remote streaming path: plex.iacob.co.uk -> Cloudflare Tunnel -> envoy-external -> plex
+# Replaced the OCI relay (VM.Standard.E2.1.Micro, hard-capped ~50 Mbps) on 2026-07-23.
+# Measured ~230 Mbps via this path. Rollback: restore A record plex.iacob.co.uk -> 193.123.177.171.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: plex-external
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - plex.iacob.co.uk
+  rules:
+    - backendRefs:
+        - name: plex
+          port: 32400
