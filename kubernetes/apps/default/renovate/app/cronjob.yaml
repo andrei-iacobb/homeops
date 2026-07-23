@@ -41,7 +41,11 @@ spec:
                 - name: RENOVATE_AUTODISCOVER
                   value: "false"
                 - name: RENOVATE_GIT_AUTHOR
-                  value: "Renovate Bot <renovate@iacob.co.uk>"
+                  # andrei@iacob.co.uk is verified on the GitHub account, so
+                  # commits authored by it (mirrored to github.com/andrei-iacobb)
+                  # count toward the contribution graph. renovate@iacob.co.uk did
+                  # not resolve to the account.
+                  value: "andrei <andrei@iacob.co.uk>"
                 - name: LOG_LEVEL
                   value: info
                 - name: RENOVATE_BASE_DIR
