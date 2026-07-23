@@ -39,6 +39,10 @@ jobs:
 
       - name: Run flate test
         uses: docker://ghcr.io/home-operations/flate:latest
+        env:
+          # Runner executes action containers as non-root (HOME=/), so flate's
+          # default cache path /.cache is unwritable. Point it at /tmp.
+          FLATE_CACHE_DIR: /tmp/flate-cache
         with:
           args: test all --path /github/workspace/kubernetes/flux/cluster --no-progress
 
@@ -64,6 +68,8 @@ jobs:
       - name: Run flate diff
         continue-on-error: true
         uses: docker://ghcr.io/home-operations/flate:latest
+        env:
+          FLATE_CACHE_DIR: /tmp/flate-cache
         with:
           args: >-
             diff all
