@@ -162,6 +162,34 @@ spec:
             summary: "Prometheus target {{ $labels.job }}/{{ $labels.instance }} is down"
             description: "Target has been unreachable for more than 5 minutes."
 
+    # ── Solis Battery Automation ────────────────────────────────
+    # The solis-charge CronJob programs inverter charge slots hourly.
+    # In Jul 2026 the inverter silently stopped honouring slots for
+    # weeks (567 kWh grid import). These alerts make ANY breakage of
+    # the automation pipeline visible. HA-side watchdog automations
+    # cover the inverter/outcome; these cover the k8s side.
+    - name: solis-charge
+      rules:
+        - alert: SolisChargeJobFailed
+          expr: |
+            kube_job_status_failed{namespace="default", job_name=~"solis-charge-.*"} > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "solis-charge job {{ $labels.job_name }} failed"
+            description: "The Solis battery slot programmer failed (exit 4 = inverter storage mode wrong/unfixable; exit 1-3 = rates/TZ/safety). Battery may not grid-charge. Check: kubectl logs -n default job/{{ $labels.job_name }}"
+
+        - alert: SolisChargeCronStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{namespace="default", cronjob="solis-charge"} > 3 * 3600
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "solis-charge has not succeeded in {{ $value | humanizeDuration }}"
+            description: "The hourly Solis battery slot programmer has no successful run for over 3h - suspended, failing, or not scheduling. Inverter slots are going stale. Check: kubectl get cronjob,jobs -n default | grep solis"
+
     # ── Flux GitOps Health ──────────────────────────────────────
     - name: flux-health
       rules:
