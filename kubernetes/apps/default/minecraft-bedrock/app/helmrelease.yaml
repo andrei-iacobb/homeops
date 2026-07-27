@@ -93,8 +93,6 @@ spec:
     service:
       app:
         ports:
-          http:
-            enabled: false
           bedrock:
             port: 19132
             protocol: UDP
