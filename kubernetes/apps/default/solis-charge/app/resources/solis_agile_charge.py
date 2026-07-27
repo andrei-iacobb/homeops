@@ -52,14 +52,20 @@ CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "00:00")
 # slot writes would be offset and we MUST refuse to push.
 MAX_CLOCK_DRIFT_SECONDS = 30 * 60
 
+# UTC hour whose run re-commits every slot to the inverter even when nothing
+# changed in HASS. Set to -1 to disable.
+FORCE_PUSH_HOUR = int(os.environ.get("FORCE_PUSH_HOUR", "23"))
+
 # Octopus Energy HACS entities.
 NEXT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_next_day_rates"
 CURRENT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_current_day_rates"
 
+INVERTER_SN = os.environ.get("INVERTER_SN", "1031030229080043")
+
 # Inverter timestamp sensor - reports the inverter's own clock as a Unix
 # epoch in UTC. Used to detect SolisCloud TZ misconfiguration.
 INVERTER_TIMESTAMP_ENTITY = (
-    "sensor.solis_inverter_1031030229080043_solis_timestamp_measurements_received"
+    f"sensor.solis_inverter_{INVERTER_SN}_solis_timestamp_measurements_received"
 )
 
 # Octoplus entities (may be absent if not enrolled - script tolerates this).
@@ -537,23 +543,27 @@ def _clear_slot(kind, slot):
 def apply_schedule(charge_windows, discharge_windows):
     """Program up to MAX_SLOTS charge + MAX_SLOTS discharge slots.
 
-    Returns True if any HASS entity state changed (used to decide whether to
-    re-push the schedule to the inverter).
+    Returns the set of (kind, slot) pairs whose HASS state changed. Empty set
+    means nothing to push. Time entities only stage their value in HASS - the
+    matching commit button is what actually sends it, so the caller must push
+    every slot in this set.
     """
-    changed = False
+    changed = set()
     for i in range(MAX_SLOTS):
         slot = i + 1
         if i < len(charge_windows):
             w = charge_windows[i]
             start_t = _utc_hhmm(w["start"])
             end_t = _utc_hhmm(w["end"])
-            changed |= _set_slot("charge", slot, start_t, end_t, CHARGE_CURRENT)
+            dirty = _set_slot("charge", slot, start_t, end_t, CHARGE_CURRENT)
             tag = w.get("tag", "")
             extra = f"  ({tag})" if tag else ""
             print(f"  Charge slot {slot}: {start_t[:5]} - {end_t[:5]} UTC{extra}")
         else:
-            changed |= _clear_slot("charge", slot)
+            dirty = _clear_slot("charge", slot)
             print(f"  Charge slot {slot}: disabled")
+        if dirty:
+            changed.add(("charge", slot))
 
     for i in range(MAX_SLOTS):
         slot = i + 1
@@ -561,26 +571,62 @@ def apply_schedule(charge_windows, discharge_windows):
             w = discharge_windows[i]
             start_t = _utc_hhmm(w["start"])
             end_t = _utc_hhmm(w["end"])
-            changed |= _set_slot("discharge", slot, start_t, end_t, DISCHARGE_CURRENT)
+            dirty = _set_slot("discharge", slot, start_t, end_t, DISCHARGE_CURRENT)
             tag = w.get("tag", "")
             extra = f"  ({tag})" if tag else ""
             print(f"  Discharge slot {slot}: {start_t[:5]} - {end_t[:5]} UTC{extra}")
         else:
-            changed |= _clear_slot("discharge", slot)
+            dirty = _clear_slot("discharge", slot)
             print(f"  Discharge slot {slot}: disabled")
+        if dirty:
+            changed.add(("discharge", slot))
     return changed
 
 
-def push_to_inverter():
-    # The HACS solis integration's button press synchronously calls the
-    # SolisCloud control API, which can take 20-40 seconds. Give it a
-    # generous timeout so we don't bail half-way.
-    hass_service(
-        "button",
-        "press",
-        {"entity_id": "button.solis_update_timed_charge_discharge"},
-        timeout=90,
-    )
+def _push_buttons_for(kind, slot):
+    """Candidate commit-button entity ids for one slot, most-current first.
+
+    The soliscloud integration replaced its single combined commit button
+    (Solis Update Timed Charge/Discharge, cid 103) with one button per slot
+    (cid 5946+) in the 2026-07 release. The old entity is left orphaned in the
+    registry as 'unavailable', and HA *silently skips* service calls to
+    unavailable entities - so the push looked like it succeeded while nothing
+    ever reached the inverter. Try each candidate, skip the dead ones.
+    """
+    return [
+        f"button.solis_inverter_{INVERTER_SN}_solis_update_timed_{kind}_{slot}",
+        "button.solis_update_timed_charge_discharge",
+    ]
+
+
+def push_to_inverter(changed_slots):
+    """Commit every changed slot. Exits non-zero if nothing could be pushed."""
+    pushed = set()
+    for kind, slot in sorted(changed_slots):
+        for eid in _push_buttons_for(kind, slot):
+            if eid in pushed:
+                break  # combined button already pressed, covers this slot
+            state = hass_get_optional(eid)
+            # A live button that has never been pressed reads 'unknown' - only
+            # 'unavailable' (or a missing entity) means it is dead.
+            if state is None or state.get("state") == "unavailable":
+                continue
+            # The button press synchronously calls the SolisCloud control API,
+            # which can take 20-40 seconds. Generous timeout so we don't bail
+            # half-way through a write.
+            hass_service("button", "press", {"entity_id": eid}, timeout=90)
+            print(f"  committed {kind} slot {slot} via {eid}")
+            pushed.add(eid)
+            break
+        else:
+            print(f"  ERROR: no usable commit button for {kind} slot {slot}")
+
+    if changed_slots and not pushed:
+        print("ERROR: slot values were staged in HASS but NO commit button "
+              "was available, so NOTHING reached the inverter. The solis "
+              "integration has renamed its buttons again - check "
+              "button.* entities and update _push_buttons_for().")
+        sys.exit(5)
 
 
 # ---------- Main ----------
@@ -653,8 +699,7 @@ def main():
         print("Running safety check on cheap windows...")
         if not safety_check(cheap_windows, rates):
             print("ABORTING - expensive rate detected inside a charge window")
-            apply_schedule([], [])
-            push_to_inverter()
+            push_to_inverter(apply_schedule([], []))
             sys.exit(1)
         print("  PASSED")
         print()
@@ -686,8 +731,7 @@ def main():
         print("Round-trip rate check on UTC-converted windows...")
         if not verify_written_slots_are_cheap(all_charge, rates):
             print("Clearing all charge slots due to round-trip check failure.")
-            apply_schedule([], discharge_windows)
-            push_to_inverter()
+            push_to_inverter(apply_schedule([], discharge_windows))
             sys.exit(3)
         print("  PASSED")
         print()
@@ -697,13 +741,26 @@ def main():
     changed = apply_schedule(all_charge, discharge_windows)
     print()
 
-    if not changed:
+    # "Unchanged in HASS" does not prove the inverter has the values: the time
+    # entities are staged locally and only a commit button sends them, so a
+    # push that silently no-ops leaves HASS looking correct forever while the
+    # inverter runs an empty schedule (exactly what happened 2026-07-26/27).
+    # Re-commit everything once a day as insurance, just before the overnight
+    # cheap slots, so the two can never drift apart for more than 24h.
+    force = now_utc.hour == FORCE_PUSH_HOUR
+    if not changed and not force:
         print("No slot values changed - skipping cloud push.")
         print("Done")
         return
 
+    if force:
+        print(f"Hourly force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
+              f"re-committing every slot regardless of HASS state.")
+        changed = {(k, s) for k in ("charge", "discharge")
+                   for s in range(1, MAX_SLOTS + 1)}
+
     print("Pushing schedule to inverter...")
-    push_to_inverter()
+    push_to_inverter(changed)
     print("Done")
 
 

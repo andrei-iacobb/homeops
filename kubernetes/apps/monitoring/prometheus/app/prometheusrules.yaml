@@ -178,7 +178,7 @@ spec:
             severity: critical
           annotations:
             summary: "solis-charge job {{ $labels.job_name }} failed"
-            description: "The Solis battery slot programmer failed (exit 4 = inverter storage mode wrong/unfixable; exit 1-3 = rates/TZ/safety). Battery may not grid-charge. Check: kubectl logs -n default job/{{ $labels.job_name }}"
+            description: "The Solis battery slot programmer failed (exit 5 = no usable commit button, schedule never reached the inverter; exit 4 = inverter storage mode wrong/unfixable; exit 1-3 = rates/TZ/safety). Battery may not grid-charge. Check: kubectl logs -n default job/{{ $labels.job_name }}"
 
         - alert: SolisChargeCronStale
           expr: |
