@@ -8,3 +8,5 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./secret.sops.yaml
+  - ./home-sync-configmap.yaml
+  - ./home-sync-cronjob.yaml

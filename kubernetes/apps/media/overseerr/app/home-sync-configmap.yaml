@@ -1,0 +1,203 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: overseerr-home-sync
+data:
+  sync.py: |
+    #!/usr/bin/env python3
+    """Bridge Plex Home managed users into Overseerr so their watchlists auto-request.
+
+    Plex Home managed users (Elle, Emil, ...) have no Plex account of their own -
+    no email, no username, no password. That means:
+
+      * they can never sign into Overseerr, so Overseerr never stores a plexToken
+        for them, and
+      * they are not "friends", so Overseerr's import-from-plex list is empty and
+        Plex's friendsWatchlist RSS feed is empty too.
+
+    Overseerr's watchlist sync only runs for users whose plexToken is set, so their
+    watchlist adds were silently ignored. This job mints each managed user's token
+    from the Home admin token (POST /api/v2/home/users/<uuid>/switch) and writes it
+    onto a matching Overseerr user, creating that user on first run. Overseerr's own
+    3-minutely sync then does the real work: TMDB lookup, dedupe against the library,
+    quota, auto-approve, and the push to Radarr/Sonarr.
+
+    Credentials are read from the Overseerr config volume, so there is nothing extra
+    to rotate or keep in sops:
+      /config/settings.json  -> Overseerr API key
+      /config/db/db.sqlite3  -> Plex admin token (user 1)
+
+    Re-running is safe and idempotent; it is also how new Home members get onboarded.
+    """
+    import json
+    import os
+    import re
+    import secrets
+    import sqlite3
+    import sys
+    import urllib.error
+    import urllib.request
+
+    CONFIG_DIR = os.environ.get("OVERSEERR_CONFIG", "/config")
+    DB_PATH = os.path.join(CONFIG_DIR, "db", "db.sqlite3")
+    SETTINGS_PATH = os.path.join(CONFIG_DIR, "settings.json")
+    OVERSEERR_URL = os.environ.get("OVERSEERR_URL", "http://overseerr.media.svc.cluster.local:5055")
+    EMAIL_DOMAIN = os.environ.get("EMAIL_DOMAIN", "plex.iacob.uk")
+    CLIENT_ID = os.environ.get("PLEX_CLIENT_ID", "homeops-overseerr-bridge")
+    INCLUDE_GUEST = os.environ.get("INCLUDE_GUEST", "false").lower() == "true"
+
+    # REQUEST | AUTO_APPROVE | REQUEST_VIEW | AUTO_REQUEST | RECENT_VIEW | WATCHLIST_VIEW
+    PERMISSIONS = int(os.environ.get("PERMISSIONS", "209731744"))
+
+    PLEX_HEADERS = {
+        "Accept": "application/json",
+        "X-Plex-Client-Identifier": CLIENT_ID,
+        "X-Plex-Product": "homeops-overseerr-bridge",
+    }
+
+
+    def log(msg):
+        print(msg, flush=True)
+
+
+    def http(url, token_header=None, method="GET", body=None, headers=None):
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(url, data=data, method=method)
+        for key, value in (headers or {}).items():
+            req.add_header(key, value)
+        if token_header:
+            req.add_header(*token_header)
+        if data is not None:
+            req.add_header("Content-Type", "application/json")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read()
+        return json.loads(raw) if raw else None
+
+
+    def plex(url, token, method="GET"):
+        return http(url, ("X-Plex-Token", token), method=method, headers=PLEX_HEADERS)
+
+
+    def overseerr(path, api_key, method="GET", body=None):
+        return http(
+            OVERSEERR_URL + path,
+            ("X-Api-Key", api_key),
+            method=method,
+            body=body,
+        )
+
+
+    def slugify(title, plex_id):
+        slug = re.sub(r"[^a-z0-9]+", "", (title or "").lower())
+        return slug or "plexuser{0}".format(plex_id)
+
+
+    def main():
+        if not os.path.exists(DB_PATH):
+            log("FATAL: Overseerr database not found at {0}".format(DB_PATH))
+            return 1
+
+        with open(SETTINGS_PATH) as fh:
+            api_key = json.load(fh)["main"]["apiKey"]
+
+        db = sqlite3.connect(DB_PATH, timeout=30)
+        db.execute("PRAGMA busy_timeout = 30000")
+
+        row = db.execute("SELECT plexToken FROM user WHERE id = 1").fetchone()
+        if not row or not row[0]:
+            log("FATAL: no Plex token on Overseerr user 1 - sign in as the owner first")
+            return 1
+        admin_token = row[0]
+
+        home = plex("https://plex.tv/api/v2/home/users", admin_token)
+        managed = [
+            u for u in home.get("users", [])
+            if not u.get("admin") and (INCLUDE_GUEST or not u.get("guest"))
+        ]
+        log("Plex Home: {0} managed user(s) to bridge".format(len(managed)))
+
+        existing = overseerr("/api/v1/user?take=200", api_key)["results"]
+        by_plex_id = {u["plexId"]: u for u in existing if u.get("plexId")}
+        by_email = {(u.get("email") or "").lower(): u for u in existing}
+
+        failures = 0
+        for member in managed:
+            title = member.get("title") or "unknown"
+            plex_id = member["id"]
+            try:
+                switched = plex(
+                    "https://plex.tv/api/v2/home/users/{0}/switch".format(member["uuid"]),
+                    admin_token,
+                    method="POST",
+                )
+                token = switched.get("authToken")
+                if not token:
+                    log("  {0}: switch returned no authToken - skipped".format(title))
+                    failures += 1
+                    continue
+
+                user = by_plex_id.get(plex_id)
+                if not user:
+                    email = "{0}@{1}".format(slugify(title, plex_id), EMAIL_DOMAIN)
+                    candidate = by_email.get(email)
+                    # Same email already taken by a different Plex identity: keep them apart.
+                    if candidate and candidate.get("plexId") not in (None, plex_id):
+                        email = "{0}-{1}@{2}".format(slugify(title, plex_id), plex_id, EMAIL_DOMAIN)
+                        candidate = by_email.get(email)
+                    user = candidate
+
+                if not user:
+                    user = overseerr(
+                        "/api/v1/user",
+                        api_key,
+                        method="POST",
+                        body={
+                            "email": email,
+                            "username": title,
+                            "password": secrets.token_urlsafe(24),
+                        },
+                    )
+                    log("  {0}: created Overseerr user {1} ({2})".format(title, user["id"], email))
+
+                if user.get("permissions") != PERMISSIONS:
+                    overseerr(
+                        "/api/v1/user/{0}".format(user["id"]),
+                        api_key,
+                        method="PUT",
+                        body={"permissions": PERMISSIONS},
+                    )
+
+                overseerr(
+                    "/api/v1/user/{0}/settings/main".format(user["id"]),
+                    api_key,
+                    method="POST",
+                    body={"watchlistSyncMovies": True, "watchlistSyncTv": True},
+                )
+
+                # plexToken has no API surface in Overseerr, so it goes in directly.
+                # Creation and permissions still go through the API above.
+                with db:
+                    db.execute(
+                        "UPDATE user SET plexToken = ?, plexId = ? WHERE id = ?",
+                        (token, plex_id, user["id"]),
+                    )
+                log("  {0}: linked to Overseerr user {1} (plexId {2})".format(title, user["id"], plex_id))
+            except urllib.error.HTTPError as err:
+                log("  {0}: HTTP {1} - {2}".format(title, err.code, err.read()[:200]))
+                failures += 1
+            except Exception as err:  # noqa: BLE001 - one bad member must not stop the rest
+                log("  {0}: {1}".format(title, err))
+                failures += 1
+
+        db.close()
+
+        if failures:
+            log("Finished with {0} failure(s)".format(failures))
+            return 1
+        log("All managed users bridged")
+        return 0
+
+
+    if __name__ == "__main__":
+        sys.exit(main())

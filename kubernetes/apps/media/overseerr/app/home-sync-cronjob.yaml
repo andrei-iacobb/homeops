@@ -1,0 +1,70 @@
+---
+# Keeps Plex Home managed users bridged into Overseerr.
+#
+# Managed users have no Plex account of their own, so they can never sign into
+# Overseerr and Overseerr's watchlist sync - which only runs for users with a
+# stored plexToken - silently ignored their watchlist adds. This mints each
+# member's token from the Home admin token and attaches it to an Overseerr user.
+#
+# Rerunning is how new Home members get onboarded, and how tokens self-heal if a
+# member is removed and re-added in Plex. Credentials come off the Overseerr
+# config volume, so there is no secret to manage here.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: overseerr-home-sync
+spec:
+  schedule: "25 */6 * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            # Match the uid/gid Overseerr's app runs as (abc:users) so the
+            # sqlite WAL/SHM files stay writable by Overseerr itself.
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          containers:
+            - name: home-sync
+              image: docker.io/library/python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              command: ["python3", "/scripts/sync.py"]
+              env:
+                - name: OVERSEERR_URL
+                  value: http://overseerr.media.svc.cluster.local:5055
+                - name: EMAIL_DOMAIN
+                  value: plex.iacob.uk
+                - name: INCLUDE_GUEST
+                  value: "false"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: config
+              persistentVolumeClaim:
+                claimName: overseerr
+            - name: scripts
+              configMap:
+                name: overseerr-home-sync
+                defaultMode: 0555
