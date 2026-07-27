@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-bedrock-loadbalancer
+  namespace: default
+  annotations:
+    lbipam.cilium.io/ips: "192.168.1.13"
+spec:
+  type: LoadBalancer
+  # Preserve the client IP so the server's player logs show real LAN addresses.
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: minecraft-bedrock
+    app.kubernetes.io/instance: minecraft-bedrock
+  ports:
+    - name: bedrock
+      protocol: UDP
+      port: 19132
+      targetPort: 19132

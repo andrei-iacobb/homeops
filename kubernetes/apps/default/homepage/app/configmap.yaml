@@ -346,6 +346,12 @@ data:
           href: https://x.com
           description: X (Twitter)
     - Base:
+      - Minecraft:
+          icon: mdi-minecraft
+          description: Bedrock server - 192.168.1.13:19132
+          widget:
+            type: minecraft
+            url: udp://192.168.1.13:19132
       - Forgejo:
           icon: forgejo.svg
           href: https://git.iacob.co.uk

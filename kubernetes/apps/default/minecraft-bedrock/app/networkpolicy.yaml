@@ -1,0 +1,22 @@
+---
+# The default-ingress policy only admits other namespaces and the host, so
+# without this LAN clients hitting the LoadBalancer VIP are dropped as "world"
+# identity. Same trap the media namespace hit with Plex and WireGuard clients.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: minecraft-bedrock-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft-bedrock
+  ingress:
+    # LAN clients and UniFi WireGuard VPN clients
+    - fromCIDR:
+        - 192.168.1.0/24
+        - 192.168.2.0/24
+      toPorts:
+        - ports:
+            - port: "19132"
+              protocol: UDP

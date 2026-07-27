@@ -47,3 +47,4 @@ resources:
   - ./fanwatch/ks.yaml
   - ./slate/ks.yaml
   - ./forgejo-runner/ks.yaml
+  - ./minecraft-bedrock/ks.yaml

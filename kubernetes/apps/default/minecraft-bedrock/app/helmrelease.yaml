@@ -1,0 +1,108 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minecraft-bedrock
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: minecraft-bedrock
+  interval: 1h
+  values:
+    controllers:
+      minecraft-bedrock:
+        # Bedrock keeps the world in memory and flushes on save; two pods would
+        # fight over the same world files, so never roll a second one up first.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: docker.io/itzg/minecraft-bedrock-server
+              tag: 2026.7.6
+            env:
+              EULA: "TRUE"
+              TZ: Europe/London
+              # itzg images start as root and su-exec down to UID:GID themselves.
+              UID: "1000"
+              GID: "1000"
+              VERSION: LATEST
+              SERVER_NAME: iacob homelab
+              SERVER_PORT: "19132"
+              LEVEL_NAME: world
+              GAMEMODE: survival
+              DIFFICULTY: normal
+              ALLOW_CHEATS: "false"
+              MAX_PLAYERS: "10"
+              # Xbox Live auth - keeps randoms off the LAN server and is what
+              # normal Bedrock clients (console, phone, Windows) expect.
+              ONLINE_MODE: "true"
+              VIEW_DISTANCE: "16"
+              TICK_DISTANCE: "4"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /usr/local/bin/mc-monitor
+                      - status-bedrock
+                      - --host
+                      - 127.0.0.1
+                      - --port
+                      - "19132"
+                  initialDelaySeconds: 60
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /usr/local/bin/mc-monitor
+                      - status-bedrock
+                      - --host
+                      - 127.0.0.1
+                      - --port
+                      - "19132"
+                  initialDelaySeconds: 30
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 10
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+            resources:
+              requests:
+                cpu: 250m
+                memory: 1Gi
+              limits:
+                memory: 4Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          http:
+            enabled: false
+          bedrock:
+            port: 19132
+            protocol: UDP
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 10Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
