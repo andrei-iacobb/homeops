@@ -600,8 +600,12 @@ def _push_buttons_for(kind, slot):
 
 
 def push_to_inverter(changed_slots):
-    """Commit every changed slot. Exits non-zero if nothing could be pushed."""
+    """Commit every changed slot. Exits non-zero if any slot could not be
+    pushed - a slot staged in HASS but never committed is the silent failure
+    this whole function exists to make loud, so a partial push is still a
+    failed run."""
     pushed = set()
+    failed = []
     for kind, slot in sorted(changed_slots):
         for eid in _push_buttons_for(kind, slot):
             if eid in pushed:
@@ -620,12 +624,14 @@ def push_to_inverter(changed_slots):
             break
         else:
             print(f"  ERROR: no usable commit button for {kind} slot {slot}")
+            failed.append(f"{kind} {slot}")
 
-    if changed_slots and not pushed:
-        print("ERROR: slot values were staged in HASS but NO commit button "
-              "was available, so NOTHING reached the inverter. The solis "
-              "integration has renamed its buttons again - check "
-              "button.* entities and update _push_buttons_for().")
+    if failed:
+        print(f"ERROR: {len(failed)} slot(s) were staged in HASS but never "
+              f"committed to the inverter ({', '.join(failed)}) - no usable "
+              f"commit button. The solis integration has probably renamed its "
+              f"buttons again; check the button.* entities and update "
+              f"_push_buttons_for().")
         sys.exit(5)
 
 
