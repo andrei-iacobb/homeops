@@ -8,4 +8,3 @@ resources:
   - ./dns.yaml
   - ./zigbee.yaml
   - ./s1.yaml
-  - ./minecraft.yaml
