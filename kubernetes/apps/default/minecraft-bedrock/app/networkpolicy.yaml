@@ -12,10 +12,11 @@ spec:
     matchLabels:
       app.kubernetes.io/name: minecraft-bedrock
   ingress:
-    # LAN clients and UniFi WireGuard VPN clients
+    # Every internal segment the UniFi gateway serves - br0 (.1), br20, br30,
+    # br67 and both WireGuard pools (.2/.3). Kept as one /16 so a new VLAN does
+    # not silently lose access; this is private space only, not the internet.
     - fromCIDR:
-        - 192.168.1.0/24
-        - 192.168.2.0/24
+        - 192.168.0.0/16
       toPorts:
         - ports:
             - port: "19132"

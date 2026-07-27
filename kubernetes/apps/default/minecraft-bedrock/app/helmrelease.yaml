@@ -36,6 +36,10 @@ spec:
               # Xbox Live auth - keeps randoms off the LAN server and is what
               # normal Bedrock clients (console, phone, Windows) expect.
               ONLINE_MODE: "true"
+              # The image defaults this on, which leaves an empty allowlist that
+              # rejects everyone. Reachable from internal subnets only and Xbox
+              # auth is still enforced above, so gate on ONLINE_MODE instead.
+              ALLOW_LIST: "false"
               VIEW_DISTANCE: "16"
               TICK_DISTANCE: "4"
             probes:
