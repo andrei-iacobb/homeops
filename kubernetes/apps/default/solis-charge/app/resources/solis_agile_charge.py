@@ -123,8 +123,21 @@ def hass_service(domain, service, data, timeout=10):
 # 2026-07-23: the register had silently flipped to an unmapped value (HASS
 # select showed "unknown") for 10+ days - slots were programmed perfectly,
 # battery ignored them, 567 kWh bought from grid that month. Guard every run.
+#
+# The soliscloud integration renames these option strings across versions
+# (2026-07-27: "Self-Use" became "Self-Use Mode - Allow Grid Charging"), which
+# turned a single hardcoded name into a hard failure and a false "battery not
+# charging" alert. Accept any name in the list; write back whichever one the
+# select actually offers. Comma-separated, most-preferred first.
 STORAGE_MODE_ENTITY = "select.solis_energy_storage_control_switch"
-REQUIRED_STORAGE_MODE = os.environ.get("REQUIRED_STORAGE_MODE", "Self-Use")
+ACCEPTED_STORAGE_MODES = [
+    m.strip()
+    for m in os.environ.get(
+        "REQUIRED_STORAGE_MODE",
+        "Self-Use Mode - Allow Grid Charging,Self-Use",
+    ).split(",")
+    if m.strip()
+]
 
 
 def ensure_storage_mode():
@@ -142,7 +155,7 @@ def ensure_storage_mode():
               f"mode; slots may be ignored. Investigate.")
         sys.exit(4)
     mode = state.get("state")
-    if mode == REQUIRED_STORAGE_MODE:
+    if mode in ACCEPTED_STORAGE_MODES:
         print(f"Storage mode check: {mode} - OK")
         return
     if mode == "unavailable":
@@ -151,17 +164,20 @@ def ensure_storage_mode():
               f"Investigate.")
         sys.exit(4)
     options = state.get("attributes", {}).get("options", [])
-    if options and REQUIRED_STORAGE_MODE not in options:
-        print(f"ERROR: required mode '{REQUIRED_STORAGE_MODE}' is not one "
-              f"of the select's options {options}. Config mistake.")
+    target = next((m for m in ACCEPTED_STORAGE_MODES if m in options), None)
+    if options and target is None:
+        print(f"ERROR: none of {ACCEPTED_STORAGE_MODES} are options of "
+              f"{STORAGE_MODE_ENTITY}; it offers {options}. The integration "
+              f"has renamed the modes again - set REQUIRED_STORAGE_MODE.")
         sys.exit(4)
+    target = target or ACCEPTED_STORAGE_MODES[0]
 
-    print(f"WARNING: storage mode is '{mode}', expected "
-          f"'{REQUIRED_STORAGE_MODE}'. Timed charge slots are ignored in "
-          f"this mode. Attempting to fix...")
+    print(f"WARNING: storage mode is '{mode}', expected one of "
+          f"{ACCEPTED_STORAGE_MODES}. Timed charge slots are ignored in "
+          f"this mode. Setting '{target}'...")
     hass_service("select", "select_option", {
         "entity_id": STORAGE_MODE_ENTITY,
-        "option": REQUIRED_STORAGE_MODE,
+        "option": target,
     }, timeout=30)
     deadline = time.monotonic() + 180
     while time.monotonic() < deadline:
@@ -172,7 +188,7 @@ def ensure_storage_mode():
             print(f"  poll error (transient, retrying): {e}")
             continue
         mode = state.get("state") if state else None
-        if mode == REQUIRED_STORAGE_MODE:
+        if mode in ACCEPTED_STORAGE_MODES:
             print(f"Storage mode fixed: now '{mode}'.")
             return
     print(f"ERROR: storage mode still '{mode}' after write + 180s. "
