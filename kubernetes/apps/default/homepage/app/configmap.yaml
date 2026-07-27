@@ -346,12 +346,12 @@ data:
           href: https://x.com
           description: X (Twitter)
     - Base:
+      # No widget: Homepage's minecraft widget speaks the Java TCP protocol via
+      # minecraftstatuspinger, so it times out on Bedrock's UDP/RakNet and
+      # reports a false "offline".
       - Minecraft:
           icon: mdi-minecraft
-          description: Bedrock server - 192.168.1.13:19132
-          widget:
-            type: minecraft
-            url: udp://192.168.1.13:19132
+          description: Bedrock - 192.168.1.13:19132
       - Forgejo:
           icon: forgejo.svg
           href: https://git.iacob.co.uk
