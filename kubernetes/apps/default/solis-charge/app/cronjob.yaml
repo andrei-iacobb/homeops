@@ -33,6 +33,23 @@ spec:
               envFrom:
                 - secretRef:
                     name: solis-charge-secret
+              # TEMPORARY - diagnostic charge for the night of 2026-07-28/29.
+              # The battery SOC sensor reports physically impossible swings
+              # (9% -> 100% within minutes while pack voltage holds at 53.3V),
+              # so we want one clean overnight fill followed by an undisturbed
+              # discharge to see whether the pack itself behaves. Agile has no
+              # sub-15p slot tonight; the cheapest overnight block is ~22p.
+              # Raise the cap to 23p and restrict to 00:00-05:00 UK so the
+              # optimizer takes the overnight block rather than tomorrow's
+              # cheaper midday slots, which solar would contaminate.
+              # REVERT once the discharge curve has been captured.
+              env:
+                - name: MAX_RATE
+                  value: "0.23"
+                - name: CHARGE_WINDOW_START
+                  value: "00:00"
+                - name: CHARGE_WINDOW_END
+                  value: "05:00"
               volumeMounts:
                 - name: script
                   mountPath: /scripts
