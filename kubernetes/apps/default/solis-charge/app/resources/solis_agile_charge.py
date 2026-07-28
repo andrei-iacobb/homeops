@@ -53,8 +53,12 @@ CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "00:00")
 MAX_CLOCK_DRIFT_SECONDS = 30 * 60
 
 # UTC hour whose run re-commits every slot to the inverter even when nothing
-# changed in HASS. Set to -1 to disable.
-FORCE_PUSH_HOUR = int(os.environ.get("FORCE_PUSH_HOUR", "23"))
+# changed in HASS. Set to -1 to disable. Sits just after the plan rolls over
+# at UK midnight (see get_rates) so the re-commit lands on a fresh schedule
+# rather than a spent one. In BST rollover is the 23:05 UTC run, so this fires
+# an hour behind it - the guarantee is only ever "once per 24h", not "on the
+# rollover run itself".
+FORCE_PUSH_HOUR = int(os.environ.get("FORCE_PUSH_HOUR", "0"))
 
 # Octopus Energy HACS entities.
 NEXT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_next_day_rates"
@@ -204,21 +208,113 @@ def ensure_storage_mode():
 
 # ---------- Octopus data ----------
 
-def get_rates():
-    """Fetch rates. Prefer next-day, fall back to current-day."""
-    try:
-        data = hass_get(NEXT_DAY_RATES)
-        rates = data["attributes"].get("rates", [])
-        if rates:
-            print(f"Using next-day rates ({len(rates)} slots)")
-            return rates
-    except Exception as e:
-        print(f"Next-day rates unavailable: {e}")
+def _covers_now(rates, now):
+    """True if some slot spans `now` - proves this set is the live day."""
+    for r in rates:
+        start = datetime.fromisoformat(r["start"])
+        end = datetime.fromisoformat(r["end"])
+        if start <= now < end:
+            return True
+    return False
 
-    data = hass_get(CURRENT_DAY_RATES)
-    rates = data["attributes"].get("rates", [])
-    print(f"Using current-day rates ({len(rates)} slots)")
-    return rates
+
+def _fetch_rates(entity, label):
+    try:
+        return hass_get(entity)["attributes"].get("rates", []) or []
+    except Exception as e:
+        print(f"{label} rates unavailable: {e}")
+        return []
+
+
+def get_rates():
+    """Fetch the rate set for the day we are planning.
+
+    The plan rolls over at midnight, not at ~16:00 when Octopus publishes the
+    next day. Switching the moment next-day appears would blank any cheap slot
+    still to come later today, because apply_schedule() rewrites all three
+    slots from scratch on every run. So the rule is simply: use whichever set
+    actually contains the current half-hour.
+    """
+    now = datetime.now(timezone.utc)
+
+    current = _fetch_rates(CURRENT_DAY_RATES, "Current-day")
+    if current and _covers_now(current, now):
+        print(f"Using current-day rates ({len(current)} slots)")
+        return current
+
+    # The Octopus integration rolls its entities over a few minutes after local
+    # midnight (observed ~00:07), so the 00:05 run still sees current-day
+    # holding yesterday while next-day holds the day we are now in. Both
+    # entities refresh in the same tick, so they cannot disagree about which
+    # day is which - this can only ever pick today, never a day early.
+    nxt = _fetch_rates(NEXT_DAY_RATES, "Next-day")
+    if nxt and _covers_now(nxt, now):
+        print(f"Using next-day rates ({len(nxt)} slots) - current-day has not "
+              f"rolled over yet.")
+        return nxt
+
+    # Nothing covers now. Only accept a set that is still ahead of us; writing
+    # a day that is already spent would leave the inverter holding stale
+    # windows, which is worse than leaving the existing schedule alone.
+    if nxt and datetime.fromisoformat(nxt[0]["start"]) > now:
+        print(f"No rate set covers now - using upcoming next-day rates "
+              f"({len(nxt)} slots).")
+        return nxt
+
+    print("No rate set covers now or the future - refusing to reprogram the "
+          "inverter from a spent schedule.")
+    return []
+
+
+def get_planning_slots():
+    """Slots we are allowed to plan against, in chronological order.
+
+    Everything still to come today, plus tomorrow once today has no cheap slot
+    left. Tomorrow is admitted only after today is exhausted, so a cheap slot
+    tonight can never be displaced by a cheaper one tomorrow - there are only
+    MAX_SLOTS slots and tomorrow would otherwise win on price alone.
+
+    Admitting tomorrow as soon as today is spent also arms it early. Inverter
+    slots are bare HH:MM values that recur daily, so writing tomorrow's 00:00
+    window during the 23:05 run starts it exactly on midnight instead of
+    catching it five minutes late on the following run.
+    """
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(hours=24)
+
+    # A slot lives on the inverter as a bare HH:MM that recurs daily, so
+    # writing one arms its NEXT occurrence - which is the slot we actually
+    # mean only while it starts inside 24h. The cutoff applies to the whole
+    # pool, not just the pre-armed tail: when the current-day entity is broken
+    # get_rates() falls through to next-day, and its later slots would be
+    # 24-32h out and fire TODAY at a rate nobody priced.
+    today = [r for r in get_rates()
+             if datetime.fromisoformat(r["end"]) > now
+             and datetime.fromisoformat(r["start"]) < cutoff]
+    if not today:
+        return []
+
+    if any(r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])
+           for r in today):
+        return today
+
+    # Same 24h rule applied to the pre-armed tail: tomorrow 14:00 written at
+    # 08:05 today would fire at 14:00 TODAY. Tomorrow 00:00 is always inside
+    # 24h, which is exactly the case worth arming ahead of the rollover.
+    #
+    # The horizon floor is separate: it stops the post-midnight fallback (when
+    # get_rates() already returned next-day because the Octopus entities have
+    # not rolled over yet) from appending that same set twice.
+    horizon = max(datetime.fromisoformat(r["end"]) for r in today)
+    ahead = []
+    for r in _fetch_rates(NEXT_DAY_RATES, "Next-day"):
+        start = datetime.fromisoformat(r["start"])
+        if horizon <= start < cutoff:
+            ahead.append(r)
+    if ahead:
+        print(f"  Nothing cheap left today - arming {len(ahead)} slot(s) from "
+              f"tomorrow that fall inside the next 24h.")
+    return today + ahead
 
 
 def get_free_electricity_sessions():
@@ -312,15 +408,19 @@ def in_charge_window(iso_str):
 
 
 def find_cheap_windows(rates):
-    """Find consecutive cheap slots inside the allowed overnight window.
+    """Find runs of consecutive cheap slots inside the allowed charge window.
 
-    Up to MAX_SLOTS windows, prefer cheapest avg. Slots that are cheap but
-    fall in daytime/solar hours are intentionally excluded - solar charges
-    the battery for free then, so paying to grid-charge would waste money."""
+    Up to MAX_SLOTS windows, prefer cheapest avg. The caller is responsible
+    for passing only slots that have not already ended.
+
+    Sort on the parsed datetime, not the raw ISO string: on the October
+    fall-back day the repeated hour yields '01:00+01:00' and '01:00+00:00',
+    which sort in the wrong order as text and would split one cheap run into
+    two competing windows."""
     cheap = sorted(
         [r for r in rates
          if r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])],
-        key=lambda r: r["start"],
+        key=lambda r: datetime.fromisoformat(r["start"]),
     )
 
     if not cheap:
@@ -540,6 +640,24 @@ def _clear_slot(kind, slot):
     return _set_slot(kind, slot, "00:00:00", "00:00:00", 0)
 
 
+ALL_SLOTS = {(kind, slot)
+             for kind in ("charge", "discharge")
+             for slot in range(1, MAX_SLOTS + 1)}
+
+
+def clear_schedule():
+    """Zero every slot and force the commit through.
+
+    apply_schedule() reports only slots whose HASS state changed, so when HASS
+    already reads 00:00 the push would be a no-op - exactly wrong on an abort
+    path, because that is the case where HASS and the inverter have drifted (a
+    previous clear staged in HASS but never committed, leaving the inverter
+    repeating an old schedule). Commit all six regardless of HASS state.
+    """
+    apply_schedule([], [])
+    push_to_inverter(ALL_SLOTS)
+
+
 def apply_schedule(charge_windows, discharge_windows):
     """Program up to MAX_SLOTS charge + MAX_SLOTS discharge slots.
 
@@ -675,37 +793,46 @@ def main():
     print()
 
     # 3. Agile rates.
-    rates = get_rates()
-    if not rates:
-        print("ERROR: no rate data available")
+    # Spent slots never reach the picker: the inverter stores a slot as a bare
+    # HH:MM with no date, so a window that has already passed would simply
+    # re-fire at the same clock time tomorrow at rates nobody checked.
+    upcoming = get_planning_slots()
+    if not upcoming:
+        # Clear rather than just bail. Leaving yesterday's windows programmed
+        # means the inverter keeps grid-charging at times nobody has priced;
+        # an empty schedule just falls back to self-use, which is safe.
+        print("ERROR: no usable rate data - clearing schedule")
+        clear_schedule()
         sys.exit(1)
 
-    cheap_count = sum(1 for r in rates if r["value_inc_vat"] <= MAX_RATE)
+    print(f"  Planning horizon: {upcoming[0]['start'][11:16]} -> "
+          f"{upcoming[-1]['end'][11:16]} ({len(upcoming)} slots)")
+    cheap_count = sum(1 for r in upcoming if r["value_inc_vat"] <= MAX_RATE)
     eligible_count = sum(
-        1 for r in rates
+        1 for r in upcoming
         if r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])
     )
     print(f"  {cheap_count} cheap slots (<={MAX_RATE*100:.0f}p), "
-          f"{len(rates) - cheap_count} expensive slots")
+          f"{len(upcoming) - cheap_count} expensive slots")
     window_desc = ("24h - no time restriction"
                    if CHARGE_WINDOW_START == CHARGE_WINDOW_END
                    else f"{CHARGE_WINDOW_START}-{CHARGE_WINDOW_END} UK local")
     print(f"  Grid-charge window: {window_desc} "
           f"-> {eligible_count} cheap slot(s) eligible to charge")
-    print(f"  Rate range: {min(r['value_inc_vat'] for r in rates)*100:.1f}p "
-          f"- {max(r['value_inc_vat'] for r in rates)*100:.1f}p")
+    print(f"  Rate range: {min(r['value_inc_vat'] for r in upcoming)*100:.1f}p "
+          f"- {max(r['value_inc_vat'] for r in upcoming)*100:.1f}p")
     print()
 
     # 4. Build charge windows.
-    cheap_windows = find_cheap_windows(rates)
+    cheap_windows = find_cheap_windows(upcoming)
     for w in cheap_windows:
         w["tag"] = f"agile {w['avg_rate']*100:.1f}p"
 
     if cheap_windows:
         print("Running safety check on cheap windows...")
-        if not safety_check(cheap_windows, rates):
+        if not safety_check(cheap_windows, upcoming):
             print("ABORTING - expensive rate detected inside a charge window")
-            push_to_inverter(apply_schedule([], []))
+            clear_schedule()
             sys.exit(1)
         print("  PASSED")
         print()
@@ -735,9 +862,13 @@ def main():
     # future TZ bug class before it hits the inverter.
     if all_charge:
         print("Round-trip rate check on UTC-converted windows...")
-        if not verify_written_slots_are_cheap(all_charge, rates):
+        if not verify_written_slots_are_cheap(all_charge, upcoming):
             print("Clearing all charge slots due to round-trip check failure.")
-            push_to_inverter(apply_schedule([], discharge_windows))
+            # Force the commit: if HASS already reads 00:00 the staged clear
+            # would push nothing and the inverter would keep charging on the
+            # windows this check just rejected.
+            apply_schedule([], discharge_windows)
+            push_to_inverter(ALL_SLOTS)
             sys.exit(3)
         print("  PASSED")
         print()
@@ -751,8 +882,8 @@ def main():
     # entities are staged locally and only a commit button sends them, so a
     # push that silently no-ops leaves HASS looking correct forever while the
     # inverter runs an empty schedule (exactly what happened 2026-07-26/27).
-    # Re-commit everything once a day as insurance, just before the overnight
-    # cheap slots, so the two can never drift apart for more than 24h.
+    # Re-commit everything once a day as insurance, on the midnight run that
+    # plans the new day, so the two can never drift apart for more than 24h.
     force = now_utc.hour == FORCE_PUSH_HOUR
     if not changed and not force:
         print("No slot values changed - skipping cloud push.")
@@ -762,8 +893,7 @@ def main():
     if force:
         print(f"Hourly force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
               f"re-committing every slot regardless of HASS state.")
-        changed = {(k, s) for k in ("charge", "discharge")
-                   for s in range(1, MAX_SLOTS + 1)}
+        changed = ALL_SLOTS
 
     print("Pushing schedule to inverter...")
     push_to_inverter(changed)
