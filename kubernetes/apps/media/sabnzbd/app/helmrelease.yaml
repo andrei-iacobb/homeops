@@ -99,7 +99,7 @@ spec:
             subPath: incomplete
       share:
         type: nfs
-        server: 10.10.10.3
+        server: 192.168.1.67
         path: /mnt/plex/media/downloads
         globalMounts:
           - path: /share
