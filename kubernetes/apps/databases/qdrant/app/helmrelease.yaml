@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: qdrant/qdrant
-              tag: v1.18.3
+              tag: v1.19.0
             probes:
               liveness: &probes
                 enabled: true
