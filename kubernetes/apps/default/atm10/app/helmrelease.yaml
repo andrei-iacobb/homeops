@@ -103,7 +103,11 @@ spec:
     service:
       app:
         annotations:
-          mc-router.itzg.me/defaultServer: "true"
+          # Must be a named mapping, not defaultServer. The asleep/loading MOTDs
+          # are only looked up by the address the client typed - on the default
+          # route mc-router dials the dead ClusterIP instead and the client just
+          # sees a failed ping. List every address anyone might actually enter.
+          mc-router.itzg.me/externalServerName: mc.iacob.uk,minecraft.iacob.uk,192.168.1.7
           mc-router.itzg.me/autoScaleUp: "true"
           mc-router.itzg.me/autoScaleDown: "true"
           # Without these the server just shows as an unreachable red X while
