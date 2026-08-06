@@ -351,7 +351,16 @@ data:
       # reports a false "offline".
       - Minecraft:
           icon: mdi-minecraft
-          description: Bedrock - 192.168.1.13:19132
+          description: Bedrock - mc.iacob.uk
+      # Java, so the widget's TCP ping works here. It hits mc-router rather than
+      # the server, which means it reports the asleep MOTD instead of a false
+      # "offline" while the pack is scaled to zero.
+      - All the Mods 10:
+          icon: mdi-minecraft
+          description: Java - mc.iacob.uk:25565
+          widget:
+            type: minecraft
+            url: udp://192.168.1.7:25565
       - Forgejo:
           icon: forgejo.svg
           href: https://git.iacob.co.uk
