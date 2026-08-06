@@ -361,6 +361,13 @@ data:
           widget:
             type: minecraft
             url: udp://192.168.1.7:25565
+      # The only server both editions can share - Paper + Geyser, one world.
+      - Crossplay:
+          icon: mdi-minecraft
+          description: Java + Bedrock - play.iacob.uk
+          widget:
+            type: minecraft
+            url: udp://192.168.1.14:25565
       - Forgejo:
           icon: forgejo.svg
           href: https://git.iacob.co.uk
