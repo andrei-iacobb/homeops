@@ -52,7 +52,15 @@ spec:
                 https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.1-dev+16-f6f13fd.jar
                 https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.1-dev+16-f6f13fd.jar
                 https://cdn.modrinth.com/data/fALzjamp/versions/MdY6JATr/Chunky-Bukkit-1.5.3.jar
-                https://ci.lucko.me/job/spark/527/artifact/spark-bukkit/build/libs/spark-1.10.175-bukkit.jar
+              # No spark jar: Paper 26.2 bundles the profiler and refuses to
+              # load the standalone plugin ("this server bundles the spark
+              # profiler"). It is already running - /spark works as-is.
+              #
+              # The two EssentialsX URLs are Jenkins lastSuccessfulBuild paths
+              # with the build hash in the filename, so they will 404 once
+              # EssentialsX CI produces a new build. Stable 2.22.0 only declares
+              # support up to 26.1.2, so the dev build is the correct one for
+              # now - but this needs a bump when 2.22.1 releases.
               # Datapacks, not mods - nothing to install client-side, so Bedrock
               # players get the same world. Every one of these was checked for
               # custom biomes: Geyser maps an unknown biome to Bedrock ID 0,
