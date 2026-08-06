@@ -1,0 +1,23 @@
+---
+# Same trap as minecraft-bedrock: default-ingress admits no LAN CIDR at all, so
+# clients arriving on the LoadBalancer VIP are dropped as "world" identity.
+# One /16 covers every subnet the gateway serves (br0, br20, br30, br67 and both
+# WireGuard pools) and keeps a new VLAN from silently losing access.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: minecraft-crossplay-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: minecraft-crossplay
+  ingress:
+    - fromCIDR:
+        - 192.168.0.0/16
+      toPorts:
+        - ports:
+            - port: "25565"
+              protocol: TCP
+            - port: "19132"
+              protocol: UDP

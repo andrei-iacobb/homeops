@@ -1,0 +1,137 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minecraft-crossplay
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: minecraft-crossplay
+  interval: 1h
+  values:
+    controllers:
+      minecraft-crossplay:
+        # One world on an RWO volume - never let a second pod come up first.
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              # Paper 26.2 needs Java 25. The java24 tag does not exist and
+              # plain "latest" is rebuilt continuously, so pin the date tag.
+              repository: docker.io/itzg/minecraft-server
+              tag: 2026.8.0-java25
+            env:
+              EULA: "TRUE"
+              TZ: Europe/London
+              UID: "1000"
+              GID: "1000"
+              TYPE: PAPER
+              # Geyser supports exactly one Java version at a time - currently
+              # 26.2. Do not float this to LATEST: a Minecraft release would
+              # take Bedrock players offline until Geyser catches up. Leaving
+              # PAPER_BUILD unset still picks up patch builds within 26.2.
+              VERSION: "26.2"
+              MEMORY: 6G
+              USE_AIKAR_FLAGS: "true"
+              MOTD: iacob homelab - java and bedrock
+              LEVEL: world
+              DIFFICULTY: normal
+              MAX_PLAYERS: "20"
+              ONLINE_MODE: "true"
+              # Bedrock players have no Java profile key, so leaving this on
+              # rejects every Floodgate login.
+              ENFORCE_SECURE_PROFILE: "false"
+              VIEW_DISTANCE: "10"
+              SIMULATION_DISTANCE: "6"
+              PLUGINS: |-
+                https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+                https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+                https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.11.0/PAPER/ViaVersion-5.11.0.jar
+                https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.11.0/PAPER/ViaBackwards-5.11.0.jar
+                https://download.luckperms.net/1658/bukkit/loader/LuckPerms-Bukkit-5.5.71.jar
+                https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.1-dev+16-f6f13fd.jar
+                https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.1-dev+16-f6f13fd.jar
+                https://cdn.modrinth.com/data/fALzjamp/versions/MdY6JATr/Chunky-Bukkit-1.5.3.jar
+                https://ci.lucko.me/job/spark/527/artifact/spark-bukkit/build/libs/spark-1.10.175-bukkit.jar
+              # Datapacks, not mods - nothing to install client-side, so Bedrock
+              # players get the same world. Every one of these was checked for
+              # custom biomes: Geyser maps an unknown biome to Bedrock ID 0,
+              # which is ocean, so a pack that adds biomes (Terralith, Incendium)
+              # renders as ocean colours for every Bedrock player. These add
+              # terrain shape and structures using vanilla biomes only.
+              # Terrain packs must be present before first generation - adding
+              # or removing one later leaves permanent seams in the world.
+              MODRINTH_PROJECTS: |-
+                datapack:tectonic
+                datapack:towns-and-towers
+                datapack:explorify
+            probes:
+              # First boot downloads Paper, nine plugins and three datapacks,
+              # then generates a Tectonic world. 15s x 60 = 15 minutes.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  initialDelaySeconds: 45
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 60
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 4
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  periodSeconds: 60
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+            resources:
+              requests:
+                cpu: 500m
+                memory: 7Gi
+              limits:
+                memory: 8Gi
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 120
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        ports:
+          java:
+            port: 25565
+            protocol: TCP
+          bedrock:
+            # Geyser runs inside the Paper JVM and opens this itself - it is not
+            # a second process, which is why one pod serves both editions.
+            port: 19132
+            protocol: UDP
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data

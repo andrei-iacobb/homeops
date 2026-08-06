@@ -1,0 +1,28 @@
+---
+# One VIP, both editions, both on their default ports - so nobody has to type a
+# port on either client. Geyser runs inside the Paper JVM and binds 19132/UDP
+# itself, which is why a single Service can carry both protocols to one pod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minecraft-crossplay-loadbalancer
+  namespace: default
+  annotations:
+    lbipam.cilium.io/ips: "192.168.1.14"
+spec:
+  type: LoadBalancer
+  # Real LAN addresses in the player log, and it makes any future IP-based ban
+  # or allowlist meaningful.
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: minecraft-crossplay
+    app.kubernetes.io/instance: minecraft-crossplay
+  ports:
+    - name: java
+      protocol: TCP
+      port: 25565
+      targetPort: 25565
+    - name: bedrock
+      protocol: UDP
+      port: 19132
+      targetPort: 19132

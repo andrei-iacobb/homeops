@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minecraft-crossplay
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/default/minecraft-crossplay/app
+  postBuild:
+    substitute:
+      APP: minecraft-crossplay
+      APP_PVC: minecraft-crossplay
+      VOLSYNC_SCHEDULE: "35 3 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: default
+  wait: false
