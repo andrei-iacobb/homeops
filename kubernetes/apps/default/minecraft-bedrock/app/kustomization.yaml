@@ -7,4 +7,5 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./service-loadbalancer.yaml
+  - ./udproute.yaml
   - ./networkpolicy.yaml

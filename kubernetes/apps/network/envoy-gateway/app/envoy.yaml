@@ -109,6 +109,15 @@ spec:
             name: iacob-uk-production-tls
           - kind: Secret
             name: iacobapp-dev-production-tls
+    # Game traffic is L4, so it cannot match on hostname - the port alone picks
+    # the backend. That is what makes *.iacob.uk resolving to this VIP enough:
+    # any name pointed here on 19132 reaches Bedrock.
+    - name: minecraft-bedrock
+      protocol: UDP
+      port: 19132
+      allowedRoutes:
+        namespaces:
+          from: All
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
