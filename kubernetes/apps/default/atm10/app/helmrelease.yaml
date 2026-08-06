@@ -1,0 +1,129 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: atm10
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: atm10
+  interval: 1h
+  values:
+    controllers:
+      atm10:
+        # StatefulSet, not Deployment: mc-router's Kubernetes scaler only ever
+        # learned to speak StatefulSet, and it requires
+        # metadata.name == spec.serviceName. Naming the release, the controller
+        # and the service all "atm10" makes that line up on the chart defaults.
+        type: statefulset
+        # mc-router owns this number at runtime. It is 1 here so the first
+        # reconcile installs the modpack; a Helm upgrade will reset it to 1 and
+        # the idle timer will put it back to 0 within the hour.
+        replicas: 1
+        containers:
+          app:
+            image:
+              repository: docker.io/itzg/minecraft-server
+              tag: java21
+            env:
+              EULA: "TRUE"
+              TZ: Europe/London
+              UID: "1000"
+              GID: "1000"
+              TYPE: AUTO_CURSEFORGE
+              CF_SLUG: all-the-mods-10
+              # 400+ mods. Aikar's flags matter at this heap size - the default
+              # collector settings produce visible tick lag on a pack this big.
+              MEMORY: 10G
+              USE_AIKAR_FLAGS: "true"
+              MOTD: All the Mods 10
+              LEVEL: world
+              DIFFICULTY: normal
+              MAX_PLAYERS: "10"
+              ONLINE_MODE: "true"
+              VIEW_DISTANCE: "10"
+              SIMULATION_DISTANCE: "6"
+            probes:
+              # A cold start installs 400+ mods before the server even begins
+              # loading, so nothing else may run until this passes. 15s x 100 =
+              # a 25 minute budget for the first boot.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  initialDelaySeconds: 60
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 100
+              # This is what mc-router's dial loop is really waiting on, so
+              # "ready" has to mean "mods loaded", not "process alive".
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  periodSeconds: 15
+                  timeoutSeconds: 10
+                  failureThreshold: 4
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: ["mc-health"]
+                  periodSeconds: 60
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "SETUID", "SETGID", "DAC_OVERRIDE", "FOWNER"]
+            resources:
+              requests:
+                cpu: "1"
+                memory: 12Gi
+              limits:
+                memory: 14Gi
+    defaultPodOptions:
+      # Scaling to 0 sends SIGTERM, which the entrypoint turns into a graceful
+      # stop. A pack this size can take minutes to flush chunks, and the 30s
+      # default would SIGKILL mid-save.
+      terminationGracePeriodSeconds: 300
+      securityContext:
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    service:
+      app:
+        annotations:
+          mc-router.itzg.me/defaultServer: "true"
+          mc-router.itzg.me/autoScaleUp: "true"
+          mc-router.itzg.me/autoScaleDown: "true"
+          # Without these the server just shows as an unreachable red X while
+          # asleep. They are the difference between "off" and "broken".
+          mc-router.itzg.me/autoScaleAsleepMOTD: "§7Asleep §8- §fjoin once to wake it (~4 min)"
+          mc-router.itzg.me/autoScaleLoadingMOTD: "§eWaking up §8- §7refresh in a few minutes"
+          # Deliberately under the Java client's own 30s connect timeout, so the
+          # first join fails cleanly on our side rather than hanging.
+          mc-router.itzg.me/autoScaleWaitTimeout: "25s"
+        ports:
+          # mc-router resolves the backend port by name: "mc-router" first, then
+          # "minecraft", then a bare 25565 fallback.
+          minecraft:
+            port: 25565
+            protocol: TCP
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 40Gi
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data

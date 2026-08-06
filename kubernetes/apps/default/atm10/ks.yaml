@@ -1,0 +1,31 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: atm10
+spec:
+  interval: 1h
+  dependsOn:
+    - name: mc-router
+  path: ./kubernetes/apps/default/atm10/app
+  postBuild:
+    substitute:
+      APP: atm10
+      APP_PVC: atm10
+      # 05:20 - well outside play hours, and the mover gets a quiet PVC because
+      # the server is almost certainly scaled to zero by then.
+      VOLSYNC_SCHEDULE: "20 5 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: default
+  wait: false

@@ -1,0 +1,18 @@
+---
+# Java clients enter through the envoy-internal VIP, same as Bedrock does on
+# 19132. TCPRoute has no hostname matching, so the port alone selects the
+# backend - which is exactly why any *.iacob.uk name works here.
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: mc-router
+  namespace: default
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: minecraft-java
+  rules:
+    - backendRefs:
+        - name: mc-router
+          port: 25565

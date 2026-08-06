@@ -118,6 +118,12 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: minecraft-java
+      protocol: TCP
+      port: 25565
+      allowedRoutes:
+        namespaces:
+          from: All
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy

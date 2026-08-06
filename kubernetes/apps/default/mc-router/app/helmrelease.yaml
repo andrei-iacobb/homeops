@@ -1,0 +1,54 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mc-router
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mc-router
+  interval: 1h
+  values:
+    controllers:
+      mc-router:
+        serviceAccount:
+          name: mc-router
+        containers:
+          app:
+            image:
+              repository: docker.io/itzg/mc-router
+              tag: 1.45.4
+            args:
+              - -in-kube-cluster
+              - -kube-namespace=default
+              - -auto-scale-up
+              - -auto-scale-down
+              # Long enough that a client crash, a disconnect or an AFK stretch
+              # never costs a 4 minute reboot. The point is reclaiming the heap
+              # for the days nobody plays, not the last half hour of an evening.
+              - -auto-scale-down-after=45m
+              # Bounds how long a status ping waits on a Service with zero
+              # endpoints before the asleep MOTD is synthesised.
+              - -backend-dial-timeout=1s
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+    service:
+      app:
+        ports:
+          minecraft:
+            port: 25565
+            protocol: TCP

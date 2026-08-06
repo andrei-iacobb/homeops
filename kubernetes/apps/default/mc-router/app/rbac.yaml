@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mc-router
+  namespace: default
+---
+# Namespaced on purpose - mc-router runs with -kube-namespace=default, so it has
+# no business seeing workloads anywhere else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mc-router
+  namespace: default
+rules:
+  # Discovers backends by watching for the mc-router.itzg.me/* annotations.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["watch", "list"]
+  # Scaling 0 <-> 1. patch is the atomic path; without it mc-router falls back
+  # to get+update and logs a warning.
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["watch", "list", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets/scale"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mc-router
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: mc-router
+subjects:
+  - kind: ServiceAccount
+    name: mc-router
+    namespace: default
