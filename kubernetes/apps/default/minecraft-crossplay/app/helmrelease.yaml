@@ -53,6 +53,12 @@ spec:
                 https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.1-dev+16-f6f13fd.jar
                 https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.1-dev+16-f6f13fd.jar
                 https://cdn.modrinth.com/data/fALzjamp/versions/MdY6JATr/Chunky-Bukkit-1.5.3.jar
+                https://cdn.modrinth.com/data/oLV8Vvxy/versions/z9Ixab2u/prism-paper-v4.4.jar
+              # Prism is the grief logger - CoreProtect's 24.0 jar hardcodes
+              # LATEST_VERSION = "26.1.2" and calls disablePlugin() on anything
+              # newer, so it would silently log nothing. Prism only knows about
+              # events after it is installed; there is no retroactive history.
+              #
               # No spark jar: Paper 26.2 bundles the profiler and refuses to
               # load the standalone plugin ("this server bundles the spark
               # profiler"). It is already running - /spark works as-is.

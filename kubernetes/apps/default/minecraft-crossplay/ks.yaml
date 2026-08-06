@@ -10,7 +10,10 @@ spec:
     substitute:
       APP: minecraft-crossplay
       APP_PVC: minecraft-crossplay
-      VOLSYNC_SCHEDULE: "35 3 * * *"
+      # Every 6h rather than nightly - this is the world people actually build
+      # in, and restic dedupes, so the extra runs cost only changed chunks.
+      # Caps worst-case loss at 6h if the world itself has to be restored.
+      VOLSYNC_SCHEDULE: "35 */6 * * *"
       MOVER_UID: "1000"
       MOVER_GID: "1000"
     substituteFrom:
