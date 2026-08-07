@@ -71,6 +71,16 @@ spec:
                   secretKeyRef:
                     name: postgres-secret
                     key: FIREFLY_DB_PASSWORD
+              PLANUM_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: PLANUM_DB_PASSWORD
+              POSTPLAN_DB_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: postgres-secret
+                    key: POSTPLAN_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true

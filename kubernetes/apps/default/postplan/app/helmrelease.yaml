@@ -1,0 +1,109 @@
+---
+# Postplan (https://www.npmjs.com/package/postplan) - static HTML draft
+# publishing for agents. No official container image; the npm package ships
+# the server, so an init container installs the pinned version into an
+# emptyDir and the app container runs it directly.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postplan
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: postplan
+  interval: 1h
+  values:
+    controllers:
+      postplan:
+        replicas: 1
+        strategy: RollingUpdate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          install:
+            image: &image
+              repository: docker.io/library/node
+              tag: 22-alpine
+            command:
+              - npm
+              - install
+              - --prefix
+              - /app
+              - --no-audit
+              - --no-fund
+              - postplan@0.0.4
+            env:
+              HOME: /tmp
+              npm_config_cache: /tmp/npm-cache
+            securityContext: &sc
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+        containers:
+          app:
+            image: *image
+            command:
+              - node
+              - /app/node_modules/postplan/src/server.js
+            env:
+              TZ: Europe/London
+              PORT: "3000"
+              POSTPLAN_PUBLIC_BASE_URL: https://plans.iacob.uk
+            envFrom:
+              - secretRef:
+                  name: postplan-secret
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: &port 3000
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 3
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+            securityContext: *sc
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    route:
+      app:
+        hostnames: ["plans.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      app:
+        type: emptyDir
+        globalMounts:
+          - path: /app
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

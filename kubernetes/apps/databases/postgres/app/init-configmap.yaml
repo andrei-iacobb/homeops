@@ -35,6 +35,8 @@ data:
         SELECT 'CREATE DATABASE vikunja' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'vikunja')\gexec
         SELECT 'CREATE DATABASE informate' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'informate')\gexec
         SELECT 'CREATE DATABASE firefly' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'firefly')\gexec
+        SELECT 'CREATE DATABASE planum' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'planum')\gexec
+        SELECT 'CREATE DATABASE postplan' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'postplan')\gexec
 
         -- Create users if they don't exist
         DO \$\$
@@ -66,6 +68,12 @@ data:
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'firefly') THEN
                 CREATE USER firefly WITH PASSWORD '$${FIREFLY_DB_PASSWORD}';
             END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'planum') THEN
+                CREATE USER planum WITH PASSWORD '$${PLANUM_DB_PASSWORD}';
+            END IF;
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'postplan') THEN
+                CREATE USER postplan WITH PASSWORD '$${POSTPLAN_DB_PASSWORD}';
+            END IF;
         END
         \$\$;
         
@@ -79,6 +87,8 @@ data:
         GRANT ALL PRIVILEGES ON DATABASE vikunja TO vikunja;
         GRANT ALL PRIVILEGES ON DATABASE informate TO informate;
         GRANT ALL PRIVILEGES ON DATABASE firefly TO firefly;
+        GRANT ALL PRIVILEGES ON DATABASE planum TO planum;
+        GRANT ALL PRIVILEGES ON DATABASE postplan TO postplan;
 
         ALTER DATABASE immich OWNER TO immich;
         ALTER DATABASE vaultwarden OWNER TO vaultwarden;
@@ -89,6 +99,8 @@ data:
         ALTER DATABASE vikunja OWNER TO vikunja;
         ALTER DATABASE informate OWNER TO informate;
         ALTER DATABASE firefly OWNER TO firefly;
+        ALTER DATABASE planum OWNER TO planum;
+        ALTER DATABASE postplan OWNER TO postplan;
 
         -- Connect to immich database and create required extensions
         \c immich
@@ -121,4 +133,10 @@ data:
 
         \c firefly
         GRANT ALL ON SCHEMA public TO firefly;
+
+        \c planum
+        GRANT ALL ON SCHEMA public TO planum;
+
+        \c postplan
+        GRANT ALL ON SCHEMA public TO postplan;
     EOSQL

@@ -413,6 +413,11 @@ data:
           icon: mdi-clipboard-list
           href: https://neatplan.app
           description: Cleaning operations app
+      - Postplan:
+          icon: mdi-file-document-outline
+          href: https://plans.iacob.uk
+          description: Agent HTML plan drafts
+          siteMonitor: http://postplan.default.svc.cluster.local:3000/healthz
       - Sharerr:
           icon: mdi-share-variant
           href: https://sharerr.iacob.uk/admin

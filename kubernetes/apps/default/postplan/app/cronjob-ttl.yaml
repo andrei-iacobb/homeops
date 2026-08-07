@@ -1,0 +1,55 @@
+---
+# Nightly TTL sweep: soft-delete drafts untouched for 7 days unless their
+# description contains "[keep]" (set via: postplan upload --description "[keep] ...").
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postplan-ttl
+spec:
+  schedule: "30 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: ttl
+              image: docker.io/library/postgres:16-alpine
+              command:
+                - psql
+                - $(DATABASE_URL)
+                - -v
+                - ON_ERROR_STOP=1
+                - -c
+                - >-
+                  UPDATE drafts SET deleted_at = now()
+                  WHERE deleted_at IS NULL
+                  AND updated_at < now() - interval '7 days'
+                  AND (description IS NULL OR description NOT ILIKE '%[keep]%');
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: postplan-secret
+                      key: DATABASE_URL
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
