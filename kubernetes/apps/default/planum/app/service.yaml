@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: planum
+  namespace: default
+  labels:
+    app.kubernetes.io/name: planum
+spec:
+  selector:
+    app.kubernetes.io/name: planum
+  ports:
+    - name: http
+      port: 4050
+      targetPort: http

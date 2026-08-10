@@ -23,6 +23,7 @@ resources:
   - ./outline/ks.yaml
   - ./website/ks.yaml
   - ./neatplan/ks.yaml
+  - ./planum/ks.yaml
   - ./postplan/ks.yaml
   - ./stirling-pdf/ks.yaml
   - ./vikunja/ks.yaml
