@@ -27,6 +27,10 @@ spec:
               # Ollama sizes threads from host CPU count and ignores the cgroup
               # limit; matching it to ollama's CPU limit measured 0.8 -> 11 tok/s.
               OLLAMA_NUM_THREAD: "16"
+              # CPU inference serializes in Ollama: one pipeline at a time,
+              # and a generous timeout for whatever queues behind it.
+              ARTICLE_WORKERS: "1"
+              OLLAMA_TIMEOUT_SECONDS: "900"
               DATABASE_URL: jdbc:postgresql://postgres.databases.svc.cluster.local:5432/informate
               POSTGRES_USER:
                 valueFrom:
