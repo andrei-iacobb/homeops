@@ -38,44 +38,13 @@ spec:
         - name: inbi-office
           port: 3300
 ---
-# Customer tracking portal. Same /api trick so the portal is same-origin too.
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: inbi-customer
-  labels:
-    app.kubernetes.io/name: inbi-customer
-spec:
-  parentRefs:
-    - name: envoy-external
-      namespace: network
-      sectionName: https
-  hostnames:
-    - track.iacobapp.dev
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /api
-      filters:
-        - type: URLRewrite
-          urlRewrite:
-            path:
-              type: ReplacePrefixMatch
-              replacePrefixMatch: /
-      backendRefs:
-        - name: inbi-api
-          port: 4000
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: inbi-customer
-          port: 3400
----
-# S3 endpoint. Public because the API signs URLs against this host and hands
-# them to browsers and driver tablets to fetch directly - see minio.yaml.
+# S3 endpoint - LAN only, deliberately NOT on envoy-external.
+#
+# The API signs S3 URLs and hands them to clients to fetch directly, so this
+# hostname has to be resolvable by whoever holds the URL. Keeping it off the
+# public gateway means media (defect photos, POD signatures, receipt scans)
+# only works from the LAN: a tablet on mobile data authenticates and syncs
+# fine but fails on any photo upload or view.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -84,11 +53,11 @@ metadata:
     app.kubernetes.io/name: inbi-minio
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: envoy-internal
       namespace: network
       sectionName: https
   hostnames:
-    - inbi-s3.iacobapp.dev
+    - inbi-s3.iacob.uk
   rules:
     - backendRefs:
         - name: inbi-minio

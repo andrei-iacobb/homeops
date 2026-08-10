@@ -6,5 +6,7 @@ resources:
   - ./minio.yaml
   - ./api.yaml
   - ./office.yaml
-  - ./customer.yaml
+  # Customer tracking portal is built and deployable but not wanted yet.
+  # Uncomment this line and its HTTPRoute to bring it back.
+  # - ./customer.yaml
   - ./httproute.yaml

@@ -71,16 +71,19 @@ spec:
             # /api prefix, so CORS only has to cover the office host.
             - name: API_CORS_ORIGIN
               value: https://inbi.iacobapp.dev
+            # Customer portal is not deployed yet; these stay pointed at the
+            # office host so any link the API generates lands somewhere real
+            # rather than on a dead hostname.
             - name: PUBLIC_BASE_URL
-              value: https://track.iacobapp.dev
+              value: https://inbi.iacobapp.dev
             - name: CUSTOMER_APP_BASE_URL
-              value: https://track.iacobapp.dev
+              value: https://inbi.iacobapp.dev
             - name: CUSTOMER_PORTAL_URL
-              value: https://track.iacobapp.dev
-            # Presigned URLs are signed against this host and handed to
-            # browsers and tablets, so it must be the public one.
+              value: https://inbi.iacobapp.dev
+            # Presigned URLs are signed against this host, so clients must be
+            # able to resolve it. LAN-only by choice - see httproute.yaml.
             - name: S3_ENDPOINT
-              value: https://inbi-s3.iacobapp.dev
+              value: https://inbi-s3.iacob.uk
             - name: S3_BUCKET
               value: inbi
             - name: S3_REGION
