@@ -51,7 +51,9 @@ spec:
               SESSION_TTL_HOURS: "12"
               # RSS connectors: poll cadence and per-source import cap, kept
               # low so feed imports cannot saturate the shared Ollama.
-              FEED_POLL_MINUTES: "30"
+              # Hourly: CPU summarization runs ~2-4 min/article, so a 30 min
+              # cadence left too little margin over the import rate.
+              FEED_POLL_MINUTES: "60"
               FEED_MAX_PER_POLL: "3"
             probes:
               liveness: &probes
