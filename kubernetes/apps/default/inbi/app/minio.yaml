@@ -1,0 +1,124 @@
+---
+# INBI gets its own MinIO rather than sharing the one in `databases`.
+#
+# The API hands out *presigned* S3 URLs that the browser and the driver tablet
+# fetch directly, so S3_ENDPOINT has to be a hostname clients can actually
+# reach - an in-cluster service name would produce URLs that resolve nowhere.
+# Making the shared MinIO publicly routable would put the personal buckets
+# (immich et al) on the internet behind nothing but a signature check, so this
+# client workload gets an isolated instance and only that one is exposed.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: inbi-minio
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-minio
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-hostpath
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-minio
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-minio
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: Recreate # RWO volume - never two writers
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-minio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-minio
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        # MinIO exposes a top-level directory as a bucket, so creating the
+        # directory is enough - no mc sidecar or post-install Job needed.
+        - name: create-bucket
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /data/inbi"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: minio
+          image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+          args: ["server", "/data", "--console-address", ":9001"]
+          env:
+            # Only the two it needs - envFrom would leak the DVLA/DVSA/Resend
+            # keys into this pod's environment for no reason.
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-secret
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-secret
+                  key: MINIO_ROOT_PASSWORD
+          ports:
+            - name: s3
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: s3
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: s3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: inbi-minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-minio
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-minio
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-minio
+  ports:
+    - name: s3
+      port: 9000
+      targetPort: s3
+    - name: console
+      port: 9001
+      targetPort: console

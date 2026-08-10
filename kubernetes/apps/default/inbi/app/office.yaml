@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-office
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-office
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-office
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-office
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: office
+          image: ghcr.io/andrei-iacobb/inbi-office:latest
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3300"
+            - name: HOSTNAME
+              value: 0.0.0.0
+            # Server-side calls skip the internet and go straight to the
+            # service. NEXT_PUBLIC_API_URL is baked in at image build time
+            # (Next inlines it), so it is not set here.
+            - name: API_INTERNAL_URL
+              value: http://inbi-api.default.svc.cluster.local:4000
+            - name: SESSION_COOKIE_NAME
+              value: inbi_office_session
+            - name: SESSION_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-secret
+                  key: SESSION_COOKIE_SECRET
+          ports:
+            - name: http
+              containerPort: 3300
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-office
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-office
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-office
+  ports:
+    - name: http
+      port: 3300
+      targetPort: http

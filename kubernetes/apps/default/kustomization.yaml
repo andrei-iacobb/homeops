@@ -28,6 +28,7 @@ resources:
   - ./stirling-pdf/ks.yaml
   - ./vikunja/ks.yaml
   - ./informate/ks.yaml
+  - ./inbi/ks.yaml
   - ./searxng/ks.yaml
   - ./zipline/ks.yaml
   - ./sharerr/ks.yaml

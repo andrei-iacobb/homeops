@@ -1,0 +1,131 @@
+---
+# Office app - the operator UI. `/api` on the same host is rewritten onto the
+# API service so the browser never makes a cross-origin call and no CORS
+# preflight is involved.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inbi-office
+  labels:
+    app.kubernetes.io/name: inbi-office
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - inbi.iacobapp.dev
+  rules:
+    # Longest prefix wins in Gateway API, so /api is matched ahead of /.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: inbi-api
+          port: 4000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: inbi-office
+          port: 3300
+---
+# Customer tracking portal. Same /api trick so the portal is same-origin too.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inbi-customer
+  labels:
+    app.kubernetes.io/name: inbi-customer
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - track.iacobapp.dev
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: inbi-api
+          port: 4000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: inbi-customer
+          port: 3400
+---
+# S3 endpoint. Public because the API signs URLs against this host and hands
+# them to browsers and driver tablets to fetch directly - see minio.yaml.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inbi-s3
+  labels:
+    app.kubernetes.io/name: inbi-minio
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - inbi-s3.iacobapp.dev
+  rules:
+    - backendRefs:
+        - name: inbi-minio
+          port: 9000
+---
+# LAN-side route for debugging without going out through Cloudflare.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inbi-internal
+  labels:
+    app.kubernetes.io/name: inbi-office
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - inbi.iacob.uk
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: inbi-api
+          port: 4000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: inbi-office
+          port: 3300

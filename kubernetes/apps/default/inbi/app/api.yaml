@@ -1,0 +1,130 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-api
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-api
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-api
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      initContainers:
+        # Schema migrations run from the same image so they can never drift
+        # from the code that expects them. `migrate deploy` is idempotent, so
+        # this is safe on every restart and every rollout.
+        - name: migrate
+          image: ghcr.io/andrei-iacobb/inbi-api:latest
+          imagePullPolicy: Always
+          command:
+            - npx
+            - prisma
+            - migrate
+            - deploy
+            - --schema
+            - packages/db/prisma/schema.prisma
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-secret
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      containers:
+        - name: api
+          image: ghcr.io/andrei-iacobb/inbi-api:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: inbi-secret
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: NODE_ENV
+              value: production
+            - name: API_PORT
+              value: "4000"
+            - name: API_HOST
+              value: 0.0.0.0
+            - name: API_LOG_LEVEL
+              value: info
+            # Both browser apps call the API same-origin through their own
+            # /api prefix, so CORS only has to cover the office host.
+            - name: API_CORS_ORIGIN
+              value: https://inbi.iacobapp.dev
+            - name: PUBLIC_BASE_URL
+              value: https://track.iacobapp.dev
+            - name: CUSTOMER_APP_BASE_URL
+              value: https://track.iacobapp.dev
+            - name: CUSTOMER_PORTAL_URL
+              value: https://track.iacobapp.dev
+            # Presigned URLs are signed against this host and handed to
+            # browsers and tablets, so it must be the public one.
+            - name: S3_ENDPOINT
+              value: https://inbi-s3.iacobapp.dev
+            - name: S3_BUCKET
+              value: inbi
+            - name: S3_REGION
+              value: auto
+            - name: S3_FORCE_PATH_STYLE
+              value: "true"
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-api
+  namespace: default
+  labels:
+    app.kubernetes.io/name: inbi-api
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-api
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http
