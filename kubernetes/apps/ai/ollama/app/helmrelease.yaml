@@ -43,7 +43,11 @@ spec:
                 cpu: 2000m
                 memory: 8Gi
               limits:
-                cpu: 8000m
+                # Raised from 8 cores: Ollama sizes its thread pool from the
+                # host's 32 cores and ignores the cgroup quota, so a low limit
+                # thrashed (measured 0.8 tok/s vs 11 tok/s at 16). Callers
+                # should also pass num_thread matching this value.
+                cpu: 16000m
                 memory: 96Gi
     defaultPodOptions:
       securityContext:
