@@ -98,16 +98,32 @@ spec:
   hostnames:
     - inbi.iacob.uk
   rules:
+    # Same /api/v1 split as the public route - a bare /api prefix would
+    # swallow the office app's own Next handlers (/api/logout, /api/search,
+    # /api/exports/*) into Fastify.
     - matches:
         - path:
             type: PathPrefix
-            value: /api
+            value: /api/v1
       filters:
         - type: URLRewrite
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefixMatch: /
+              replacePrefixMatch: /v1
+      backendRefs:
+        - name: inbi-api
+          port: 4000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/health
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /health
       backendRefs:
         - name: inbi-api
           port: 4000
