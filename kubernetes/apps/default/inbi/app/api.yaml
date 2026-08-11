@@ -71,12 +71,14 @@ spec:
             # /api prefix, so CORS only has to cover the office host.
             - name: API_CORS_ORIGIN
               value: https://inbi.iacobapp.dev
+            # Receipt-scan QR codes point here. The scan page lives in the
+            # office app, so the phone only ever talks to this host.
+            - name: OFFICE_APP_BASE_URL
+              value: https://inbi.iacobapp.dev
             # Customer portal is not deployed yet; these stay pointed at the
             # office host so any link the API generates lands somewhere real
             # rather than on a dead hostname.
             - name: PUBLIC_BASE_URL
-              value: https://inbi.iacobapp.dev
-            - name: CUSTOMER_APP_BASE_URL
               value: https://inbi.iacobapp.dev
             - name: CUSTOMER_PORTAL_URL
               value: https://inbi.iacobapp.dev
