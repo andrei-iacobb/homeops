@@ -136,7 +136,12 @@ spec:
               - /bin/sh
               - -c
               - |
-                apk add --no-cache curl jq >/dev/null 2>&1 || true
+                # These are runtime dependencies, not optional conveniences. If
+                # installation fails, exit so Kubernetes retries instead of
+                # leaving a healthy-looking sidecar that can never update the
+                # heatmap.
+                set -eu
+                apk add --no-cache curl jq
                 cat > /tmp/fj.sql <<'EOF'
                 SELECT COALESCE(json_object_agg(d, c), '{}'::json) FROM (SELECT to_char(to_timestamp(created_unix) AT TIME ZONE 'UTC','YYYY-MM-DD') d, count(*) c FROM action WHERE act_user_id=(SELECT id FROM "user" WHERE lower_name='andrei') AND created_unix > extract(epoch from now())::int - 31536000 GROUP BY 1) s;
                 EOF
@@ -157,6 +162,20 @@ spec:
                   fi
                   sleep 3600
                 done
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - /bin/sh
+                      - -c
+                      - find /data/gitea/public/assets/data/heatmap.json -mmin -120 -print -quit | grep -q .
+                  initialDelaySeconds: 180
+                  periodSeconds: 300
+                  timeoutSeconds: 5
+                  failureThreshold: 2
             securityContext:
               # root needed for `apk add curl jq`; sidecar only reads the DB + GitHub
               # and writes one JSON file. allowPrivilegeEscalation stays off.
