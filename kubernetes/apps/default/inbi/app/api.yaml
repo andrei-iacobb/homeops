@@ -82,9 +82,15 @@ spec:
               value: https://inbi.iacobapp.dev
             - name: CUSTOMER_PORTAL_URL
               value: https://inbi.iacobapp.dev
-            # Presigned URLs are signed against this host, so clients must be
-            # able to resolve it. LAN-only by choice - see httproute.yaml.
+            # What the API itself reads and writes through. The in-cluster
+            # service, because the LAN hostname does not resolve from a pod
+            # (CoreDNS knows nothing about *.iacob.uk).
             - name: S3_ENDPOINT
+              value: http://inbi-minio.default.svc.cluster.local:9000
+            # What client-facing presigned urls are signed against. A browser
+            # resolves this itself, so it must be the reachable name.
+            # LAN-only by choice - see httproute.yaml.
+            - name: S3_PUBLIC_ENDPOINT
               value: https://inbi-s3.iacob.uk
             - name: S3_BUCKET
               value: inbi
