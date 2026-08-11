@@ -16,17 +16,37 @@ spec:
   hostnames:
     - inbi.iacobapp.dev
   rules:
-    # Longest prefix wins in Gateway API, so /api is matched ahead of /.
+    # Match /api/v1 rather than bare /api. The office app serves its OWN Next
+    # route handlers under /api (/api/logout, /api/search, /api/exports/*,
+    # /api/expenses/receipts.csv) - a bare /api rule swallows all of them and
+    # 404s them against Fastify. Every Fastify route lives under /v1, so this
+    # prefix separates the two cleanly. Longest prefix wins, so these are
+    # matched ahead of /.
     - matches:
         - path:
             type: PathPrefix
-            value: /api
+            value: /api/v1
       filters:
         - type: URLRewrite
           urlRewrite:
             path:
               type: ReplacePrefixMatch
-              replacePrefixMatch: /
+              replacePrefixMatch: /v1
+      backendRefs:
+        - name: inbi-api
+          port: 4000
+    # Convenience only: lets the deployment be health-checked from outside.
+    # Does not collide - the office app has no /api/health handler.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/health
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /health
       backendRefs:
         - name: inbi-api
           port: 4000
