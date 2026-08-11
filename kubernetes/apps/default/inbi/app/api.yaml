@@ -75,6 +75,11 @@ spec:
             # office app, so the phone only ever talks to this host.
             - name: OFFICE_APP_BASE_URL
               value: https://inbi.iacobapp.dev
+            # Media urls (photos, signatures, PODs) are built against this and
+            # handed to browsers and tablets. Includes the /api prefix the
+            # gateway strips, so links resolve as /api/v1/media/<token>.
+            - name: API_PUBLIC_BASE_URL
+              value: https://inbi.iacobapp.dev/api
             # Customer portal is not deployed yet; these stay pointed at the
             # office host so any link the API generates lands somewhere real
             # rather than on a dead hostname.
