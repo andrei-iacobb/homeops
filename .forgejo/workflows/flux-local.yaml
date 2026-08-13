@@ -57,12 +57,9 @@ jobs:
           CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
-          # The dind network has no IPv6 route, while flate's static Go resolver
-          # can select GitHub Pages' AAAA record without falling back to IPv4.
-          BACKUBE_IPV4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
-            ahostsv4 backube.github.io | awk 'NR == 1 { print $1 }')
-          test -n "$BACKUBE_IPV4"
-          docker run --rm --add-host "backube.github.io:$BACKUBE_IPV4" \
+          # The dind network is IPv4-only. Advertising an unusable IPv6 stack
+          # lets flate's static Go resolver select AAAA records without fallback.
+          docker run --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 \
             -v "$VOL":/w "$FLATE_IMAGE" \
             test all --path /w/pr --cache-dir /tmp/flate-cache --no-progress
 
@@ -93,10 +90,7 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
-          BACKUBE_IPV4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
-            ahostsv4 backube.github.io | awk 'NR == 1 { print $1 }')
-          test -n "$BACKUBE_IPV4"
-          docker run --rm --add-host "backube.github.io:$BACKUBE_IPV4" \
+          docker run --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 \
             -v "$VOL":/w "$FLATE_IMAGE" \
             diff all \
             --path /w/pr \
