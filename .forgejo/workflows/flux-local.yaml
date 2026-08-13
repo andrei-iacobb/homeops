@@ -18,9 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLATE_IMAGE: ghcr.io/home-operations/flate:latest
+  FLATE_IMAGE: ghcr.io/home-operations/flate:0.5.0@sha256:91c31f5d64c82be1d252637ec512302120e49e19831093f2907d5679c3136d17
   GIT_IMAGE: alpine/git:latest
-  CLUSTER_PATH: kubernetes/flux/cluster
 
 jobs:
   pre-job:
@@ -59,7 +58,7 @@ jobs:
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
-            test all --path "/w/pr/${CLUSTER_PATH}" --cache-dir /tmp/flate-cache --no-progress
+            test all --path /w/pr --cache-dir /tmp/flate-cache --no-progress
 
   diff:
     name: Flux Local Diff
@@ -90,8 +89,8 @@ jobs:
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
           docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
             diff all \
-            --path "/w/pr/${CLUSTER_PATH}" \
-            --path-orig "/w/base/${CLUSTER_PATH}" \
+            --path /w/pr \
+            --path-orig /w/base \
             --cache-dir /tmp/flate-cache \
             --output gitea --no-progress | tee diff.out || true
           if [ -s diff.out ]; then
