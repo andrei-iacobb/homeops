@@ -1,0 +1,100 @@
+---
+# Disposable, synthetic sandbox storage. It is intentionally separate from the
+# live INBI database and can be rebuilt from the deterministic demo seed.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: inbi-demo-postgres
+  labels:
+    app.kubernetes.io/name: inbi-demo-postgres
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-hostpath
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-demo-postgres
+  labels:
+    app.kubernetes.io/name: inbi-demo-postgres
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-demo-postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-demo-postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: postgres
+          image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+          env:
+            - name: POSTGRES_USER
+              value: inbi_sandbox
+            - name: POSTGRES_DB
+              value: inbi_sandbox
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: POSTGRES_PASSWORD
+          ports:
+            - name: postgres
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "inbi_sandbox", "-d", "inbi_sandbox"]
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "inbi_sandbox", "-d", "inbi_sandbox"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 25m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: inbi-demo-postgres
+---
+# This short service name is a deliberate safety contract: the application
+# refuses demo reset/seed operations unless DATABASE_URL targets demo-postgres.
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-postgres
+  labels:
+    app.kubernetes.io/name: inbi-demo-postgres
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-demo-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

@@ -413,6 +413,10 @@ data:
           icon: mdi-clipboard-list
           href: https://neatplan.app
           description: Cleaning operations app
+      - INBI Sandbox:
+          icon: mdi-truck-fast-outline
+          href: https://inbi-demo.iacobapp.dev
+          description: Interactive Office and Tablet demo
       - Postplan:
           icon: mdi-file-document-outline
           href: https://plans.iacob.uk

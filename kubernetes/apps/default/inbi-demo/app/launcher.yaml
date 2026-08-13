@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-demo-launcher
+  labels:
+    app.kubernetes.io/name: inbi-demo-launcher
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-demo-launcher
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-demo-launcher
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: launcher
+          image: ghcr.io/andrei-iacobb/inbi-fleet-launcher:1523106668dbe9e5dc68380003af07d13108f08d@sha256:1bd49d5710e6befd5450f26fcfa93fff3d865fd3f343fb26b5be94ec8d2e21c0
+          env:
+            - name: DEMO_API_URL
+              value: http://inbi-demo-api:4000
+            - name: DEMO_API_HEALTH_URL
+              value: http://inbi-demo-api:4000/readyz
+            - name: DEMO_OFFICE_URL
+              value: https://inbi-demo-office.iacobapp.dev/demo
+            - name: DEMO_OFFICE_HEALTH_URL
+              value: http://inbi-demo-office:3300/health
+            - name: DEMO_DRIVER_URL
+              value: https://inbi-demo-tablet.iacobapp.dev
+            - name: DEMO_DRIVER_HEALTH_URL
+              value: http://inbi-demo-tablet:8080/healthz
+            - name: DEMO_PUBLIC_ORIGIN
+              value: https://inbi-demo.iacobapp.dev
+            - name: DEMO_RESET_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: DEMO_RESET_TOKEN
+          ports:
+            - name: http
+              containerPort: 4200
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-demo-launcher
+  labels:
+    app.kubernetes.io/name: inbi-demo-launcher
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-demo-launcher
+  ports:
+    - name: http
+      port: 4200
+      targetPort: http

@@ -29,6 +29,7 @@ resources:
   - ./vikunja/ks.yaml
   - ./informate/ks.yaml
   - ./inbi/ks.yaml
+  - ./inbi-demo/ks.yaml
   - ./searxng/ks.yaml
   - ./zipline/ks.yaml
   - ./sharerr/ks.yaml

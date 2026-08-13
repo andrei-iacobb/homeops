@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-demo-tablet
+  labels:
+    app.kubernetes.io/name: inbi-demo-tablet
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-demo-tablet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-demo-tablet
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: tablet
+          image: ghcr.io/andrei-iacobb/inbi-fleet-driver-demo:1523106668dbe9e5dc68380003af07d13108f08d@sha256:7277805d0e7cfa0157bc8a57ef855921bcd87ee46e0bf36f187845a577257b0a
+          env:
+            - name: DEMO_LAUNCHER_ORIGIN
+              value: https://inbi-demo.iacobapp.dev
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-demo-tablet
+  labels:
+    app.kubernetes.io/name: inbi-demo-tablet
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-demo-tablet
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -1,0 +1,194 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-demo-api
+  labels:
+    app.kubernetes.io/name: inbi-demo-api
+spec:
+  # Reset coordination is process-local, so the sandbox intentionally has one
+  # API writer. Do not increase this without moving the reset gate to Postgres.
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-demo-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-demo-api
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+          command:
+            - sh
+            - -c
+            - until pg_isready -h demo-postgres -U inbi_sandbox -d inbi_sandbox; do sleep 2; done
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+        - name: migrate
+          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:1523106668dbe9e5dc68380003af07d13108f08d@sha256:65745afcd56b3b3d9841ae315d17ee3f6ce8c5fe8d99f0b26524b4a4dadddabf
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+        - name: wait-for-minio
+          image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+          command:
+            - sh
+            - -c
+            - until mc alias set demo http://inbi-demo-minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do sleep 2; done; mc mb --ignore-existing demo/inbi-demo-media
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: MINIO_ROOT_PASSWORD
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+        - name: seed
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:1523106668dbe9e5dc68380003af07d13108f08d@sha256:7e1c1a22b8fdcbfdccada54f721ba117b496b2f1b5e71d2101f3895d7c0a191d
+          command: ["node", "dist/demo-seed.js"]
+          envFrom:
+            - secretRef:
+                name: inbi-demo-secret
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DEMO_MODE
+              value: "1"
+            - name: DEMO_ORG_SLUG
+              value: inbi-demo
+            - name: DEMO_DEVICE_ID
+              value: inbi-demo-tablet-01
+            - name: DEMO_OFFICE_EMAIL
+              value: presenter@demo.invalid
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: api
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:1523106668dbe9e5dc68380003af07d13108f08d@sha256:7e1c1a22b8fdcbfdccada54f721ba117b496b2f1b5e71d2101f3895d7c0a191d
+          envFrom:
+            - secretRef:
+                name: inbi-demo-secret
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: NODE_ENV
+              value: production
+            - name: DEMO_MODE
+              value: "1"
+            - name: DEMO_ORG_SLUG
+              value: inbi-demo
+            - name: DEMO_DEVICE_ID
+              value: inbi-demo-tablet-01
+            - name: DEMO_OFFICE_EMAIL
+              value: presenter@demo.invalid
+            - name: API_HOST
+              value: 0.0.0.0
+            - name: API_PORT
+              value: "4000"
+            - name: API_LOG_LEVEL
+              value: info
+            - name: API_CORS_ORIGIN
+              value: https://inbi-demo.iacobapp.dev,https://inbi-demo-office.iacobapp.dev,https://inbi-demo-tablet.iacobapp.dev
+            - name: API_PUBLIC_BASE_URL
+              value: https://inbi-demo.iacobapp.dev/api
+            - name: OFFICE_APP_BASE_URL
+              value: https://inbi-demo-office.iacobapp.dev
+            - name: PUBLIC_BASE_URL
+              value: https://inbi-demo.iacobapp.dev
+            - name: S3_ENDPOINT
+              value: http://inbi-demo-minio:9000
+            - name: S3_BUCKET
+              value: inbi-demo-media
+            - name: S3_REGION
+              value: us-east-1
+            - name: S3_FORCE_PATH_STYLE
+              value: "true"
+            - name: TRACKER_MOCK
+              value: "1"
+            - name: TRAFFIC_MOCK
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 4000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-demo-api
+  labels:
+    app.kubernetes.io/name: inbi-demo-api
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-demo-api
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http

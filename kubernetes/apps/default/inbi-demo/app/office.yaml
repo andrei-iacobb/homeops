@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inbi-demo-office
+  labels:
+    app.kubernetes.io/name: inbi-demo-office
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inbi-demo-office
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inbi-demo-office
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: office
+          image: ghcr.io/andrei-iacobb/inbi-fleet-office-demo:1523106668dbe9e5dc68380003af07d13108f08d@sha256:020dc0971416cee5fd6efa1f6acf21abf388a9a0da5aca7050b93105ba317a32
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: NODE_ENV
+              value: production
+            - name: DEMO_MODE
+              value: "1"
+            - name: DEMO_LOBBY_URL
+              value: https://inbi-demo.iacobapp.dev
+            - name: DEMO_OFFICE_EMAIL
+              value: presenter@demo.invalid
+            - name: DEMO_OFFICE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: DEMO_OFFICE_PASSWORD
+            - name: API_INTERNAL_URL
+              value: http://inbi-demo-api:4000
+            - name: SESSION_COOKIE_NAME
+              value: inbi_demo_session
+            - name: SESSION_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: inbi-demo-secret
+                  key: SESSION_COOKIE_SECRET
+          ports:
+            - name: http
+              containerPort: 3300
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/apps/office/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: next-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inbi-demo-office
+  labels:
+    app.kubernetes.io/name: inbi-demo-office
+spec:
+  selector:
+    app.kubernetes.io/name: inbi-demo-office
+  ports:
+    - name: http
+      port: 3300
+      targetPort: http
