@@ -20,8 +20,8 @@ spec:
           app:
             image:
               repository: ghcr.io/andrei-iacobb/holden-systems-site
-              # Next.js 16.3 standalone image built from the merged app commit.
-              tag: 27c564e@sha256:342d0ee165752b0ec3261fe2fc84cb826f654555249db3a329c808fe2b0af9c9
+              # Next.js 16.3 standalone image with the Mapbox Activity lifecycle fix.
+              tag: 3020d9d@sha256:fa9ac0d08773921899cc75ad24927a543c888858d77dcf73a4ff99df79d68492
             probes:
               liveness: &probes
                 enabled: true
