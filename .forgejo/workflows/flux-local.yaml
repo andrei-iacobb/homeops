@@ -19,7 +19,7 @@ concurrency:
 
 env:
   FLATE_IMAGE: ghcr.io/home-operations/flate:0.5.0@sha256:91c31f5d64c82be1d252637ec512302120e49e19831093f2907d5679c3136d17
-  GIT_IMAGE: alpine/git:latest
+  GIT_IMAGE: alpine/git:latest@sha256:729da2347ce652f30476b064198577fe12e1147e58499be9f343039343ef2cee
 
 jobs:
   pre-job:
@@ -57,7 +57,13 @@ jobs:
           CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
-          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
+          # The dind network has no IPv6 route, while flate's static Go resolver
+          # can select GitHub Pages' AAAA record without falling back to IPv4.
+          BACKUBE_IPV4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+            ahostsv4 backube.github.io | awk 'NR == 1 { print $1 }')
+          test -n "$BACKUBE_IPV4"
+          docker run --rm --add-host "backube.github.io:$BACKUBE_IPV4" \
+            -v "$VOL":/w "$FLATE_IMAGE" \
             test all --path /w/pr --cache-dir /tmp/flate-cache --no-progress
 
   diff:
@@ -87,7 +93,11 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
-          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
+          BACKUBE_IPV4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+            ahostsv4 backube.github.io | awk 'NR == 1 { print $1 }')
+          test -n "$BACKUBE_IPV4"
+          docker run --rm --add-host "backube.github.io:$BACKUBE_IPV4" \
+            -v "$VOL":/w "$FLATE_IMAGE" \
             diff all \
             --path /w/pr \
             --path-orig /w/base \
