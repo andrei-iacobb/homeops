@@ -18,9 +18,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLATE_IMAGE: ghcr.io/home-operations/flate:latest
-  GIT_IMAGE: alpine/git:latest
-  CLUSTER_PATH: kubernetes/flux/cluster
+  FLATE_IMAGE: ghcr.io/home-operations/flate:0.5.0@sha256:91c31f5d64c82be1d252637ec512302120e49e19831093f2907d5679c3136d17
+  GIT_IMAGE: alpine/git:latest@sha256:729da2347ce652f30476b064198577fe12e1147e58499be9f343039343ef2cee
 
 jobs:
   pre-job:
@@ -58,8 +57,19 @@ jobs:
           CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
-          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
-            test all --path "/w/pr/${CLUSTER_PATH}" --cache-dir /tmp/flate-cache --no-progress
+          # The dind network is IPv4-only, while flate is a static Go binary
+          # whose resolver can select unusable AAAA records without fallback.
+          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          host_args=()
+          for source_host in "${source_hosts[@]}"; do
+            source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+              ahostsv4 "$source_host" | awk 'NR == 1 { print $1 }')
+            test -n "$source_ipv4"
+            host_args+=(--add-host "$source_host:$source_ipv4")
+          done
+          docker run --rm "${host_args[@]}" \
+            -v "$VOL":/w "$FLATE_IMAGE" \
+            test all --path /w/pr --cache-dir /tmp/flate-cache --no-progress
 
   diff:
     name: Flux Local Diff
@@ -88,13 +98,24 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
-          docker run --rm -v "$VOL":/w "$FLATE_IMAGE" \
+          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          host_args=()
+          for source_host in "${source_hosts[@]}"; do
+            source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+              ahostsv4 "$source_host" | awk 'NR == 1 { print $1 }')
+            test -n "$source_ipv4"
+            host_args+=(--add-host "$source_host:$source_ipv4")
+          done
+          docker run --rm "${host_args[@]}" \
+            -v "$VOL":/w "$FLATE_IMAGE" \
             diff all \
-            --path "/w/pr/${CLUSTER_PATH}" \
-            --path-orig "/w/base/${CLUSTER_PATH}" \
+            --path /w/pr \
+            --path-orig /w/base \
             --cache-dir /tmp/flate-cache \
             --output gitea --no-progress | tee diff.out || true
           if [ -s diff.out ]; then
+            # Markdown backticks and jq's $b are deliberately literal here.
+            # shellcheck disable=SC2016
             BODY=$(printf '### Flux Diff\n```diff\n%s\n```' "$(head -c 60000 diff.out)")
             jq -n --arg b "$BODY" '{body:$b}' | curl -s -X POST \
               "${SERVER}/api/v1/repos/${REPO}/issues/${PR_NUMBER}/comments" \
