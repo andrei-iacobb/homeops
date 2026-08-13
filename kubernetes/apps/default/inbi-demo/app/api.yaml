@@ -70,10 +70,15 @@ spec:
                 secretKeyRef:
                   name: inbi-demo-secret
                   key: MINIO_ROOT_PASSWORD
+            - name: MC_CONFIG_DIR
+              value: /tmp/.mc
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
         - name: seed
           image: ghcr.io/andrei-iacobb/inbi-fleet-api:1523106668dbe9e5dc68380003af07d13108f08d@sha256:7e1c1a22b8fdcbfdccada54f721ba117b496b2f1b5e71d2101f3895d7c0a191d
           command: ["node", "dist/demo-seed.js"]
