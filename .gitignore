@@ -1,5 +1,7 @@
 claude.md
+.claude/
 .playwright-mcp/
+**/.DS_Store
 
 # Secrets
 *.pub
