@@ -59,7 +59,7 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           # The dind network is IPv4-only, while flate is a static Go binary
           # whose resolver can select unusable AAAA records without fallback.
-          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          source_hosts=(backube.github.io grafana.github.io kubernetes-sigs.github.io charts.goauthentik.io cdn01.quay.io)
           host_args=()
           for source_host in "${source_hosts[@]}"; do
             source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
@@ -98,7 +98,7 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
-          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          source_hosts=(backube.github.io grafana.github.io kubernetes-sigs.github.io charts.goauthentik.io cdn01.quay.io)
           host_args=()
           for source_host in "${source_hosts[@]}"; do
             source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \

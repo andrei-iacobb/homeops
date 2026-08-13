@@ -24,19 +24,11 @@ spec:
       imagePullSecrets:
         - name: ghcr-pull-secret
       initContainers:
-        # Schema migrations run from the same image so they can never drift
-        # from the code that expects them. `migrate deploy` is idempotent, so
-        # this is safe on every restart and every rollout.
+        # The dedicated migrator target is built from the same commit as the
+        # API and owns the exact Prisma 7 migration command in its image CMD.
         - name: migrate
-          image: ghcr.io/andrei-iacobb/inbi-api:latest
-          imagePullPolicy: Always
-          command:
-            - npx
-            - prisma
-            - migrate
-            - deploy
-            - --schema
-            - packages/db/prisma/schema.prisma
+          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:aeaeff58463449496cf4e5e699baca8a09079153b66a30b227384fd565d9b912
+          imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -51,8 +43,8 @@ spec:
               memory: 512Mi
       containers:
         - name: api
-          image: ghcr.io/andrei-iacobb/inbi-api:latest
-          imagePullPolicy: Always
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:937ad1e2eb4692f99cca6b608426ebb39f57e73b09e1cad06cdb15625a5564a8
+          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: inbi-secret
@@ -115,7 +107,7 @@ spec:
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /health
+              path: /readyz
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
