@@ -57,9 +57,17 @@ jobs:
           CLONE_URL="https://token:${TOKEN}@${SERVER#https://}/${REPO}.git"
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
-          # The dind network is IPv4-only. Advertising an unusable IPv6 stack
-          # lets flate's static Go resolver select AAAA records without fallback.
-          docker run --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 \
+          # The dind network is IPv4-only, while flate is a static Go binary
+          # whose resolver can select unusable AAAA records without fallback.
+          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          host_args=()
+          for source_host in "${source_hosts[@]}"; do
+            source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+              ahostsv4 "$source_host" | awk 'NR == 1 { print $1 }')
+            test -n "$source_ipv4"
+            host_args+=(--add-host "$source_host:$source_ipv4")
+          done
+          docker run --rm "${host_args[@]}" \
             -v "$VOL":/w "$FLATE_IMAGE" \
             test all --path /w/pr --cache-dir /tmp/flate-cache --no-progress
 
@@ -90,7 +98,15 @@ jobs:
             clone --depth 1 --branch "$HEAD_REF" "$CLONE_URL" /w/pr
           docker run --rm -v "$VOL":/w "$GIT_IMAGE" \
             clone --depth 1 --branch "$BASE_REF" "$CLONE_URL" /w/base
-          docker run --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 \
+          source_hosts=(backube.github.io grafana.github.io charts.goauthentik.io cdn01.quay.io)
+          host_args=()
+          for source_host in "${source_hosts[@]}"; do
+            source_ipv4=$(docker run --rm --entrypoint getent "$GIT_IMAGE" \
+              ahostsv4 "$source_host" | awk 'NR == 1 { print $1 }')
+            test -n "$source_ipv4"
+            host_args+=(--add-host "$source_host:$source_ipv4")
+          done
+          docker run --rm "${host_args[@]}" \
             -v "$VOL":/w "$FLATE_IMAGE" \
             diff all \
             --path /w/pr \
@@ -98,6 +114,8 @@ jobs:
             --cache-dir /tmp/flate-cache \
             --output gitea --no-progress | tee diff.out || true
           if [ -s diff.out ]; then
+            # Markdown backticks and jq's $b are deliberately literal here.
+            # shellcheck disable=SC2016
             BODY=$(printf '### Flux Diff\n```diff\n%s\n```' "$(head -c 60000 diff.out)")
             jq -n --arg b "$BODY" '{body:$b}' | curl -s -X POST \
               "${SERVER}/api/v1/repos/${REPO}/issues/${PR_NUMBER}/comments" \
