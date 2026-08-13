@@ -25,9 +25,18 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      initContainers:
+        # Prisma migrations must land before the Next 16.3 app boots; the
+        # migrator image's default CMD is `prisma migrate deploy`.
+        - name: migrate
+          image: ghcr.io/andrei-iacobb/neatplan-migrator:efa33e5
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: neatplan-secret
       containers:
         - name: neatplan
-          image: ghcr.io/andrei-iacobb/neatplan:d968dd5
+          image: ghcr.io/andrei-iacobb/neatplan:efa33e5
           imagePullPolicy: Always
           envFrom:
             - secretRef:
@@ -44,7 +53,8 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 6
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /api/readyz
               port: http
             initialDelaySeconds: 30
             periodSeconds: 5
