@@ -25,8 +25,8 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: office
-          image: ghcr.io/andrei-iacobb/inbi-office:latest
-          imagePullPolicy: Always
+          image: ghcr.io/andrei-iacobb/inbi-fleet-office:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:6e31ee536924383f5190fdd717b65710822ee8186c3ec4f65e938f7417b93198
+          imagePullPolicy: IfNotPresent
           env:
             - name: TZ
               value: Europe/London
@@ -54,13 +54,13 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /login
+              path: /health
               port: http
             initialDelaySeconds: 20
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: /login
+              path: /health
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
