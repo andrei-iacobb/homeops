@@ -48,7 +48,9 @@ spec:
               containerPort: 4200
           livenessProbe:
             httpGet:
-              path: /healthz
+              # Dependency failures should make the lobby unready, not restart
+              # an otherwise healthy launcher while Postgres/API are starting.
+              path: /
               port: http
             initialDelaySeconds: 20
             periodSeconds: 15

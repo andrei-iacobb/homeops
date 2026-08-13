@@ -47,6 +47,11 @@ spec:
               value: inbi_sandbox
             - name: POSTGRES_DB
               value: inbi_sandbox
+            # Initialise beneath the mounted volume root. The unprivileged
+            # postgres user owns this subdirectory and does not need to chmod
+            # the OpenEBS mount point itself.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
