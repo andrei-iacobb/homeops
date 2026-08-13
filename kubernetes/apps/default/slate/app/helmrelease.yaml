@@ -65,6 +65,11 @@ spec:
         ports:
           http:
             port: *port
+          # Next 16.3 server splits the tldraw sync WebSocket onto its own port
+          # (SYNC_PORT, default 3001); same-port upgrades conflict with Next's
+          # own upgrade handler.
+          sync:
+            port: 3001
 
     route:
       internal:
@@ -74,6 +79,13 @@ spec:
             namespace: network
             sectionName: https
         rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api/sync
+            backendRefs:
+              - identifier: app
+                port: 3001
           - backendRefs:
               - identifier: app
                 port: *port
