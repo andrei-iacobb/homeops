@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: docker.io/itzg/mc-router
-              tag: 1.46.2
+              tag: 1.46.3
             args:
               - -in-kube-cluster
               - -kube-namespace=default
