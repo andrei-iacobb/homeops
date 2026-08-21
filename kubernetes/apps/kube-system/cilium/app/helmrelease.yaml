@@ -44,7 +44,7 @@ spec:
       enabled: true
     loadBalancer:
       algorithm: maglev
-      mode: "dsr"
+      mode: "snat"
     localRedirectPolicy: true
     operator:
       dashboards:
