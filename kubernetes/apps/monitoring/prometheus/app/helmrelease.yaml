@@ -45,28 +45,58 @@ spec:
         global:
           resolve_timeout: 5m
         route:
-          receiver: "n8n-webhook"
+          # Default: everything goes to Hermes for triage. Hermes classifies the
+          # alert light vs heavy, auto-fixes the light ones, and only pings
+          # Discord for the ones that actually need Andrei.
+          receiver: "hermes-triage"
           group_by: ["alertname", "namespace"]
           group_wait: 30s
           group_interval: 5m
           repeat_interval: 12h
           routes:
             - matchers:
-                - severity="critical"
-              receiver: "n8n-webhook"
-              repeat_interval: 1h
-            - matchers:
                 - severity="info"
               receiver: "null"
             - matchers:
                 - alertname="InfoInhibitor"
               receiver: "null"
+            - matchers:
+                - alertname="Watchdog"
+              receiver: "null"
+            # Criticals are deliberately fanned out to BOTH paths: straight to
+            # Discord (continue: true) so a broken or unreachable triage pipeline
+            # can never silently swallow a critical alert, and then on to Hermes
+            # for triage. Warnings - the crash-loop/OOM noise - go to Hermes only.
+            - matchers:
+                - severity="critical"
+              receiver: "n8n-webhook"
+              repeat_interval: 1h
+              continue: true
+            - matchers:
+                - severity="critical"
+              receiver: "hermes-triage"
+              repeat_interval: 1h
         receivers:
           - name: "null"
+          - name: "hermes-triage"
+            webhook_configs:
+              # Hermes Agent webhook gateway on the hermes-agent VM (192.168.1.73).
+              # Authenticated with a shared token; Hermes' webhook adapter accepts
+              # it via the X-Gitlab-Token scheme (a plain constant-time compare),
+              # which is the only scheme Alertmanager can satisfy - it cannot HMAC
+              # its own body. Token is mounted from the alertmanager-hermes-webhook
+              # secret, never inlined here.
+              - url: "http://192.168.1.73:8644/webhooks/alertmanager"
+                send_resolved: false
+                http_config:
+                  http_headers:
+                    X-Gitlab-Token:
+                      files:
+                        - /etc/alertmanager/secrets/alertmanager-hermes-webhook/token
           - name: "n8n-webhook"
             webhook_configs:
-              # n8n workflow webhook — create a workflow in n8n with a Webhook trigger
-              # to forward alerts to Discord/Telegram/email/etc.
+              # n8n workflow -> Discord. Now only used for critical alerts, as the
+              # always-delivered safety net behind Hermes triage.
               - url: "http://n8n.default.svc.cluster.local:5678/webhook/alertmanager"
                 send_resolved: true
         inhibit_rules:
@@ -76,6 +106,10 @@ spec:
               - severity="warning"
             equal: ["alertname", "namespace"]
       alertmanagerSpec:
+        # Mounted at /etc/alertmanager/secrets/alertmanager-hermes-webhook/token
+        # and read by the hermes-triage receiver's X-Gitlab-Token header.
+        secrets:
+          - alertmanager-hermes-webhook
         storage:
           volumeClaimTemplate:
             spec:

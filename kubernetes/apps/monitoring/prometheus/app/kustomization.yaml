@@ -6,4 +6,5 @@ resources:
   - helmrelease.yaml
   - httproute.yaml
   - secret.sops.yaml
+  - alertmanager-secret.sops.yaml
   - prometheusrules.yaml
