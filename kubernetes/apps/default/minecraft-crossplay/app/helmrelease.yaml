@@ -50,8 +50,8 @@ spec:
                 https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.11.0/PAPER/ViaBackwards-5.11.0.jar
                 https://download.luckperms.net/1658/bukkit/loader/LuckPerms-Bukkit-5.5.71.jar
                 https://cdn.modrinth.com/data/ayRaM8J7/versions/cLNipSgw/VaultUnlocked-2.20.2.jar
-                https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsX-2.22.1-dev+21-d5dc7e3.jar
-                https://ci.ender.zone/job/EssentialsX/lastSuccessfulBuild/artifact/jars/EssentialsXSpawn-2.22.1-dev+21-d5dc7e3.jar
+                https://ci.ender.zone/job/EssentialsX/1825/artifact/jars/EssentialsX-2.22.1-dev+21-d5dc7e3.jar
+                https://ci.ender.zone/job/EssentialsX/1825/artifact/jars/EssentialsXSpawn-2.22.1-dev+21-d5dc7e3.jar
                 https://cdn.modrinth.com/data/fALzjamp/versions/MdY6JATr/Chunky-Bukkit-1.5.3.jar
                 https://cdn.modrinth.com/data/nfGCP9fk/versions/GYdTPugT/item-nbt-api-plugin-2.16.0.jar
                 https://cdn.modrinth.com/data/oLV8Vvxy/versions/z9Ixab2u/prism-paper-v4.4.jar
@@ -67,11 +67,12 @@ spec:
               # load the standalone plugin ("this server bundles the spark
               # profiler"). It is already running - /spark works as-is.
               #
-              # The two EssentialsX URLs are Jenkins lastSuccessfulBuild paths
-              # with the build hash in the filename, so they will 404 once
-              # EssentialsX CI produces a new build. Stable 2.22.0 only declares
-              # support up to 26.1.2, so the dev build is the correct one for
-              # now - but this needs a bump when 2.22.1 releases.
+              # The two EssentialsX URLs are pinned to explicit build #1825
+              # (2026-08-23T20:40 UTC). Use build numbers instead of
+              # lastSuccessfulBuild to prevent 404 errors when new builds succeed.
+              # When EssentialsX 2.22.1 releases as stable, switch to the stable
+              # jar. Until then, rebuild this pod to pull new dev builds by
+              # updating the build number here and in the filenames above.
               # Datapacks, not mods - nothing to install client-side, so Bedrock
               # players get the same world. Every one of these was checked for
               # custom biomes: Geyser maps an unknown biome to Bedrock ID 0,
