@@ -105,6 +105,7 @@ data:
         -- Connect to immich database and create required extensions
         \c immich
         CREATE EXTENSION IF NOT EXISTS vector;
+        CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
         CREATE EXTENSION IF NOT EXISTS cube;
         CREATE EXTENSION IF NOT EXISTS earthdistance;
         CREATE EXTENSION IF NOT EXISTS unaccent;
