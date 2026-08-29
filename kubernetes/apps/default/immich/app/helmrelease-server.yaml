@@ -35,6 +35,7 @@ spec:
               IMMICH_MEDIA_LOCATION: /usr/src/app/upload
               IMMICH_ALLOW_SETUP: "false"
               IMMICH_HELMET_FILE: "true"
+              IMMICH_MACHINE_LEARNING_URL: http://immich-ml:3003
             probes:
               liveness: &probes
                 enabled: true
