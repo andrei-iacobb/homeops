@@ -13,7 +13,10 @@ data:
     http {
       access_log /dev/stdout combined;
       client_body_temp_path /tmp/client-body;
+      fastcgi_temp_path /tmp/fastcgi;
       proxy_temp_path /tmp/proxy;
+      scgi_temp_path /tmp/scgi;
+      uwsgi_temp_path /tmp/uwsgi;
 
       map $arg_slug $upload_status {
         default duplicate;
