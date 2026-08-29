@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - ./helmrelease-server.yaml
   - ./helmrelease-ml.yaml
+  - ./httproute-external-root.yaml
   - ./ocirepository.yaml
   - ./secret.sops.yaml
