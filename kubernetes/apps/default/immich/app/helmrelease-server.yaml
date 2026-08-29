@@ -61,6 +61,35 @@ spec:
               limits:
                 cpu: 4000m
                 memory: 8Gi
+          guest-proxy:
+            image:
+              repository: docker.io/nginx
+              tag: 1.31-alpine
+            command: ["/usr/sbin/nginx"]
+            args: ["-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]
+            probes:
+              liveness: &guest-proxy-probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/server/ping
+                    port: 8080
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *guest-proxy-probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -72,14 +101,36 @@ spec:
         ports:
           http:
             port: 2283
+      guest:
+        controller: immich-server
+        ports:
+          http:
+            port: 8080
     persistence:
       upload:
         type: persistentVolumeClaim
         storageClass: nfs-immich
         size: 100Gi
         accessMode: ReadWriteMany
-        globalMounts:
-          - path: /usr/src/app/upload
+        advancedMounts:
+          immich-server:
+            app:
+              - path: /usr/src/app/upload
+      guest-proxy-config:
+        type: configMap
+        name: immich-guest-proxy-config
+        advancedMounts:
+          immich-server:
+            guest-proxy:
+              - path: /etc/nginx/nginx.conf
+                subPath: nginx.conf
+                readOnly: true
+      tmp:
+        type: emptyDir
+        advancedMounts:
+          immich-server:
+            guest-proxy:
+              - path: /tmp
     route:
       app:
         hostnames: ["photos.iacob.uk"]
@@ -99,5 +150,5 @@ spec:
             sectionName: https
         rules:
           - backendRefs:
-              - identifier: app
-                port: 2283
+              - identifier: guest
+                port: 8080
