@@ -19,7 +19,7 @@ spec:
               # Paper 26.2 needs Java 25. The java24 tag does not exist and
               # plain "latest" is rebuilt continuously, so pin the date tag.
               repository: docker.io/itzg/minecraft-server
-              tag: 2026.8.2-java25
+              tag: 2026.9.0-java25
             env:
               EULA: "TRUE"
               TZ: Europe/London
