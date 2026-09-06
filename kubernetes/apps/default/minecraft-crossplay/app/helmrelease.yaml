@@ -48,7 +48,7 @@ spec:
                 https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
                 https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.11.0/PAPER/ViaVersion-5.11.0.jar
                 https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.11.0/PAPER/ViaBackwards-5.11.0.jar
-                https://download.luckperms.net/1658/bukkit/loader/LuckPerms-Bukkit-5.5.71.jar
+                https://download.luckperms.net/1668/bukkit/loader/LuckPerms-Bukkit-5.5.81.jar
                 https://cdn.modrinth.com/data/ayRaM8J7/versions/cLNipSgw/VaultUnlocked-2.20.2.jar
                 https://ci.ender.zone/job/EssentialsX/1825/artifact/jars/EssentialsX-2.22.1-dev+21-d5dc7e3.jar
                 https://ci.ender.zone/job/EssentialsX/1825/artifact/jars/EssentialsXSpawn-2.22.1-dev+21-d5dc7e3.jar
@@ -66,6 +66,11 @@ spec:
               # No spark jar: Paper 26.2 bundles the profiler and refuses to
               # load the standalone plugin ("this server bundles the spark
               # profiler"). It is already running - /spark works as-is.
+              #
+              # download.luckperms.net only serves the current build, so an
+              # older pin 404s as soon as upstream publishes a new one - which
+              # fails mcopy and stops the container before the server starts.
+              # Live URL: https://metadata.luckperms.net/data/downloads
               #
               # The two EssentialsX URLs are pinned to explicit build #1825
               # (2026-08-23T20:40 UTC). Use build numbers instead of
