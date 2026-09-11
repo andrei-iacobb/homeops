@@ -72,91 +72,191 @@
 			</div>
 		</div>
 {{else}}
-		{{/* PUBLIC VIEW - business card: identity, stats, contribution graph, stack. */}}
+		{{/* PUBLIC VIEW - business card in the andrei.iacob.co.uk house style:
+		     warm paper, ink type, clay accent, one gold moment for the peak day. */}}
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap">
 		<style>
-			.ap-wrap{display:flex;justify-content:center;padding:clamp(16px,2.5vw,30px) 8px clamp(28px,5vw,52px);color-scheme:dark}
-			.ap-card{position:relative;overflow:hidden;width:100%;max-width:880px;padding:clamp(24px,4vw,40px);border-radius:24px;background:radial-gradient(125% 80% at 50% -12%,#14181d 0%,#0b0c0f 56%);border:1px solid rgba(255,255,255,.09);box-shadow:0 1px 0 0 rgba(255,255,255,.05) inset,0 30px 70px -24px rgba(0,0,0,.85),0 10px 28px -14px rgba(0,0,0,.65);animation:ap-in .6s cubic-bezier(.2,.8,.2,1) both}
-			.ap-glow{position:absolute;inset:-45% -20% auto -20%;height:440px;pointer-events:none;z-index:0;background:radial-gradient(50% 100% at 50% 0%,rgba(57,211,83,.20),rgba(57,211,83,0) 70%)}
-			.ap-glow2{position:absolute;right:-12%;top:-14%;width:420px;height:420px;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(56,189,248,.10),transparent 64%)}
-			.ap-card>:not(.ap-glow):not(.ap-glow2){position:relative;z-index:1}
-			.ap-head{display:flex;align-items:center;gap:clamp(16px,3vw,24px)}
+			/* Tokens lifted straight from andrei.iacob.co.uk globals.css so the two
+			   surfaces stay in step. Paper/ink/clay are the site's; gold is the one
+			   addition, reserved entirely for the peak contribution day. */
+			.ap-wrap{
+				--paper-hi:#fcf9f3;--paper:#f6f2e9;--paper-lo:#efe9dc;
+				--ink:27 30 36;                  /* #1b1e24 - site --color-ink */
+				--clay:#d5461a;                  /* hsl(14 78% 47%) - site --accent */
+				--clay-soft:#b83919;             /* hsl(12 76% 41%) - site --accent-soft, 5.0:1 on paper */
+				--gold:#d4a017;                  /* graphic only - 2.4:1, never carries text alone */
+				--gold-ink:#856310;              /* text-safe gold, 4.8:1 on paper */
+				--ease:cubic-bezier(.2,.8,.2,1); /* the site's only easing token */
+				--display:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+				--sans:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+				--mono:ui-monospace,"SFMono-Regular",Menlo,Monaco,monospace;
+				color-scheme:light;
+				display:flex;justify-content:center;
+				padding:clamp(16px,2.5vw,32px) 8px clamp(28px,5vw,56px);
+			}
+			.ap-wrap *{box-sizing:border-box}
+			.ap-wrap ::selection{background:rgb(213 70 26 / .22);color:#11151a;text-shadow:none}
+
+			.ap-card{
+				position:relative;overflow:hidden;width:100%;min-width:0;max-width:880px;
+				padding:clamp(24px,4vw,44px);border-radius:20px;
+				background:radial-gradient(120% 90% at 50% -8%,var(--paper-hi) 0%,var(--paper) 42%,var(--paper-lo) 100%);
+				border:1px solid rgb(var(--ink) / .10);
+				box-shadow:0 1px 0 0 rgb(255 255 255 / .6) inset,0 34px 70px -34px rgb(var(--ink) / .55);
+				font-family:var(--sans);color:rgb(var(--ink) / .9);
+				animation:ap-rise .7s var(--ease) both;
+			}
+			/* One ambient wash, not per-section bands. 5% clay keeps it warm without tinting the type. */
+			.ap-tint{position:absolute;right:-14%;top:-22%;width:520px;height:520px;pointer-events:none;z-index:0;
+				background:radial-gradient(circle,rgb(213 70 26 / .07),transparent 62%)}
+			.ap-card>:not(.ap-tint){position:relative;z-index:1}
+
+			.ap-head{display:flex;align-items:flex-end;gap:clamp(16px,3vw,28px)}
 			.ap-avatar{flex:none}
-			.ap-avatar img{width:clamp(78px,12vw,110px)!important;height:clamp(78px,12vw,110px)!important;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(57,211,83,.4);box-shadow:0 0 0 4px rgba(57,211,83,.09),0 10px 26px -8px rgba(0,0,0,.8)}
+			.ap-avatar img{width:clamp(84px,12vw,116px)!important;height:clamp(84px,12vw,116px)!important;
+				border-radius:14px;object-fit:cover;display:block;
+				box-shadow:0 0 0 1px rgb(var(--ink) / .12),0 14px 30px -16px rgb(var(--ink) / .6)}
 			.ap-id{min-width:0}
-			.ap-name{margin:0;font-size:clamp(26px,3.9vw,37px);font-weight:700;line-height:1.04;letter-spacing:-.025em;color:#f4f5f7;text-wrap:balance}
-			.ap-role{margin:7px 0 0;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:#39d353}
-			.ap-tagline{margin:10px 0 0;font-size:14.5px;line-height:1.55;color:rgba(244,245,247,.68);max-width:60ch;text-wrap:balance}
+			.ap-eyebrow{margin:0 0 10px;font-family:var(--sans);font-size:11px;font-weight:600;
+				text-transform:uppercase;letter-spacing:.22em;color:rgb(var(--ink) / .65)}
+			.ap-name{margin:0;font-family:var(--display);font-size:clamp(34px,5.4vw,58px);font-weight:700;
+				line-height:.95;letter-spacing:-.03em;color:rgb(var(--ink));text-wrap:balance}
+			.ap-tagline{margin:14px 0 0;font-size:16.5px;line-height:1.5;color:rgb(var(--ink) / .7);max-width:58ch;text-wrap:balance}
+			.ap-meta{margin:14px 0 0;font-family:var(--mono);font-size:12.5px;color:rgb(var(--ink) / .65)}
+			.ap-link{color:inherit;text-decoration:none;border-bottom:1px solid rgb(var(--ink) / .22);padding-bottom:1px;
+				transition:border-color .2s var(--ease),color .2s var(--ease)}
+			.ap-link:hover{color:var(--clay-soft);border-bottom-color:var(--clay-soft)}
+			.ap-wrap a:focus-visible{outline:none;border-radius:2px;
+				box-shadow:0 0 0 2px var(--paper),0 0 0 4px rgb(213 70 26 / .75)}
+			/* The site's uptime heartbeat, same geometry. */
+			.ap-dot{position:relative;display:inline-block;width:7px;height:7px;border-radius:50%;
+				background:var(--clay-soft);box-shadow:0 0 6px rgb(184 57 25 / .8);margin-right:9px;vertical-align:middle}
+			.ap-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;
+				border:1px solid rgb(184 57 25 / .6);animation:ap-ping 2.6s var(--ease) infinite}
 
-			.ap-stats{margin-top:clamp(20px,3.4vw,28px);display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-			.ap-stat{position:relative;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 15px;overflow:hidden}
-			.ap-stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,rgba(57,211,83,.7),rgba(57,211,83,0))}
-			.ap-stat-num{font-size:clamp(23px,3.4vw,32px);font-weight:700;letter-spacing:-.02em;color:#f4f5f7;font-variant-numeric:tabular-nums;line-height:1;display:flex;align-items:center;gap:7px}
-			.ap-stat.hot .ap-stat-num{color:#39d353}
-			.ap-stat-lab{margin-top:7px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:rgba(244,245,247,.46)}
-			.ap-flame{width:17px;height:17px;flex:none}
+			/* Hairline rules, no boxed tiles - the site's <dl> stat treatment. */
+			.ap-stats{margin:clamp(26px,4vw,38px) 0 0;display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(12px,2vw,20px)}
+			.ap-stats dt,.ap-stats dd{margin:0}
+			.ap-stat{border-top:1px solid rgb(var(--ink) / .15);padding-top:14px}
+			.ap-stat-num{font-family:var(--display);font-size:clamp(26px,3.4vw,36px);font-weight:700;
+				line-height:1;letter-spacing:-.02em;color:rgb(var(--ink));font-variant-numeric:tabular-nums;
+				display:flex;align-items:center;gap:8px}
+			.ap-stat-lab{margin-top:10px;font-size:13.5px;line-height:1.35;color:rgb(var(--ink) / .65)}
+			.ap-when{display:block;margin-top:3px;font-family:var(--mono);font-size:12px;color:rgb(var(--ink) / .5)}
+			.ap-stat.peak{border-top-color:var(--gold)}
+			.ap-stat.peak .ap-stat-num{color:var(--gold-ink)}
 
-			.ap-graph{margin-top:clamp(22px,4vw,30px)}
-			.ap-heatmap{display:flex;flex-direction:column;gap:8px}
-			.ap-hm-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+			.ap-graph{margin-top:clamp(26px,4vw,36px)}
+			.ap-heatmap{display:flex;flex-direction:column;gap:10px;min-width:0;--cell:11px;--gap:3px}
+			/* The Mon/Wed/Fri gutter sits OUTSIDE the scroller. Sticky-inside-the-scroller
+			   needed an opaque patch, and no flat colour matches the card's paper gradient. */
+			.ap-hm-wrap{display:flex;gap:var(--gap);min-width:0}
+			.ap-hm-gutter{flex:none;display:flex;flex-direction:column;gap:5px;padding-top:2px}
+			.ap-hm-spacer{height:13px}
+			.ap-hm-scroll{flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;padding:2px 0 6px;
+				scrollbar-width:thin;scrollbar-color:rgb(var(--ink) / .2) transparent}
 			.ap-hm-scroll::-webkit-scrollbar{height:7px}
-			.ap-hm-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
-			.ap-hm-inner{display:inline-flex;flex-direction:column;gap:4px;--cell:11px;--gap:3px}
-			.ap-hm-months{display:grid;grid-auto-rows:13px;column-gap:var(--gap);margin-left:calc(28px + var(--gap));font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;color:rgba(244,245,247,.45)}
+			.ap-hm-scroll::-webkit-scrollbar-thumb{background:rgb(var(--ink) / .18);border-radius:4px}
+			/* 11px cell + 3px gap: 53 weeks plus the 28px day gutter lands at 770px,
+			   inside the 800px content width, so the card never scrolls on desktop. */
+			.ap-hm-inner{display:inline-flex;flex-direction:column;gap:5px}
+			.ap-hm-months{display:grid;grid-auto-rows:13px;column-gap:var(--gap);
+				font-family:var(--mono);font-size:10.5px;color:rgb(var(--ink) / .5)}
 			.ap-hm-months span{grid-row:1;white-space:nowrap;overflow:visible}
-			.ap-hm-main{display:flex;gap:var(--gap)}
-			.ap-hm-days{display:grid;grid-template-rows:repeat(7,var(--cell));row-gap:var(--gap);width:28px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10px;color:rgba(244,245,247,.42)}
+			.ap-hm-days{display:grid;grid-template-rows:repeat(7,var(--cell));row-gap:var(--gap);width:28px;
+				font-family:var(--mono);font-size:10px;color:rgb(var(--ink) / .5)}
 			.ap-hm-days span{line-height:var(--cell);height:var(--cell)}
-			.ap-hm-grid{display:grid;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell);grid-auto-flow:column;gap:var(--gap)}
-			.ap-cell{width:var(--cell);height:var(--cell);border-radius:3px;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
-			.ap-cell[data-level="1"]{background:#0e4429}
-			.ap-cell[data-level="2"]{background:#006d32}
-			.ap-cell[data-level="3"]{background:#26a641}
-			.ap-cell[data-level="4"]{background:#39d353}
-			.ap-cell[data-future="1"]{background:transparent;outline:none}
-			.ap-cell:hover{transform:scale(1.35);outline-color:rgba(255,255,255,.35)}
-			.ap-hm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:11.5px;color:rgba(244,245,247,.5)}
+			.ap-hm-grid{display:grid;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell);
+				grid-auto-flow:column;gap:var(--gap)}
+			/* Ink-alpha ramp, identical stops to the graph on andrei.iacob.co.uk. */
+			.ap-cell{width:var(--cell);height:var(--cell);border-radius:3px;background:rgb(var(--ink) / .06);
+				transition:transform .12s var(--ease)}
+			.ap-cell[data-level="1"]{background:rgb(var(--ink) / .2)}
+			.ap-cell[data-level="2"]{background:rgb(var(--ink) / .4)}
+			.ap-cell[data-level="3"]{background:rgb(var(--ink) / .6)}
+			.ap-cell[data-level="4"]{background:rgb(var(--ink) / .85)}
+			.ap-cell[data-future="1"]{background:transparent}
+			/* The one gold moment. Ink ring so the peak reads without relying on hue. */
+			.ap-cell[data-peak="1"]{background:var(--gold);
+				box-shadow:0 0 0 1px rgb(var(--ink) / .45),0 0 0 3.5px rgb(212 160 23 / .28)}
+			.ap-cell:hover{transform:scale(1.4)}
+			.ap-hm-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+				font-family:var(--mono);font-size:11.5px;color:rgb(var(--ink) / .55)}
+			.ap-hm-keys{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 			.ap-hm-legend{display:flex;align-items:center;gap:5px}
-			.ap-hm-legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:rgba(255,255,255,.05);outline:1px solid rgba(255,255,255,.04);outline-offset:-1px}
-			.ap-hm-legend i[data-level="1"]{background:#0e4429}
-			.ap-hm-legend i[data-level="2"]{background:#006d32}
-			.ap-hm-legend i[data-level="3"]{background:#26a641}
-			.ap-hm-legend i[data-level="4"]{background:#39d353}
-			.ap-hm-skeleton{height:104px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.07),rgba(255,255,255,.04));background-size:200% 100%;animation:ap-shimmer 1.3s ease-in-out infinite}
-			.ap-hm-error{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:rgba(244,245,247,.4);padding:8px 0}
+			.ap-hm-legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:rgb(var(--ink) / .06)}
+			.ap-hm-legend i[data-level="1"]{background:rgb(var(--ink) / .2)}
+			.ap-hm-legend i[data-level="2"]{background:rgb(var(--ink) / .4)}
+			.ap-hm-legend i[data-level="3"]{background:rgb(var(--ink) / .6)}
+			.ap-hm-legend i[data-level="4"]{background:rgb(var(--ink) / .85)}
+			.ap-hm-legend i[data-peak="1"]{background:var(--gold);box-shadow:0 0 0 1px rgb(var(--ink) / .45)}
+			.ap-hm-skeleton{height:112px;border-radius:6px;
+				background:linear-gradient(90deg,rgb(var(--ink) / .05),rgb(var(--ink) / .1),rgb(var(--ink) / .05));
+				background-size:200% 100%;animation:ap-shimmer 1.3s ease-in-out infinite}
+			.ap-hm-note{font-family:var(--mono);font-size:12.5px;color:rgb(var(--ink) / .5);padding:10px 0}
 
-			.ap-tech{margin-top:clamp(22px,3.6vw,30px);padding-top:clamp(18px,3vw,22px);border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:12px}
-			.ap-tech-row{display:flex;gap:14px;align-items:flex-start}
-			.ap-tech-label{flex:0 0 80px;font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:rgba(244,245,247,.42);line-height:26px}
-			.ap-badges{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-			.ap-badge{height:25px;display:block;border-radius:5px;transition:transform .16s cubic-bezier(.2,.8,.2,1),filter .16s;filter:saturate(.95)}
-			.ap-badge:hover{transform:translateY(-2px);filter:saturate(1.18)}
+			.ap-tech{margin-top:clamp(26px,4vw,36px);padding-top:clamp(20px,3vw,26px);
+				border-top:1px solid rgb(var(--ink) / .12);display:flex;flex-direction:column;gap:16px}
+			.ap-tech-row{display:flex;gap:18px;align-items:flex-start}
+			.ap-tech-label{flex:0 0 84px;font-size:11px;font-weight:600;text-transform:uppercase;
+				letter-spacing:.22em;color:rgb(var(--ink) / .65);line-height:26px}
+			.ap-chips{display:flex;flex-wrap:wrap;gap:7px}
+			/* Text chips, not shields.io colour blocks - hue here would carry no meaning. */
+			.ap-chip{display:inline-flex;align-items:center;height:26px;padding:0 12px;border-radius:999px;
+				border:1px solid rgb(var(--ink) / .16);font-size:12.5px;color:rgb(var(--ink) / .78);
+				white-space:nowrap;transition:border-color .2s var(--ease),color .2s var(--ease)}
+			.ap-chip:hover{border-color:rgb(184 57 25 / .5);color:var(--clay-soft)}
 
-			@keyframes ap-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+			@keyframes ap-rise{from{opacity:.01;transform:translateY(14px)}to{opacity:1;transform:none}}
 			@keyframes ap-shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-			@media (max-width:620px){.ap-stats{grid-template-columns:repeat(2,1fr)}}
-			@media (max-width:540px){.ap-head{flex-direction:column;text-align:center}.ap-tech-row{flex-direction:column;gap:6px}.ap-tech-label{flex:none;line-height:1.6}}
-			@media (prefers-reduced-motion:reduce){.ap-card{animation:none}.ap-cell,.ap-badge{transition:none}.ap-hm-skeleton{animation:none}}
+			@keyframes ap-ping{0%{transform:scale(.7);opacity:.9}70%,100%{transform:scale(2.4);opacity:0}}
+			@media (max-width:760px){.ap-stats{grid-template-columns:repeat(3,1fr)}}
+			@media (max-width:560px){.ap-stats{grid-template-columns:repeat(2,1fr)}
+				.ap-head{flex-direction:column;align-items:flex-start;gap:18px}
+				.ap-tech-row{flex-direction:column;gap:8px}.ap-tech-label{flex:none;line-height:1.6}}
+			@media (hover:none){.ap-cell:hover{transform:none}}
+			@media (prefers-reduced-motion:reduce){
+				.ap-card{animation:none}.ap-cell,.ap-chip,.ap-link{transition:none}
+				.ap-hm-skeleton{animation:none}.ap-dot::after{animation:none}}
 		</style>
 
 		<section class="ap-wrap">
 			<article class="ap-card" aria-label="Andrei Iacob">
-				<div class="ap-glow" aria-hidden="true"></div>
-				<div class="ap-glow2" aria-hidden="true"></div>
+				<div class="ap-tint" aria-hidden="true"></div>
 				<header class="ap-head">
 					<div class="ap-avatar">{{ctx.AvatarUtils.Avatar .ContextUser 256}}</div>
 					<div class="ap-id">
+						<p class="ap-eyebrow">CS Student - Full-Stack &amp; Self-Hosted Infra</p>
 						<h1 class="ap-name">Andrei Iacob</h1>
-						<p class="ap-role">CS Student &middot; Full-Stack &amp; Self-Hosted Infra</p>
 						<p class="ap-tagline">I build for the web and self-host everything else - a 30+ service Kubernetes homelab on Proxmox, run entirely through GitOps.</p>
+						<p class="ap-meta"><span class="ap-dot" aria-hidden="true"></span>Everything else lives at <a class="ap-link" href="https://andrei.iacob.co.uk" target="_blank" rel="noopener noreferrer">andrei.iacob.co.uk</a></p>
 					</div>
 				</header>
 
-				<div class="ap-stats">
-					<div class="ap-stat"><div class="ap-stat-num" data-stat="total">0</div><div class="ap-stat-lab">Contributions</div></div>
-					<div class="ap-stat hot"><div class="ap-stat-num" data-stat="current"><svg class="ap-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>0</span></div><div class="ap-stat-lab">Current streak</div></div>
-					<div class="ap-stat"><div class="ap-stat-num" data-stat="longest">0</div><div class="ap-stat-lab">Longest streak</div></div>
-					<div class="ap-stat"><div class="ap-stat-num" data-stat="active">0</div><div class="ap-stat-lab">Active days</div></div>
-				</div>
+				<dl class="ap-stats">
+					<div class="ap-stat">
+						<dt class="ap-stat-num" data-stat="total">0</dt>
+						<dd class="ap-stat-lab">Contributions</dd>
+					</div>
+					<div class="ap-stat">
+						<dt class="ap-stat-num" data-stat="current">0</dt>
+						<dd class="ap-stat-lab">Current streak</dd>
+					</div>
+					<div class="ap-stat">
+						<dt class="ap-stat-num" data-stat="longest">0</dt>
+						<dd class="ap-stat-lab">Longest streak</dd>
+					</div>
+					<div class="ap-stat">
+						<dt class="ap-stat-num" data-stat="active">0</dt>
+						<dd class="ap-stat-lab">Active days</dd>
+					</div>
+					<div class="ap-stat peak">
+						<dt class="ap-stat-num" data-stat="peak">0</dt>
+						<dd class="ap-stat-lab">Peak day<span class="ap-when" data-stat-when="peak"></span></dd>
+					</div>
+				</dl>
 
 				<div class="ap-graph">
 					<div id="ap-heatmap" class="ap-heatmap" data-src="{{AppSubUrl}}/assets/data/heatmap.json" role="img" aria-label="Contribution activity over the last year">
@@ -167,15 +267,15 @@
 				<section class="ap-tech" aria-label="Tech stack">
 					<div class="ap-tech-row">
 						<span class="ap-tech-label">Languages</span>
-						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&amp;logo=typescript&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat-square&amp;logo=python&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&amp;logo=javascript&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="Java" src="https://img.shields.io/badge/Java-437291?style=flat-square&amp;logo=openjdk&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="C#" src="https://img.shields.io/badge/C%23-512BD4?style=flat-square&amp;logo=csharp&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="C++" src="https://img.shields.io/badge/C++-00599C?style=flat-square&amp;logo=cplusplus&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Swift" src="https://img.shields.io/badge/Swift-F05138?style=flat-square&amp;logo=swift&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Shell" src="https://img.shields.io/badge/Shell-4EAA25?style=flat-square&amp;logo=gnubash&amp;logoColor=white"></div>
+						<div class="ap-chips"><span class="ap-chip">TypeScript</span><span class="ap-chip">Python</span><span class="ap-chip">JavaScript</span><span class="ap-chip">Java</span><span class="ap-chip">C#</span><span class="ap-chip">C++</span><span class="ap-chip">Swift</span><span class="ap-chip">Shell</span></div>
 					</div>
 					<div class="ap-tech-row">
 						<span class="ap-tech-label">Infra</span>
-						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="Kubernetes" src="https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&amp;logo=kubernetes&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Proxmox" src="https://img.shields.io/badge/Proxmox-E57000?style=flat-square&amp;logo=proxmox&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Flux CD" src="https://img.shields.io/badge/Flux_CD-5468FF?style=flat-square&amp;logo=flux&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Talos Linux" src="https://img.shields.io/badge/Talos_Linux-FF7300?style=flat-square&amp;logo=linux&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Docker" src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&amp;logo=docker&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Cilium" src="https://img.shields.io/badge/Cilium-F8C517?style=flat-square&amp;logo=cilium&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="WireGuard" src="https://img.shields.io/badge/WireGuard-88171A?style=flat-square&amp;logo=wireguard&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Cloudflare" src="https://img.shields.io/badge/Cloudflare-F38020?style=flat-square&amp;logo=cloudflare&amp;logoColor=white"></div>
+						<div class="ap-chips"><span class="ap-chip">Kubernetes</span><span class="ap-chip">Proxmox</span><span class="ap-chip">Flux CD</span><span class="ap-chip">Talos Linux</span><span class="ap-chip">Docker</span><span class="ap-chip">Cilium</span><span class="ap-chip">WireGuard</span><span class="ap-chip">Cloudflare</span></div>
 					</div>
 					<div class="ap-tech-row">
 						<span class="ap-tech-label">Stack</span>
-						<div class="ap-badges"><img class="ap-badge" height="25" loading="lazy" alt="React" src="https://img.shields.io/badge/React-61DAFB?style=flat-square&amp;logo=react&amp;logoColor=black"><img class="ap-badge" height="25" loading="lazy" alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?style=flat-square&amp;logo=nextdotjs&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Node.js" src="https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&amp;logo=nodedotjs&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt=".NET" src="https://img.shields.io/badge/.NET-512BD4?style=flat-square&amp;logo=dotnet&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&amp;logo=postgresql&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&amp;logo=redis&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Grafana" src="https://img.shields.io/badge/Grafana-F46800?style=flat-square&amp;logo=grafana&amp;logoColor=white"><img class="ap-badge" height="25" loading="lazy" alt="Tailwind" src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&amp;logo=tailwindcss&amp;logoColor=white"></div>
+						<div class="ap-chips"><span class="ap-chip">React</span><span class="ap-chip">Next.js</span><span class="ap-chip">Node.js</span><span class="ap-chip">.NET</span><span class="ap-chip">PostgreSQL</span><span class="ap-chip">Redis</span><span class="ap-chip">Grafana</span><span class="ap-chip">Tailwind</span></div>
 					</div>
 				</section>
 			</article>
@@ -190,10 +290,17 @@
 			function lvl(c){if(c<=0)return 0;if(c<3)return 1;if(c<7)return 2;if(c<15)return 3;return 4;}
 			function key(d){return d.toISOString().slice(0,10);}
 			var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-			function err(){root.innerHTML='<div class="ap-hm-error">Activity graph unavailable.</div>';}
+			function note(msg){root.innerHTML='<div class="ap-hm-note">'+msg+'</div>';}
 			fetch(src+'?t='+Math.floor(Date.now()/3600000),{cache:'no-cache'})
 				.then(function(r){if(!r.ok)throw 0;return r.json();})
-				.then(function(data){render(data);stats(data);}).catch(err);
+				.then(function(data){
+					var days=(data.days||[]);
+					if(!days.length){note('No activity recorded yet.');return;}
+					var peak=peakOf(days);
+					render(data,peak);
+					stats(data,peak);
+				})
+				.catch(function(){note('Activity graph unavailable.');});
 
 			function countUp(el,val){
 				if(REDUCED){el.textContent=val.toLocaleString();return;}
@@ -202,7 +309,25 @@
 				requestAnimationFrame(step);
 			}
 			function setStat(name,val){var el=document.querySelector('[data-stat="'+name+'"]');if(!el)return;var out=el.querySelector('span')||el;countUp(out,val);}
-			function stats(data){
+
+			/* Busiest single day in the window. Ties resolve to the most recent date,
+			   so the gold cell is the latest best day rather than the oldest. */
+			function peakOf(days){
+				var today=key(new Date(Date.now()));
+				var best={count:0,date:null};
+				days.forEach(function(d){
+					if(!d||!d.date||d.date>today)return;
+					var c=d.count||0;
+					if(c>best.count||(c===best.count&&c>0&&d.date>best.date))best={count:c,date:d.date};
+				});
+				return best;
+			}
+			function pretty(ds){
+				var d=new Date(ds+'T00:00:00Z');
+				return d.getUTCDate()+' '+MON[d.getUTCMonth()];
+			}
+
+			function stats(data,peak){
 				var arr=(data.days||[]).filter(function(d){return d.count>0;}).map(function(d){return d.date;});
 				var set={};arr.forEach(function(d){set[d]=1;});
 				var active=arr.length,total=data.total||0;
@@ -213,9 +338,12 @@
 				if(!set[key(t)])t.setUTCDate(t.getUTCDate()-1);
 				while(set[key(t)]){cur++;t.setUTCDate(t.getUTCDate()-1);}
 				setStat('total',total);setStat('current',cur);setStat('longest',longest);setStat('active',active);
+				setStat('peak',peak.count);
+				var when=document.querySelector('[data-stat-when="peak"]');
+				if(when)when.textContent=peak.date?pretty(peak.date):'';
 			}
 
-			function render(data){
+			function render(data,peak){
 				var counts={};(data.days||[]).forEach(function(d){counts[d.date]=d.count;});
 				var today=new Date();today.setUTCHours(0,0,0,0);
 				var end=new Date(today);end.setUTCDate(end.getUTCDate()+(6-end.getUTCDay()));
@@ -224,28 +352,44 @@
 				var inner=document.createElement('div');inner.className='ap-hm-inner';
 				var months=document.createElement('div');months.className='ap-hm-months';
 				months.style.gridTemplateColumns='repeat('+WEEKS+',var(--cell))';
-				var main=document.createElement('div');main.className='ap-hm-main';
 				var days=document.createElement('div');days.className='ap-hm-days';
 				['','Mon','','Wed','','Fri',''].forEach(function(t){var s=document.createElement('span');s.textContent=t;days.appendChild(s);});
 				var grid=document.createElement('div');grid.className='ap-hm-grid';
-				var cur=new Date(start),lastMonth=-1;
+				var cur=new Date(start),lastMonth=-1,peakSeen=false;
 				for(var i=0;i<WEEKS*7;i++){
 					if(cur.getUTCDay()===0){var col=Math.floor(i/7);var m=cur.getUTCMonth();if(m!==lastMonth){var sp=document.createElement('span');sp.textContent=MON[m];sp.style.gridColumnStart=(col+1);months.appendChild(sp);lastMonth=m;}}
 					var cell=document.createElement('div');cell.className='ap-cell';var k=key(cur);
-					if(cur>today){cell.setAttribute('data-future','1');}else{var c=counts[k]||0;cell.setAttribute('data-level',lvl(c));cell.title=(c===0?'No contributions':(c+' contribution'+(c>1?'s':'')))+' on '+k;}
+					if(cur>today){cell.setAttribute('data-future','1');}else{
+						var c=counts[k]||0;
+						cell.setAttribute('data-level',lvl(c));
+						cell.title=(c===0?'No contributions':(c+' contribution'+(c>1?'s':'')))+' on '+k;
+						if(peak.date&&k===peak.date){cell.setAttribute('data-peak','1');cell.title='Peak day - '+cell.title;peakSeen=true;}
+					}
 					grid.appendChild(cell);cur.setUTCDate(cur.getUTCDate()+1);
 				}
-				main.appendChild(days);main.appendChild(grid);
 				var foot=document.createElement('div');foot.className='ap-hm-foot';
 				var cap=document.createElement('span');cap.textContent='GitHub + Forgejo, last 12 months';
+				var keys=document.createElement('span');keys.className='ap-hm-keys';
+				if(peakSeen){
+					var pk=document.createElement('span');pk.className='ap-hm-legend';
+					var gi=document.createElement('i');gi.setAttribute('data-peak','1');
+					pk.appendChild(gi);pk.appendChild(document.createTextNode('Peak day'));
+					keys.appendChild(pk);
+				}
 				var leg=document.createElement('span');leg.className='ap-hm-legend';
 				leg.appendChild(document.createTextNode('Less'));
 				[0,1,2,3,4].forEach(function(L){var i=document.createElement('i');if(L)i.setAttribute('data-level',L);leg.appendChild(i);});
 				leg.appendChild(document.createTextNode('More'));
-				foot.appendChild(cap);foot.appendChild(leg);
-				inner.appendChild(months);inner.appendChild(main);
+				keys.appendChild(leg);
+				foot.appendChild(cap);foot.appendChild(keys);
+				inner.appendChild(months);inner.appendChild(grid);
 				var scroll=document.createElement('div');scroll.className='ap-hm-scroll';scroll.appendChild(inner);
-				root.innerHTML='';root.appendChild(scroll);root.appendChild(foot);
+				var gutter=document.createElement('div');gutter.className='ap-hm-gutter';
+				var spacer=document.createElement('div');spacer.className='ap-hm-spacer';
+				gutter.appendChild(spacer);gutter.appendChild(days);
+				var wrap=document.createElement('div');wrap.className='ap-hm-wrap';
+				wrap.appendChild(gutter);wrap.appendChild(scroll);
+				root.innerHTML='';root.appendChild(wrap);root.appendChild(foot);
 				scroll.scrollLeft=scroll.scrollWidth;
 			}
 		})();
