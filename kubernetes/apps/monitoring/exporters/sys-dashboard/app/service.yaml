@@ -1,6 +1,6 @@
 ---
 # Headless service with NO selector: sys-dashboard runs as a systemd service
-# on the Arch desktop host (192.168.1.23:4287), not as an in-cluster pod.
+# on the Arch desktop host (192.168.20.85:4287), not as an in-cluster pod.
 # It exposes AI-agent usage metrics (tokmon-derived) at /metrics.
 # Same pattern as monitoring/exporters/wireguard-oci and syncthing.
 apiVersion: v1
