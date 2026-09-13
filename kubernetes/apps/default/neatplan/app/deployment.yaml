@@ -10,7 +10,7 @@ spec:
   revisionHistoryLimit: 3
   replicas: 1
   strategy:
-    type: RollingUpdate
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/controller: neatplan
@@ -25,22 +25,52 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        fsGroupChangePolicy: OnRootMismatch
       initContainers:
         # Prisma migrations must land before the Next 16.3 app boots; the
         # migrator image's default CMD is `prisma migrate deploy`.
         - name: migrate
-          image: ghcr.io/andrei-iacobb/neatplan-migrator:e302e95
+          image: ghcr.io/andrei-iacobb/neatplan-migrator:1b9b49b
           imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: neatplan-secret
       containers:
         - name: neatplan
-          image: ghcr.io/andrei-iacobb/neatplan:e302e95
+          image: ghcr.io/andrei-iacobb/neatplan:1b9b49b
           imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: neatplan-secret
+          env:
+            - name: NEATPLAN_DATA_DIR
+              value: /app/data
+            - name: VAPID_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: neatplan-secret
+                  key: VAPID_PUBLIC_KEY
+                  optional: true
+            - name: VAPID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: neatplan-secret
+                  key: VAPID_PRIVATE_KEY
+                  optional: true
+            - name: VAPID_SUBJECT
+              valueFrom:
+                secretKeyRef:
+                  name: neatplan-secret
+                  key: VAPID_SUBJECT
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
           ports:
             - name: http
               containerPort: 4040
@@ -67,3 +97,7 @@ spec:
             limits:
               cpu: 1000m
               memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: neatplan-data
