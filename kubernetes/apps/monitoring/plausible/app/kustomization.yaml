@@ -10,3 +10,4 @@ resources:
   - ./httproute-events.yaml
   - ./httproute-script.yaml
   - ./httproute-manual.yaml
+  - ./pvc-nfs.yaml

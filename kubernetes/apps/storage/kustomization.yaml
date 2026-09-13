@@ -11,5 +11,6 @@ resources:
   - ./openebs/ks.yaml
   - ./nfs-csi/ks.yaml
   - ./nfs-csi-immich/ks.yaml
+  - ./nfs-csi-data/ks.yaml
   - ./nfs-csi/storageclasses/ks.yaml
   - ./volsync/ks.yaml

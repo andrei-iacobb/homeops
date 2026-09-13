@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ./media-storageclass.yaml
   - ./immich-storageclass.yaml
+  - ./data-storageclass.yaml
