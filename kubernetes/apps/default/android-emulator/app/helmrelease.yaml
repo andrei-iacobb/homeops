@@ -1,0 +1,86 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: android-emulator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: android-emulator
+  interval: 1h
+  values:
+    controllers:
+      android-emulator:
+        replicas: 1
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: docker.io/budtmo/docker-android
+              tag: emulator_14.0
+            env:
+              TZ: Europe/London
+              EMULATOR_DEVICE: "Pixel 9"
+              WEB_VNC: "true"
+              EMULATOR_NO_SKIN: "true"
+              EMULATOR_DATA_PARTITION: "8g"
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - grep -q READY /home/androidusr/device_status
+                  initialDelaySeconds: 600
+                  periodSeconds: 30
+                  failureThreshold: 10
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - sh
+                      - -c
+                      - grep -q READY /home/androidusr/device_status
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  failureThreshold: 60
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 2
+                memory: 4Gi
+              limits:
+                memory: 8Gi
+            securityContext:
+              privileged: true
+    service:
+      app:
+        ports:
+          http:
+            port: &port 6080
+          adb:
+            port: 5555
+    route:
+      app:
+        hostnames: ["android.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      dev-shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 1Gi
+        globalMounts:
+          - path: /dev/shm

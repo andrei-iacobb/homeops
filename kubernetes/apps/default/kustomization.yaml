@@ -55,3 +55,4 @@ resources:
   - ./mc-router/ks.yaml
   - ./atm10/ks.yaml
   - ./minecraft-crossplay/ks.yaml
+  - ./android-emulator/ks.yaml

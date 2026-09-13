@@ -638,6 +638,10 @@ data:
           icon: mdi-tools
           href: https://it-tools.iacob.uk
           description: Developer utilities
+      - Android Emulator:
+          icon: mdi-android
+          href: https://android.iacob.uk
+          description: Pixel 9, Android 14, noVNC
       - Paperless NGX:
           icon: paperless.svg
           href: https://paperless.iacob.uk
