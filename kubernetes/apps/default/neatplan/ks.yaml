@@ -6,6 +6,18 @@ metadata:
 spec:
   interval: 1h
   path: ./kubernetes/apps/default/neatplan/app
+  postBuild:
+    substitute:
+      APP: neatplan
+      APP_PVC: neatplan-data
+      VOLSYNC_SCHEDULE: "15 4 * * *"
+      MOVER_UID: "1001"
+      MOVER_GID: "1001"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

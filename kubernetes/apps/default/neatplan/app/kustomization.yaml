@@ -6,3 +6,6 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute.yaml
+  - ./pvc-data.yaml
+components:
+  - ../../../../components/volsync
