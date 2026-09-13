@@ -78,6 +78,14 @@ spec:
               - identifier: app
                 port: *port
     persistence:
+      # The AVD is recreated on every boot under /home/androidusr/emulator and
+      # grows to the 8g data partition. Keep it off the node root disk, which
+      # sits at the kubelet eviction floor.
+      scratch:
+        type: persistentVolumeClaim
+        existingClaim: android-emulator-scratch
+        globalMounts:
+          - path: /home/androidusr/emulator
       dev-shm:
         type: emptyDir
         medium: Memory
