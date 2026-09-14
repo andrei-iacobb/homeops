@@ -46,11 +46,30 @@ DISCHARGE_CURRENT = 50     # Amps
 CHARGE_WINDOW_START = os.environ.get("CHARGE_WINDOW_START", "00:00")
 CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "00:00")
 
-# Max acceptable drift between inverter reported UTC time and real UTC.
+# Max acceptable offset between the inverter's own clock and real UTC.
 # Anything beyond this almost certainly means the SolisCloud station was
 # flipped to a local-time TZ (e.g. Europe/London with DST), in which case
 # slot writes would be offset and we MUST refuse to push.
+#
+# Measured at the moment HASS received the reading (sensor last_changed minus
+# the reported timestamp), never against "now": the SolisCloud feed routinely
+# stalls for hours (gaps of 25-234 min between readings seen 2026-09-12), and
+# during a stall the newest reading ages by exactly one hour per hour. A
+# now-based comparison misread that as a broken clock and aborted 20 of 48
+# hourly runs on 2026-09-12/13. Feed latency at receipt is 0-23 min observed;
+# a station TZ mistake shows as ~60 min. 30 min splits the two.
 MAX_CLOCK_DRIFT_SECONDS = 30 * 60
+
+# Age of the newest inverter reading beyond which the run warns that the
+# SolisCloud feed is stale. Warning only: slot writes go through the
+# SolisCloud control API and are idempotent, so a stale feed is no reason to
+# leave a spent schedule on the inverter.
+STALE_FEED_WARN_SECONDS = 3 * 3600
+
+# How far back to look for a genuine inverter reading. No value change in
+# this window means the clock cannot be verified at all - abort, that is an
+# outage worth an alert, not a stall to ride through.
+CLOCK_HISTORY_WINDOW_SECONDS = 24 * 3600
 
 # UTC hour whose run re-commits every slot to the inverter even when nothing
 # changed in HASS. Set to -1 to disable. Sits just after the plan rolls over
@@ -510,6 +529,43 @@ def merge_windows(windows):
 
 # ---------- Sanity checks ----------
 
+def _last_genuine_inverter_reading():
+    """Newest (epoch, received_at) pair from recorder history where the
+    sensor value actually changed.
+
+    Not the live state's last_changed: HA rewrites last_changed to the
+    restart time when it restores a sensor, so a restore landing mid-stall
+    makes a stale reading look freshly received. A reading stale by ~1h
+    restored "now" reads offset 0 and would cancel a genuine +1h clock error
+    exactly. A value transition in history is a real arrival with a real
+    time, and a restore never produces one (same value in, same value out).
+    Returns None if no transition exists in the window.
+    """
+    since = (datetime.now(timezone.utc)
+             - timedelta(seconds=CLOCK_HISTORY_WINDOW_SECONDS)).isoformat()
+    hist = _request(
+        "GET",
+        f"{HASS_URL}/api/history/period/{since}"
+        f"?filter_entity_id={INVERTER_TIMESTAMP_ENTITY}"
+        f"&minimal_response&no_attributes",
+    ) or []
+    records = hist[0] if hist else []
+    # Compare numeric values only: an 'unavailable' blip followed by the same
+    # stale value coming back is not an arrival, it is the integration
+    # reconnecting to a feed that is still stalled.
+    numeric = []
+    for r in records:
+        try:
+            numeric.append((float(r["state"]),
+                            datetime.fromisoformat(r["last_changed"])))
+        except (KeyError, TypeError, ValueError):
+            continue
+    for i in range(len(numeric) - 1, 0, -1):
+        if numeric[i][0] != numeric[i - 1][0]:
+            return numeric[i]
+    return None
+
+
 def verify_inverter_clock():
     """Abort if the inverter clock has drifted from real UTC.
 
@@ -519,30 +575,50 @@ def verify_inverter_clock():
     (which honours DST), every slot would be applied 1h late from late
     March to late October. That mistake cost real money before this check
     existed - hence the hard abort.
+
+    The offset is taken at receipt time (when HASS recorded the value
+    changing, minus the timestamp the value carries) so a stalled SolisCloud
+    feed reads as "stale", not as "clock wrong". See
+    _last_genuine_inverter_reading for why the live state's last_changed is
+    not good enough.
     """
     state = hass_get_optional(INVERTER_TIMESTAMP_ENTITY)
     if not state:
         print(f"WARN: inverter timestamp sensor missing ({INVERTER_TIMESTAMP_ENTITY}); "
               f"skipping clock-drift check")
         return
-    try:
-        inverter_epoch = float(state["state"])
-    except (KeyError, TypeError, ValueError):
-        print(f"WARN: inverter timestamp sensor unreadable; skipping clock-drift check")
-        return
 
-    real_epoch = datetime.now(timezone.utc).timestamp()
-    drift = real_epoch - inverter_epoch
-    inverter_dt = datetime.fromtimestamp(inverter_epoch, tz=timezone.utc)
-    print(f"Inverter clock check: inverter says {inverter_dt:%Y-%m-%d %H:%M:%S} UTC, "
-          f"drift {drift:+.0f}s from real UTC.")
-
-    if abs(drift) > MAX_CLOCK_DRIFT_SECONDS:
-        print(f"ABORTING: inverter clock drift {drift:+.0f}s exceeds "
-              f"{MAX_CLOCK_DRIFT_SECONDS}s. This usually means the SolisCloud "
-              f"station TZ was changed away from UTC+0. Fix the station setting "
-              f"before charging will resume.")
+    reading = _last_genuine_inverter_reading()
+    if reading is None:
+        print(f"ABORTING: no new inverter reading in the last "
+              f"{CLOCK_HISTORY_WINDOW_SECONDS // 3600}h - the SolisCloud feed "
+              f"is down, the clock cannot be verified and slot writes would "
+              f"not reach the inverter anyway. Investigate.")
         sys.exit(2)
+    inverter_epoch, received = reading
+    if received.tzinfo is None:
+        received = received.replace(tzinfo=timezone.utc)
+
+    now = datetime.now(timezone.utc)
+    inverter_dt = datetime.fromtimestamp(inverter_epoch, tz=timezone.utc)
+    offset = received.timestamp() - inverter_epoch
+    age = (now - received).total_seconds()
+    print(f"Inverter clock check: reading stamped {inverter_dt:%Y-%m-%d %H:%M:%S} UTC, "
+          f"received by HASS {received:%H:%M:%S} UTC (offset {offset:+.0f}s), "
+          f"reading is {age / 60:.0f} min old.")
+
+    if abs(offset) > MAX_CLOCK_DRIFT_SECONDS:
+        print(f"ABORTING: inverter clock offset {offset:+.0f}s at receipt exceeds "
+              f"{MAX_CLOCK_DRIFT_SECONDS}s. Either the SolisCloud station TZ was "
+              f"changed away from UTC+0 (fix the station setting), or the feed "
+              f"just delivered an old reading after an outage - in that case "
+              f"the next run passes once a fresh reading lands.")
+        sys.exit(2)
+
+    if age > STALE_FEED_WARN_SECONDS:
+        print(f"WARN: newest inverter reading is {age / 3600:.1f}h old - the "
+              f"SolisCloud feed has stalled. Clock verified from the last good "
+              f"reading; continuing.")
 
 
 def _rate_at(rates, dt_utc):
