@@ -17,7 +17,7 @@ Saving Sessions from Home Assistant and programs the Solis inverter:
     the inverter with no TZ conversion, so feeding it BST would charge an
     hour late.
 
-Up to 3 charge slots and 3 discharge slots. Unused slots are cleared.
+Up to 3 charge slots and 3 discharge slots, written straight to the\nSolisCloud open API (window, current and the per-slot on/off switch).\nUnused slots are cleared and switched off.
 """
 
 import json
@@ -695,169 +695,382 @@ def verify_written_slots_are_cheap(charge_windows, rates):
     return True
 
 
+# ---------- SolisCloud API (direct inverter I/O) ----------
+
+# Slots are written straight to SolisCloud's open API instead of through the
+# HACS integration's time/number/button entities. Discovered 2026-09-14 by
+# driving the SolisCloud web app: every timed slot has its own on/off switch
+# (register 43707, one bit per slot, cids 5916-5927) and a slot whose switch
+# is off is ignored no matter what its window says. The integration has no
+# entity for those switches at all, so the only slot that ever worked was the
+# one Andrei had toggled on by hand in the app. Going direct also removes the
+# stage-then-commit-button dance that silently no-op'd in July.
+#
+# Register map for this model (S5-EH1P4.6K-L, model 3103), taken from the
+# web app's own atReadBatch call. 6214-family and 5948-family both address
+# the current register (verified: writing 6214 reads back on 5948), the web
+# app uses the 62xx ids so we do too.
+SOLIS_DOMAIN = os.environ.get("SOLIS_DOMAIN", "https://www.soliscloud.com:13333")
+SOLIS_KEY_ID = os.environ["SOLIS_KEY_ID"]
+SOLIS_KEY_SECRET = os.environ["SOLIS_KEY_SECRET"].encode("utf-8")
+SOLIS_USERNAME = os.environ["SOLIS_USERNAME"]
+SOLIS_PASSWORD = os.environ["SOLIS_PASSWORD"]
+
+SLOT_CIDS = {
+    "charge": [
+        {"switch": "5916", "time": "5946", "current": "6214"},
+        {"switch": "5917", "time": "5949", "current": "6225"},
+        {"switch": "5918", "time": "5952", "current": "6247"},
+    ],
+    "discharge": [
+        {"switch": "5922", "time": "5964", "current": "6302"},
+        {"switch": "5923", "time": "5968", "current": "6313"},
+        {"switch": "5924", "time": "5972", "current": "6324"},
+    ],
+}
+# SolisCloud codes that mean "datalogger busy, try again", not "bad request".
+SOLIS_RETRY_CODES = {"B0173", "B0600"}
+SOLIS_RETRIES = 4
+SOLIS_RETRY_SLEEP = 15
+
+
+class SolisError(RuntimeError):
+    pass
+
+
+class SolisCloud:
+    """Minimal signed client for /v2/api/{login,atRead,control}."""
+
+    def __init__(self):
+        self._token = None
+
+    def _post_once(self, path, body, with_token=False):
+        import base64
+        import hashlib
+        import hmac
+        raw = json.dumps(body, separators=(",", ":")).encode("utf-8")
+        content_md5 = base64.b64encode(hashlib.md5(raw).digest()).decode()
+        date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+        to_sign = "POST\n" + content_md5 + "\napplication/json\n" + date + "\n" + path
+        sign = base64.b64encode(
+            hmac.new(SOLIS_KEY_SECRET, to_sign.encode("utf-8"), hashlib.sha1).digest()
+        ).decode()
+        headers = {
+            "Content-MD5": content_md5,
+            "Content-Type": "application/json",
+            "Date": date,
+            "Authorization": f"API {SOLIS_KEY_ID}:{sign}",
+        }
+        if with_token:
+            headers["token"] = self._token
+        req = urllib.request.Request(SOLIS_DOMAIN + path, data=raw,
+                                     headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            return json.loads(resp.read())
+
+    def _post(self, path, body, with_token=False):
+        """Read-type call with plain retries (reads are idempotent)."""
+        last = None
+        for attempt in range(1, SOLIS_RETRIES + 1):
+            try:
+                result = self._post_once(path, body, with_token)
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                last = f"{type(e).__name__}: {e}"
+                print(f"    solis {path} attempt {attempt}: {last}")
+                time.sleep(SOLIS_RETRY_SLEEP)
+                continue
+            code = str(result.get("code"))
+            if code in SOLIS_RETRY_CODES:
+                last = f"{code} {result.get('msg')}"
+                print(f"    solis {path} attempt {attempt}: datalogger busy ({last})")
+                time.sleep(SOLIS_RETRY_SLEEP)
+                continue
+            return result
+        raise SolisError(f"{path} failed after {SOLIS_RETRIES} attempts: {last}")
+
+    def login(self):
+        import hashlib
+        result = self._post("/v2/api/login", {
+            "username": SOLIS_USERNAME,
+            "password": hashlib.md5(SOLIS_PASSWORD.encode("utf-8")).hexdigest(),
+        })
+        token = result.get("csrfToken")
+        if str(result.get("code")) != "0" or not token:
+            raise SolisError(f"login failed: {result.get('code')} {result.get('msg')}")
+        self._token = token
+
+    def read(self, cid):
+        """Live Modbus read. Returns (value, raw_register) as strings. For a
+        bit cid (slot switch) value is the bit and raw is the whole register."""
+        result = self._post("/v2/api/atRead", {"inverterSn": INVERTER_SN, "cid": cid},
+                            with_token=True)
+        if str(result.get("code")) != "0":
+            raise SolisError(f"atRead {cid}: {result.get('code')} {result.get('msg')}")
+        data = result.get("data") or {}
+        return str(data.get("msg")), str(data.get("yuanzhi"))
+
+    def write(self, cid, value, raw=None, must_write=False):
+        """Write one cid. Bit cids need the register's current raw value
+        (the web app calls it yuanzhi) or the API refuses with B0218
+        "read first then set". Returns the Modbus echo string.
+
+        A control POST that times out or comes back "datalogger busy" may
+        still have been applied, and for a bit cid the raw we hold is then
+        stale. So never blindly re-POST: read the cid back first, and
+        otherwise retry with the fresh raw. "Already holds the value" counts
+        as success only when the caller knew the value differed beforehand
+        (a normal diff-driven write). A forced rewrite (must_write) exists
+        precisely because the stored value is already right and the inverter
+        is not acting on it, so there equality proves nothing and the POST
+        is retried until it is acknowledged.
+        """
+        value = str(value)
+        last = None
+        for attempt in range(1, SOLIS_RETRIES + 1):
+            body = {"inverterSn": INVERTER_SN, "cid": cid, "value": value}
+            if raw is not None:
+                body["yuanzhi"] = str(raw)
+            try:
+                result = self._post_once("/v2/api/control", body, with_token=True)
+                code = str(result.get("code"))
+                if code not in SOLIS_RETRY_CODES:
+                    if code != "0":
+                        raise SolisError(f"control {cid}={value}: {code} {result.get('msg')}")
+                    entry = (result.get("data") or [{}])[0]
+                    if str(entry.get("code")) != "0":
+                        raise SolisError(f"control {cid}={value}: inverter returned "
+                                         f"{entry.get('code')} {entry.get('msg')}")
+                    return str(entry.get("recv") or "")
+                last = f"{code} {result.get('msg')}"
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                last = f"{type(e).__name__}: {e}"
+            print(f"    solis control {cid} attempt {attempt}: {last} - reading back")
+            time.sleep(SOLIS_RETRY_SLEEP)
+            current, fresh_raw = self.read(cid)
+            if _same_value(current, value) and not must_write:
+                print(f"    solis control {cid}: already {value} - write had landed")
+                return ""
+            if raw is not None:
+                raw = fresh_raw
+        raise SolisError(f"control {cid}={value} failed after {SOLIS_RETRIES} attempts: {last}")
+
+
+def _same_value(a, b):
+    """'7' == '7.0', '08:00-15:00' == '08:00-15:00'."""
+    try:
+        return float(a) == float(b)
+    except (TypeError, ValueError):
+        return str(a) == str(b)
+
+
+def _echo_register_value(recv):
+    """Value from a Modbus fn-06 write echo like '0106AABB000119F7', or None."""
+    if len(recv) >= 12 and recv[2:4] == "06":
+        try:
+            return int(recv[8:12], 16)
+        except ValueError:
+            return None
+    return None
+
+
 # ---------- Slot programming ----------
 
 def _utc_hhmm(iso_str):
-    """Take an ISO timestamp with offset, convert to UTC, return HH:MM:SS.
+    """Take an ISO timestamp with offset, convert to UTC, return HH:MM.
 
-    The Solis inverter clock runs in UTC+0 (per SolisCloud station settings).
-    The HACS solis integration sends the raw HH:MM from the time entity
-    straight to the inverter with no TZ conversion. So we must emit times
-    in the inverter's local clock = UTC.
+    The Solis inverter clock runs in UTC+0 (per SolisCloud station settings)
+    and the API takes bare HH:MM with no TZ, so we must emit times in the
+    inverter's local clock = UTC.
     """
     dt = datetime.fromisoformat(iso_str)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).strftime("%H:%M:%S")
+    return dt.astimezone(timezone.utc).strftime("%H:%M")
 
 
-def _norm_time(v):
-    """Normalise '05:30:00' style states for comparison ('5:30:00' -> '05:30:00')."""
+def _norm_hhmm(v):
+    """'5:30:00' / '05:30' style HA time states -> 'HH:MM', else None."""
     if not isinstance(v, str) or ":" not in v:
-        return v
+        return None
     parts = v.split(":")
-    return ":".join(p.zfill(2) for p in parts[:3]) if len(parts) >= 2 else v
+    try:
+        return f"{int(parts[0]):02d}:{int(parts[1]):02d}"
+    except (ValueError, IndexError):
+        return None
 
 
-def _set_slot(kind, slot, start, end, current):
-    """kind in {'charge','discharge'}. Writes time and current entities.
-
-    Returns True if any value differed from the current HASS state.
-    """
-    changed = False
-    targets = [
-        ("time", f"time.solis_timed_{kind}_start_{slot}", start, _norm_time),
-        ("time", f"time.solis_timed_{kind}_end_{slot}", end, _norm_time),
-        ("number", f"number.solis_timed_{kind}_current_{slot}", current, lambda x: str(int(float(x)))),
-    ]
-    for domain, eid, desired, normaliser in targets:
-        current_state = hass_get_optional(eid)
-        cur_val = current_state.get("state") if current_state else None
-        if normaliser(cur_val) != normaliser(desired):
-            changed = True
-            if domain == "time":
-                hass_service("time", "set_value", {"entity_id": eid, "time": desired})
-            else:
-                hass_service("number", "set_value", {"entity_id": eid, "value": desired})
-    return changed
-
-
-def _clear_slot(kind, slot):
-    return _set_slot(kind, slot, "00:00:00", "00:00:00", 0)
+def _hass_cached_slot(kind, slot):
+    """(window, current) as the HACS integration last saw them on the cloud,
+    or (None, None) when unknown. Cheap; the live atRead costs 10-30s per cid
+    on the datalogger, and the switch bits are the only thing the integration
+    cannot tell us."""
+    start = hass_get_optional(f"time.solis_timed_{kind}_start_{slot}")
+    end = hass_get_optional(f"time.solis_timed_{kind}_end_{slot}")
+    cur = hass_get_optional(f"number.solis_timed_{kind}_current_{slot}")
+    s = _norm_hhmm(start.get("state")) if start else None
+    e = _norm_hhmm(end.get("state")) if end else None
+    window = f"{s}-{e}" if s and e else None
+    try:
+        current = int(float(cur.get("state"))) if cur else None
+    except (TypeError, ValueError):
+        current = None
+    return window, current
 
 
 ALL_SLOTS = {(kind, slot)
              for kind in ("charge", "discharge")
              for slot in range(1, MAX_SLOTS + 1)}
 
+DISABLED_WINDOW = "00:00-00:00"
 
-def clear_schedule():
-    """Zero every slot and force the commit through.
 
-    apply_schedule() reports only slots whose HASS state changed, so when HASS
-    already reads 00:00 the push would be a no-op - exactly wrong on an abort
-    path, because that is the case where HASS and the inverter have drifted (a
-    previous clear staged in HASS but never committed, leaving the inverter
-    repeating an old schedule). Commit all six regardless of HASS state.
+def _desired_slots(charge_windows, discharge_windows):
+    out = {}
+    for kind, windows, amps in (("charge", charge_windows, CHARGE_CURRENT),
+                                ("discharge", discharge_windows, DISCHARGE_CURRENT)):
+        for i in range(MAX_SLOTS):
+            slot = i + 1
+            if i < len(windows):
+                w = windows[i]
+                out[(kind, slot)] = {
+                    "enabled": True,
+                    "window": f"{_utc_hhmm(w['start'])}-{_utc_hhmm(w['end'])}",
+                    "current": amps,
+                    "tag": w.get("tag", ""),
+                }
+            else:
+                out[(kind, slot)] = {"enabled": False, "window": DISABLED_WINDOW,
+                                     "current": 0, "tag": ""}
+    return out
+
+
+def apply_schedule(charge_windows, discharge_windows, force=False):
+    """Program up to MAX_SLOTS charge + MAX_SLOTS discharge slots on the
+    inverter and return the number of registers written.
+
+    Per slot: current, window and the on/off switch. Writes go out in three
+    global phases - every switch-off first, then every window/current, then
+    every switch-on - so a failure part-way can never leave a stale slot
+    live next to a new one.
+
+    What is compared against what: switch bits are always read live (the
+    integration cannot see them). For slots we want ENABLED the window and
+    current are read live too - those are the registers that make the
+    inverter pull from the grid, and the HACS cache has lied before. For
+    slots we want disabled the cache is good enough: with the switch off
+    the window is inert, and the daily force pass tidies it anyway.
+    force=True rewrites everything (the daily re-commit, every abort path,
+    and the charge-outcome re-commit).
+
+    Any read or write the cloud or the inverter rejects exits non-zero: a
+    slot half-programmed is the silent failure this function exists to make
+    loud.
     """
-    apply_schedule([], [])
-    push_to_inverter(ALL_SLOTS)
-
-
-def apply_schedule(charge_windows, discharge_windows):
-    """Program up to MAX_SLOTS charge + MAX_SLOTS discharge slots.
-
-    Returns the set of (kind, slot) pairs whose HASS state changed. Empty set
-    means nothing to push. Time entities only stage their value in HASS - the
-    matching commit button is what actually sends it, so the caller must push
-    every slot in this set.
-    """
-    changed = set()
-    for i in range(MAX_SLOTS):
-        slot = i + 1
-        if i < len(charge_windows):
-            w = charge_windows[i]
-            start_t = _utc_hhmm(w["start"])
-            end_t = _utc_hhmm(w["end"])
-            dirty = _set_slot("charge", slot, start_t, end_t, CHARGE_CURRENT)
-            tag = w.get("tag", "")
-            extra = f"  ({tag})" if tag else ""
-            print(f"  Charge slot {slot}: {start_t[:5]} - {end_t[:5]} UTC{extra}")
-        else:
-            dirty = _clear_slot("charge", slot)
-            print(f"  Charge slot {slot}: disabled")
-        if dirty:
-            changed.add(("charge", slot))
-
-    for i in range(MAX_SLOTS):
-        slot = i + 1
-        if i < len(discharge_windows):
-            w = discharge_windows[i]
-            start_t = _utc_hhmm(w["start"])
-            end_t = _utc_hhmm(w["end"])
-            dirty = _set_slot("discharge", slot, start_t, end_t, DISCHARGE_CURRENT)
-            tag = w.get("tag", "")
-            extra = f"  ({tag})" if tag else ""
-            print(f"  Discharge slot {slot}: {start_t[:5]} - {end_t[:5]} UTC{extra}")
-        else:
-            dirty = _clear_slot("discharge", slot)
-            print(f"  Discharge slot {slot}: disabled")
-        if dirty:
-            changed.add(("discharge", slot))
-    return changed
-
-
-def _push_buttons_for(kind, slot):
-    """Candidate commit-button entity ids for one slot, most-current first.
-
-    The soliscloud integration replaced its single combined commit button
-    (Solis Update Timed Charge/Discharge, cid 103) with one button per slot
-    (cid 5946+) in the 2026-07 release. The old entity is left orphaned in the
-    registry as 'unavailable', and HA *silently skips* service calls to
-    unavailable entities - so the push looked like it succeeded while nothing
-    ever reached the inverter. Try each candidate, skip the dead ones.
-    """
-    return [
-        f"button.solis_inverter_{INVERTER_SN}_solis_update_timed_{kind}_{slot}",
-        "button.solis_update_timed_charge_discharge",
-    ]
-
-
-def push_to_inverter(changed_slots):
-    """Commit every changed slot. Exits non-zero if any slot could not be
-    pushed - a slot staged in HASS but never committed is the silent failure
-    this whole function exists to make loud, so a partial push is still a
-    failed run."""
-    pushed = set()
-    failed = []
-    for kind, slot in sorted(changed_slots):
-        for eid in _push_buttons_for(kind, slot):
-            if eid in pushed:
-                break  # combined button already pressed, covers this slot
-            state = hass_get_optional(eid)
-            # A live button that has never been pressed reads 'unknown' - only
-            # 'unavailable' (or a missing entity) means it is dead.
-            if state is None or state.get("state") == "unavailable":
-                continue
-            # The button press synchronously calls the SolisCloud control API,
-            # which can take 20-40 seconds. Generous timeout so we don't bail
-            # half-way through a write.
-            hass_service("button", "press", {"entity_id": eid}, timeout=90)
-            print(f"  committed {kind} slot {slot} via {eid}")
-            pushed.add(eid)
-            break
-        else:
-            print(f"  ERROR: no usable commit button for {kind} slot {slot}")
-            failed.append(f"{kind} {slot}")
-
-    if failed:
-        print(f"ERROR: {len(failed)} slot(s) were staged in HASS but never "
-              f"committed to the inverter ({', '.join(failed)}) - no usable "
-              f"commit button. The solis integration has probably renamed its "
-              f"buttons again; check the button.* entities and update "
-              f"_push_buttons_for().")
+    desired = _desired_slots(charge_windows, discharge_windows)
+    try:
+        return _apply(desired, force)
+    except SolisError as e:
+        print(f"ERROR: SolisCloud: {e}")
+        print("ERROR: inverter programming failed part-way; slots may be "
+              "inconsistent. The next run retries the whole schedule.")
         sys.exit(5)
 
+
+def _apply(desired, force):
+    api = SolisCloud()
+    api.login()
+
+    # Current state. One live read per switch (the value is the bit and the
+    # read also returns the whole switch register, needed as yuanzhi).
+    switch_on = {}
+    raw = None
+    for key in sorted(desired):
+        kind, slot = key
+        value, raw = api.read(SLOT_CIDS[kind][slot - 1]["switch"])
+        switch_on[key] = value == "1"
+    live = {}
+    for key in sorted(desired):
+        kind, slot = key
+        if desired[key]["enabled"]:
+            cids = SLOT_CIDS[kind][slot - 1]
+            window, _ = api.read(cids["time"])
+            current, _ = api.read(cids["current"])
+            live[key] = (window, current)
+        else:
+            live[key] = _hass_cached_slot(kind, slot)
+
+    offs, values, ons = [], [], []  # (label, cid, value)
+    for key in sorted(desired):
+        kind, slot = key
+        d = desired[key]
+        cids = SLOT_CIDS[kind][slot - 1]
+        window, current = live[key]
+        want_current = str(d["current"])
+        need_current = force or current is None or not _same_value(current, want_current)
+        need_window = force or window != d["window"]
+        need_switch = force or switch_on[key] != d["enabled"]
+        extra = f"  ({d['tag']})" if d["tag"] else ""
+        state = (f"{d['window']} UTC @ {d['current']}A, switch on" if d["enabled"]
+                 else "disabled")
+        print(f"  {kind.capitalize()} slot {slot}: {state}{extra}")
+        if need_switch:
+            (ons if d["enabled"] else offs).append(
+                (f"{kind} {slot} switch", cids["switch"], "1" if d["enabled"] else "0"))
+        if need_current:
+            values.append((f"{kind} {slot} current", cids["current"], want_current))
+        if need_window:
+            values.append((f"{kind} {slot} window", cids["time"], d["window"]))
+
+    writes = offs + values + ons
+    if not writes:
+        print("  Inverter already matches - nothing to write.")
+        return 0
+
+    print(f"  Writing {len(writes)} register(s) to the inverter "
+          f"({len(offs)} off, {len(values)} values, {len(ons)} on)...")
+    for label, cid, value in writes:
+        is_switch = cid in {c["switch"] for kinds in SLOT_CIDS.values() for c in kinds}
+        if is_switch:
+            recv = api.write(cid, value, raw=raw, must_write=force)
+            new_raw = _echo_register_value(recv)
+            if new_raw is None:
+                _, raw = api.read(cid)  # echo unparseable - refetch
+            else:
+                raw = str(new_raw)
+        else:
+            recv = api.write(cid, value, must_write=force)
+        print(f"    wrote {label} = {value}  (echo {recv or '-'})")
+
+    # Read back what matters: every switch bit, plus window and current of
+    # every enabled slot.
+    bad = []
+    for key in sorted(desired):
+        kind, slot = key
+        cids = SLOT_CIDS[kind][slot - 1]
+        d = desired[key]
+        value, _ = api.read(cids["switch"])
+        if (value == "1") != d["enabled"]:
+            bad.append(f"{kind} {slot} switch reads {value}")
+        if d["enabled"]:
+            window, _ = api.read(cids["time"])
+            current, _ = api.read(cids["current"])
+            if window != d["window"]:
+                bad.append(f"{kind} {slot} window reads {window}, want {d['window']}")
+            if not _same_value(current, d["current"]):
+                bad.append(f"{kind} {slot} current reads {current}, want {d['current']}")
+    if bad:
+        print(f"ERROR: read-back mismatch after write: {'; '.join(bad)}")
+        sys.exit(5)
+    print("  Read-back OK.")
+    return len(writes)
+
+
+def clear_schedule():
+    """Disable every slot, rewriting all registers regardless of cache."""
+    apply_schedule([], [], force=True)
+
+
+# ---------- Charge outcome check ----------
 
 def _float_state(entity_id):
     """(value, last_updated) for a numeric sensor, or (None, None)."""
@@ -872,34 +1085,49 @@ def _float_state(entity_id):
     return value, updated
 
 
-def _last_commit_press(kind, slot):
-    """When the per-slot commit button was last pressed (aware UTC), or None.
-    HA stores a button's state as the ISO timestamp of its last press."""
-    for eid in _push_buttons_for(kind, slot):
-        state = hass_get_optional(eid)
-        if not state or state.get("state") in (None, "unknown", "unavailable"):
-            continue
-        try:
-            pressed = datetime.fromisoformat(state["state"])
-        except (TypeError, ValueError):
-            continue
-        return pressed if pressed.tzinfo else pressed.replace(tzinfo=timezone.utc)
-    return None
+# Re-commit cooldown lives in a HASS state we set ourselves (POST
+# /api/states). The job has no storage of its own and HASS is the one place
+# every run can see. Not persisted across HASS restarts, which only means
+# one extra re-commit - acceptable for a rate limit.
+RECOMMIT_MARKER_ENTITY = "sensor.solis_charge_last_recommit"
 
 
-def verify_charging(charge_windows, now, pushed_this_run=False):
+def _last_recommit():
+    state = hass_get_optional(RECOMMIT_MARKER_ENTITY)
+    if not state:
+        return None
+    try:
+        t = datetime.fromisoformat(state["state"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
+def _mark_recommit(now):
+    _request("POST", f"{HASS_URL}/api/states/{RECOMMIT_MARKER_ENTITY}", {
+        "state": now.isoformat(),
+        "attributes": {"friendly_name": "Solis charge last re-commit"},
+    })
+
+
+def verify_charging(charge_windows, discharge_windows, now, pushed_this_run=False):
     """Inside a programmed charge window, prove the inverter is actually
-    grid-charging; re-commit every programmed charge slot if it is not.
+    grid-charging; rewrite every slot if it is not.
+
+    Neither "cloud read-back matches" nor "HASS matches" is proof (2026-09-12:
+    slot stored, read back all morning, battery sat at 19% - the slot switch
+    bit was off). The only proof is the inverter behaving: inside a window
+    the battery must be taking roughly the timed-charge current.
 
     Returns True if verified OK or not applicable, False if a re-commit was
     needed (the run still exits 0 - the remedy has been applied and the next
     run re-verifies).
     """
     if pushed_this_run:
-        # Any telemetry we have predates the commit we just sent; judging the
+        # Any telemetry we have predates the write we just sent; judging the
         # inverter on it would double-write every time a window is programmed
         # while already open. The next run (15 min) verifies.
-        print("Charge check: slots were pushed this run - verifying next run.")
+        print("Charge check: slots were written this run - verifying next run.")
         return True
     active = None
     for w in charge_windows:
@@ -956,18 +1184,16 @@ def verify_charging(charge_windows, now, pushed_this_run=False):
 
     print(f"WARNING: window {label} is active, battery at {soc:.0f}% but only "
           f"{watts:+.0f} W ({age / 60:.0f} min old reading). The inverter is not "
-          f"running the timed charge - the last commit never reached it.")
-    slots = {("charge", i + 1) for i in range(min(len(charge_windows), MAX_SLOTS))}
-    last = max((p for p in (_last_commit_press(k, i) for k, i in slots) if p),
-               default=None)
+          f"running the timed charge.")
+    last = _last_recommit()
     if last and (now - last).total_seconds() < CHARGE_VERIFY_RECOMMIT_COOLDOWN_SECONDS:
         print(f"  Last re-commit was {(now - last).total_seconds() / 60:.0f} min ago "
               f"- giving the inverter until the cooldown expires before another.")
         return False
-    print("  Re-committing every programmed charge slot.")
-    push_to_inverter(slots)
+    print("  Rewriting every slot.")
+    apply_schedule(charge_windows, discharge_windows, force=True)
+    _mark_recommit(now)  # only a delivered rewrite starts the cooldown
     return False
-
 
 
 # ---------- Main ----------
@@ -1084,42 +1310,25 @@ def main():
             # Force the commit: if HASS already reads 00:00 the staged clear
             # would push nothing and the inverter would keep charging on the
             # windows this check just rejected.
-            apply_schedule([], discharge_windows)
-            push_to_inverter(ALL_SLOTS)
+            apply_schedule([], discharge_windows, force=True)
             sys.exit(3)
         print("  PASSED")
         print()
 
-    # 6. Apply.
-    print("Programming inverter:")
-    changed = apply_schedule(all_charge, discharge_windows)
-    print()
-
-    # "Unchanged in HASS" does not prove the inverter has the values: the time
-    # entities are staged locally and only a commit button sends them, so a
-    # push that silently no-ops leaves HASS looking correct forever while the
-    # inverter runs an empty schedule (exactly what happened 2026-07-26/27).
-    # Re-commit everything once a day as insurance, on the midnight run that
-    # plans the new day, so the two can never drift apart for more than 24h.
-    # The job runs every 15 min, so gate the force-push on the first run of
-    # the hour or it would re-commit four times.
+    # 6. Apply. Re-write everything once a day as insurance, gated on the
+    # first run of the hour since the job runs every 15 min.
     force = now_utc.hour == FORCE_PUSH_HOUR and now_utc.minute < 15
-    pushed = False
-    if not changed and not force:
-        print("No slot values changed - skipping cloud push.")
-    else:
-        if force:
-            print(f"Daily force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
-                  f"re-committing every slot regardless of HASS state.")
-            changed = ALL_SLOTS
-        print("Pushing schedule to inverter...")
-        push_to_inverter(changed)
-        pushed = True
+    if force:
+        print(f"Daily force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
+              f"rewriting every slot regardless of current state.")
+    print("Programming inverter:")
+    written = apply_schedule(all_charge, discharge_windows, force=force)
     print()
 
-    # 7. Prove it. A push that SolisCloud accepted is not a push the inverter
-    # applied; inside a live window the battery has to be charging.
-    verify_charging(all_charge, datetime.now(timezone.utc), pushed_this_run=pushed)
+    # 7. Prove it. A write the cloud accepted is not a slot the inverter is
+    # running; inside a live window the battery has to be charging.
+    verify_charging(all_charge, discharge_windows, datetime.now(timezone.utc),
+                    pushed_this_run=written > 0)
     print("Done")
 
 

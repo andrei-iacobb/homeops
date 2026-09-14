@@ -5,13 +5,14 @@
 #   - Octoplus Saving Sessions (discharge during)
 #
 # Every 15 minutes: Power-up / Saving Session announcements made during the
-# day are picked up quickly, and a slot commit that SolisCloud accepted but
-# never delivered to the inverter is caught and re-sent within a quarter hour
-# of the window opening (see verify_charging in the script). Runs at :05
-# rather than :00 so the Octopus rate entities have rolled over first.
+# day are picked up quickly, and a slot the inverter is not actually running
+# is caught and rewritten within a quarter hour of the window opening (see
+# verify_charging in the script). Runs at :05 rather than :00 so the Octopus
+# rate entities have rolled over first.
 #
-# Times sent to the inverter are UTC because the SolisCloud station is
-# configured as UTC+0 and the HACS solis integration does not TZ-convert.
+# Slots are written straight to the SolisCloud open API (window, current and
+# the per-slot on/off switch bit the HACS integration cannot set). Times are
+# UTC because the SolisCloud station is configured as UTC+0.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -24,6 +25,11 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 3
+      # Every register read is a live Modbus round-trip through the
+      # datalogger (10-30s), so a run costs ~90s and a bad one much more.
+      # concurrencyPolicy Forbid means a job that hangs would block the
+      # schedule indefinitely, so bound it below the 15 min cadence.
+      activeDeadlineSeconds: 660
       template:
         spec:
           restartPolicy: OnFailure
