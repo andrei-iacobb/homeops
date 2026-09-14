@@ -71,6 +71,31 @@ STALE_FEED_WARN_SECONDS = 3 * 3600
 # outage worth an alert, not a stall to ride through.
 CLOCK_HISTORY_WINDOW_SECONDS = 24 * 3600
 
+# Charge verification. SolisCloud's control API can accept a slot write,
+# read it back as stored, and still never deliver it to the inverter: on
+# 2026-09-12 atRead reported 08:00-15:00 for slot 1 all morning while the
+# battery sat at 19% with no grid import, and grid charging only began after
+# the commit button was pressed again (SolisCloud 5-min series shows 0 W to
+# the battery until 08:47 UTC and 2.7 kW from 09:22 UTC, the re-press was at
+# 09:02). So neither "HASS state matches" nor "cloud read-back matches" is
+# proof. The only proof is the inverter behaving: inside a programmed charge
+# window the battery must be taking roughly the timed-charge current. If it
+# is not, re-commit the slots.
+# 50 A x ~52 V is ~2.6 kW; 2.7 kW observed. Below this inside a window the
+# timed charge is not running (PV-only charging on a bright day can also
+# exceed it, in which case the battery is filling anyway and nothing is lost).
+CHARGE_VERIFY_MIN_WATTS = float(os.environ.get("CHARGE_VERIFY_MIN_WATTS", "2000"))
+# Charge current tapers near full; do not treat that as a failed slot.
+CHARGE_VERIFY_FULL_SOC = float(os.environ.get("CHARGE_VERIFY_FULL_SOC", "95"))
+# Give the inverter this long after a window opens before judging it, and
+# only judge on a reading no older than this (the feed stalls for hours).
+CHARGE_VERIFY_SETTLE_SECONDS = 10 * 60
+CHARGE_VERIFY_MAX_AGE_SECONDS = 20 * 60
+# Never re-commit more often than this. Bounds the SolisCloud write rate if
+# the inverter genuinely refuses to charge (BMS limit, fault) to two an hour
+# for the length of the window, instead of one per run.
+CHARGE_VERIFY_RECOMMIT_COOLDOWN_SECONDS = 30 * 60
+
 # UTC hour whose run re-commits every slot to the inverter even when nothing
 # changed in HASS. Set to -1 to disable. Sits just after the plan rolls over
 # at UK midnight (see get_rates) so the re-commit lands on a fresh schedule
@@ -90,6 +115,11 @@ INVERTER_SN = os.environ.get("INVERTER_SN", "1031030229080043")
 INVERTER_TIMESTAMP_ENTITY = (
     f"sensor.solis_inverter_{INVERTER_SN}_solis_timestamp_measurements_received"
 )
+# Live battery telemetry used by verify_charging (see the knobs above).
+BATTERY_POWER_ENTITY = (
+    f"sensor.solis_inverter_{INVERTER_SN}_solis_battery_power")      # W, +ve = charging
+BATTERY_SOC_ENTITY = (
+    f"sensor.solis_inverter_{INVERTER_SN}_solis_remaining_battery_capacity")  # %
 
 # Octoplus entities (may be absent if not enrolled - script tolerates this).
 OCTOPLUS_SAVING_EVENT = "event.octopus_energy_a_a2279b81_octoplus_saving_session_events"
@@ -829,6 +859,117 @@ def push_to_inverter(changed_slots):
         sys.exit(5)
 
 
+def _float_state(entity_id):
+    """(value, last_updated) for a numeric sensor, or (None, None)."""
+    state = hass_get_optional(entity_id)
+    try:
+        value = float(state.get("state"))
+        updated = datetime.fromisoformat(state["last_updated"])
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return None, None
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=timezone.utc)
+    return value, updated
+
+
+def _last_commit_press(kind, slot):
+    """When the per-slot commit button was last pressed (aware UTC), or None.
+    HA stores a button's state as the ISO timestamp of its last press."""
+    for eid in _push_buttons_for(kind, slot):
+        state = hass_get_optional(eid)
+        if not state or state.get("state") in (None, "unknown", "unavailable"):
+            continue
+        try:
+            pressed = datetime.fromisoformat(state["state"])
+        except (TypeError, ValueError):
+            continue
+        return pressed if pressed.tzinfo else pressed.replace(tzinfo=timezone.utc)
+    return None
+
+
+def verify_charging(charge_windows, now, pushed_this_run=False):
+    """Inside a programmed charge window, prove the inverter is actually
+    grid-charging; re-commit every programmed charge slot if it is not.
+
+    Returns True if verified OK or not applicable, False if a re-commit was
+    needed (the run still exits 0 - the remedy has been applied and the next
+    run re-verifies).
+    """
+    if pushed_this_run:
+        # Any telemetry we have predates the commit we just sent; judging the
+        # inverter on it would double-write every time a window is programmed
+        # while already open. The next run (15 min) verifies.
+        print("Charge check: slots were pushed this run - verifying next run.")
+        return True
+    active = None
+    for w in charge_windows:
+        start = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
+        end = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
+        if start + timedelta(seconds=CHARGE_VERIFY_SETTLE_SECONDS) <= now < end:
+            active = (start, end, w)
+            break
+    if active is None:
+        return True
+    start, end, w = active
+    label = f"{start:%H:%M}-{end:%H:%M} UTC ({w.get('tag') or 'charge'})"
+
+    reading = _last_genuine_inverter_reading()
+    if reading is None:
+        print(f"Charge check: inside window {label} but no inverter reading "
+              f"in the last {CLOCK_HISTORY_WINDOW_SECONDS // 3600}h - cannot verify.")
+        return True
+    _, received = reading
+    if received.tzinfo is None:
+        received = received.replace(tzinfo=timezone.utc)
+    age = (now - received).total_seconds()
+    if age > CHARGE_VERIFY_MAX_AGE_SECONDS:
+        print(f"Charge check: inside window {label} but newest inverter reading "
+              f"is {age / 60:.0f} min old - cannot verify until the feed catches up.")
+        return True
+    if received < start + timedelta(seconds=CHARGE_VERIFY_SETTLE_SECONDS):
+        print(f"Charge check: inside window {label} but newest reading predates "
+              f"the settle period - waiting for a fresh one.")
+        return True
+
+    watts, watts_at = _float_state(BATTERY_POWER_ENTITY)
+    soc, soc_at = _float_state(BATTERY_SOC_ENTITY)
+    if watts is None or soc is None:
+        print(f"Charge check: battery sensors unreadable "
+              f"(power={watts}, soc={soc}) - cannot verify.")
+        return True
+    # The battery sensors must be as current as the timestamp reading: a
+    # sensor stuck on an old value while the feed keeps ticking would
+    # otherwise condemn the inverter every run for the whole window.
+    telemetry_floor = received - timedelta(seconds=CHARGE_VERIFY_MAX_AGE_SECONDS)
+    if min(watts_at, soc_at) < telemetry_floor:
+        print(f"Charge check: battery telemetry older than the newest inverter "
+              f"reading (power {watts_at:%H:%M:%S}, soc {soc_at:%H:%M:%S}, "
+              f"reading {received:%H:%M:%S}) - cannot verify.")
+        return True
+    if soc >= CHARGE_VERIFY_FULL_SOC:
+        print(f"Charge check: window {label}, battery {soc:.0f}% - full enough, OK.")
+        return True
+    if watts >= CHARGE_VERIFY_MIN_WATTS:
+        print(f"Charge check: window {label}, battery taking {watts:.0f} W "
+              f"at {soc:.0f}% - charging, OK.")
+        return True
+
+    print(f"WARNING: window {label} is active, battery at {soc:.0f}% but only "
+          f"{watts:+.0f} W ({age / 60:.0f} min old reading). The inverter is not "
+          f"running the timed charge - the last commit never reached it.")
+    slots = {("charge", i + 1) for i in range(min(len(charge_windows), MAX_SLOTS))}
+    last = max((p for p in (_last_commit_press(k, i) for k, i in slots) if p),
+               default=None)
+    if last and (now - last).total_seconds() < CHARGE_VERIFY_RECOMMIT_COOLDOWN_SECONDS:
+        print(f"  Last re-commit was {(now - last).total_seconds() / 60:.0f} min ago "
+              f"- giving the inverter until the cooldown expires before another.")
+        return False
+    print("  Re-committing every programmed charge slot.")
+    push_to_inverter(slots)
+    return False
+
+
+
 # ---------- Main ----------
 
 def main():
@@ -960,19 +1101,25 @@ def main():
     # inverter runs an empty schedule (exactly what happened 2026-07-26/27).
     # Re-commit everything once a day as insurance, on the midnight run that
     # plans the new day, so the two can never drift apart for more than 24h.
-    force = now_utc.hour == FORCE_PUSH_HOUR
+    # The job runs every 15 min, so gate the force-push on the first run of
+    # the hour or it would re-commit four times.
+    force = now_utc.hour == FORCE_PUSH_HOUR and now_utc.minute < 15
+    pushed = False
     if not changed and not force:
         print("No slot values changed - skipping cloud push.")
-        print("Done")
-        return
+    else:
+        if force:
+            print(f"Daily force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
+                  f"re-committing every slot regardless of HASS state.")
+            changed = ALL_SLOTS
+        print("Pushing schedule to inverter...")
+        push_to_inverter(changed)
+        pushed = True
+    print()
 
-    if force:
-        print(f"Hourly force-push window ({FORCE_PUSH_HOUR:02d}:00 UTC) - "
-              f"re-committing every slot regardless of HASS state.")
-        changed = ALL_SLOTS
-
-    print("Pushing schedule to inverter...")
-    push_to_inverter(changed)
+    # 7. Prove it. A push that SolisCloud accepted is not a push the inverter
+    # applied; inside a live window the battery has to be charging.
+    verify_charging(all_charge, datetime.now(timezone.utc), pushed_this_run=pushed)
     print("Done")
 
 

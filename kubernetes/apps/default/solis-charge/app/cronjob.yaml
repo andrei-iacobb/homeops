@@ -4,8 +4,11 @@
 #   - Octoplus Free Electricity / Power-ups (force-charge during)
 #   - Octoplus Saving Sessions (discharge during)
 #
-# Hourly cadence so Power-up / Saving Session announcements made during the
-# day are picked up without waiting for the nightly run.
+# Every 15 minutes: Power-up / Saving Session announcements made during the
+# day are picked up quickly, and a slot commit that SolisCloud accepted but
+# never delivered to the inverter is caught and re-sent within a quarter hour
+# of the window opening (see verify_charging in the script). Runs at :05
+# rather than :00 so the Octopus rate entities have rolled over first.
 #
 # Times sent to the inverter are UTC because the SolisCloud station is
 # configured as UTC+0 and the HACS solis integration does not TZ-convert.
@@ -14,7 +17,7 @@ kind: CronJob
 metadata:
   name: solis-charge
 spec:
-  schedule: "5 * * * *"
+  schedule: "5,20,35,50 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 5
   failedJobsHistoryLimit: 5
