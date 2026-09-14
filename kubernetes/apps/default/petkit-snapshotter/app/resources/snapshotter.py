@@ -416,6 +416,8 @@ class Collector:
             if not state or not isinstance(state.get("state"), str):
                 continue
             source_state = state["state"]
+            if parse_datetime(source_state) is None:
+                continue
             if self.store.already_seen(entity, source_state):
                 continue
             image_path = (state.get("attributes") or {}).get("entity_picture")
