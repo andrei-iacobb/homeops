@@ -116,7 +116,7 @@
         (state.device === 'all' || item.device === state.device) &&
         (state.event === 'all' || item.event === state.event)
       );
-      summary.textContent = filtered.length === 1 ? '1 saved snapshot' : `${filtered.length} saved snapshots`;
+      summary.textContent = filtered.length === 1 ? '1 saved snapshot' : String(filtered.length) + ' saved snapshots';
       timeline.replaceChildren();
       if (!filtered.length) {
         const empty = document.createElement('p');
@@ -144,7 +144,7 @@
           card.className = 'snapshot';
           const image = document.createElement('img');
           image.src = item.url;
-          image.alt = `${item.device_label}, ${item.event_label.toLowerCase()} at ${displayTime(item.event_at)}`;
+          image.alt = item.device_label + ', ' + item.event_label.toLowerCase() + ' at ' + displayTime(item.event_at);
           image.loading = 'lazy';
           image.decoding = 'async';
           const meta = document.createElement('div');
@@ -173,11 +173,11 @@
     async function load() {
       try {
         const response = await fetch('/manifest.json', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`manifest ${response.status}`);
+        if (!response.ok) throw new Error('manifest ' + response.status);
         const manifest = await response.json();
         state.snapshots = Array.isArray(manifest.snapshots) ? manifest.snapshots : [];
         const updatedAt = dateValue(manifest.updated_at);
-        updated.textContent = updatedAt ? `Updated ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(updatedAt)}` : 'Archive ready';
+        updated.textContent = updatedAt ? 'Updated ' + new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(updatedAt) : 'Archive ready';
         render();
       } catch (_error) {
         updated.textContent = 'Archive unavailable';
