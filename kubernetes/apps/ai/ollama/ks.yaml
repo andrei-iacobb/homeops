@@ -9,7 +9,7 @@ spec:
   postBuild:
     substitute:
       APP: ollama
-      APP_PVC: ollama
+      APP_PVC: ollama-nfs
       VOLSYNC_SCHEDULE: "0 5 * * 0"
       MOVER_UID: "1000"
       MOVER_GID: "1000"

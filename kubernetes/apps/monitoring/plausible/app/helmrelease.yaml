@@ -124,9 +124,7 @@ spec:
     persistence:
       clickhouse-data:
         type: persistentVolumeClaim
-        storageClass: openebs-hostpath
-        size: 20Gi
-        accessMode: ReadWriteOnce
+        existingClaim: plausible-clickhouse-nfs
         advancedMounts:
           clickhouse:
             app:
