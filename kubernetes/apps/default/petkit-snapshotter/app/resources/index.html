@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PetKit snapshots</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #2b2723;
+      --muted: rgba(43, 39, 35, .62);
+      --quiet: rgba(43, 39, 35, .45);
+      --canvas: #eee7da;
+      --card: rgba(255, 255, 255, .92);
+      --line: rgba(60, 50, 40, .12);
+      --accent: #b85c38;
+      --accent-soft: rgba(184, 92, 56, .12);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { max-width: 980px; margin: 0 auto; padding: 22px 18px 28px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .eyebrow { margin: 0 0 4px; color: var(--quiet); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(22px, 4vw, 30px); letter-spacing: -.035em; line-height: 1.05; }
+    .updated { color: var(--muted); font-size: 12px; text-align: right; white-space: nowrap; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 6px; margin-bottom: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.52); }
+    button, select { min-height: 36px; border: 1px solid transparent; border-radius: 10px; color: var(--ink); font: inherit; }
+    button { padding: 0 12px; background: transparent; cursor: pointer; }
+    button:hover { background: rgba(255,255,255,.7); }
+    button[aria-pressed="true"] { border-color: rgba(184,92,56,.24); background: var(--accent-soft); color: #914827; font-weight: 650; }
+    select { margin-left: auto; padding: 0 10px; border-color: var(--line); background: var(--card); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .summary { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .day { position: relative; margin: 0 0 20px; }
+    .day-title { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; color: var(--quiet); font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .day-title::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+    .timeline { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .snapshot { overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--card); box-shadow: 0 8px 22px rgba(74, 58, 43, .045); }
+    .snapshot img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #d6cec0; }
+    .snapshot-meta { display: flex; align-items: start; justify-content: space-between; gap: 10px; padding: 10px 12px 11px; }
+    .snapshot-time { display: block; color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 650; }
+    .snapshot-source { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .event { flex: none; padding: 3px 7px; border-radius: 999px; background: var(--accent-soft); color: #914827; font-size: 10px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+    .empty, .error { padding: 26px 16px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); text-align: center; }
+    .error { color: #9c302d; background: rgba(197,41,42,.06); }
+    @media (max-width: 560px) {
+      main { padding: 16px 12px 22px; }
+      header { align-items: start; flex-direction: column; gap: 6px; }
+      .updated { text-align: left; }
+      select { margin-left: 0; width: 100%; }
+      .timeline { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">PetKit event archive</p>
+        <h1>Snapshot timeline</h1>
+      </div>
+      <div class="updated" id="updated">Loading archive...</div>
+    </header>
+    <nav class="toolbar" aria-label="Snapshot filters">
+      <button type="button" data-device="all" aria-pressed="true">All</button>
+      <button type="button" data-device="tommy" aria-pressed="false">Tommy</button>
+      <button type="button" data-device="downstairs" aria-pressed="false">Downstairs feeder</button>
+      <select id="event-filter" aria-label="Filter event type">
+        <option value="all">All events</option>
+        <option value="visit">Visits</option>
+        <option value="eat">Eating</option>
+        <option value="feed">Feeding</option>
+      </select>
+    </nav>
+    <p class="summary" id="summary">Loading snapshots...</p>
+    <section id="timeline" aria-live="polite"></section>
+  </main>
+  <script>
+    const state = { device: 'all', event: 'all', snapshots: [] };
+    const params = new URLSearchParams(location.search);
+    if (['tommy', 'downstairs'].includes(params.get('device'))) state.device = params.get('device');
+    if (['visit', 'eat', 'feed'].includes(params.get('event'))) state.event = params.get('event');
+
+    const timeline = document.getElementById('timeline');
+    const summary = document.getElementById('summary');
+    const updated = document.getElementById('updated');
+    const eventFilter = document.getElementById('event-filter');
+    eventFilter.value = state.event;
+
+    function dateValue(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.valueOf()) ? null : date;
+    }
+
+    function displayTime(value) {
+      const date = dateValue(value);
+      return date ? new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(date) : 'Unknown time';
+    }
+
+    function displayDay(value) {
+      const date = dateValue(value);
+      return date ? new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).format(date) : 'Undated';
+    }
+
+    function render() {
+      document.querySelectorAll('[data-device]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.device === state.device));
+      });
+      const filtered = state.snapshots.filter((item) =>
+        (state.device === 'all' || item.device === state.device) &&
+        (state.event === 'all' || item.event === state.event)
+      );
+      summary.textContent = filtered.length === 1 ? '1 saved snapshot' : `${filtered.length} saved snapshots`;
+      timeline.replaceChildren();
+      if (!filtered.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty';
+        empty.textContent = 'No snapshots match this filter yet.';
+        timeline.append(empty);
+        return;
+      }
+      const groups = new Map();
+      filtered.forEach((item) => {
+        const key = displayDay(item.event_at);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+      groups.forEach((items, day) => {
+        const daySection = document.createElement('section');
+        daySection.className = 'day';
+        const dayTitle = document.createElement('h2');
+        dayTitle.className = 'day-title';
+        dayTitle.textContent = day;
+        const grid = document.createElement('div');
+        grid.className = 'timeline';
+        items.forEach((item) => {
+          const card = document.createElement('article');
+          card.className = 'snapshot';
+          const image = document.createElement('img');
+          image.src = item.url;
+          image.alt = `${item.device_label}, ${item.event_label.toLowerCase()} at ${displayTime(item.event_at)}`;
+          image.loading = 'lazy';
+          image.decoding = 'async';
+          const meta = document.createElement('div');
+          meta.className = 'snapshot-meta';
+          const copy = document.createElement('div');
+          const time = document.createElement('time');
+          time.className = 'snapshot-time';
+          time.dateTime = item.event_at;
+          time.textContent = displayTime(item.event_at);
+          const source = document.createElement('span');
+          source.className = 'snapshot-source';
+          source.textContent = item.device_label;
+          copy.append(time, source);
+          const badge = document.createElement('span');
+          badge.className = 'event';
+          badge.textContent = item.event_label;
+          meta.append(copy, badge);
+          card.append(image, meta);
+          grid.append(card);
+        });
+        daySection.append(dayTitle, grid);
+        timeline.append(daySection);
+      });
+    }
+
+    async function load() {
+      try {
+        const response = await fetch('/manifest.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`manifest ${response.status}`);
+        const manifest = await response.json();
+        state.snapshots = Array.isArray(manifest.snapshots) ? manifest.snapshots : [];
+        const updatedAt = dateValue(manifest.updated_at);
+        updated.textContent = updatedAt ? `Updated ${new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(updatedAt)}` : 'Archive ready';
+        render();
+      } catch (_error) {
+        updated.textContent = 'Archive unavailable';
+        summary.textContent = '';
+        timeline.replaceChildren();
+        const error = document.createElement('p');
+        error.className = 'error';
+        error.textContent = 'The snapshot archive is unavailable. It will retry automatically.';
+        timeline.append(error);
+      }
+    }
+
+    document.querySelectorAll('[data-device]').forEach((button) => {
+      button.addEventListener('click', () => { state.device = button.dataset.device; render(); });
+    });
+    eventFilter.addEventListener('change', () => { state.event = eventFilter.value; render(); });
+    render();
+    load();
+    window.setInterval(load, 60_000);
+  </script>
+</body>
+</html>

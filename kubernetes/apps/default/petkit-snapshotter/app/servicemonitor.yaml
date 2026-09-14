@@ -1,0 +1,16 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: petkit-snapshotter
+  namespace: default
+  labels:
+    app: petkit-snapshotter
+spec:
+  selector:
+    matchLabels:
+      app: petkit-snapshotter
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

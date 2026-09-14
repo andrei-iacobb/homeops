@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: petkit-snapshotter
+  namespace: default
+  labels:
+    app: petkit-snapshotter
+spec:
+  selector:
+    app: petkit-snapshotter
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

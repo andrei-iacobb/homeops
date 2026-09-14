@@ -49,6 +49,7 @@ resources:
   - ./mealie/ks.yaml
   - ./solis-charge/ks.yaml
   - ./fanwatch/ks.yaml
+  - ./petkit-snapshotter/ks.yaml
   - ./slate/ks.yaml
   - ./forgejo-runner/ks.yaml
   - ./minecraft-bedrock/ks.yaml
