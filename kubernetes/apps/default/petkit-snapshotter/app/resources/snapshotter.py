@@ -487,7 +487,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             )
             self.send_header(
                 "Content-Security-Policy",
-                "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self' https://hass.iacob.uk http://192.168.1.90:8123",
+                "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self' https://hass.iacob.uk https://hass.iacob.co.uk http://192.168.1.90:8123",
             )
             self.end_headers()
             self.wfile.write(body)
