@@ -170,6 +170,11 @@ def metric_label(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
 
 
+def snapshot_url(filename: str) -> str:
+    base_url = PUBLIC_BASE_URL or ""
+    return f"{base_url}/snapshots/{filename}"
+
+
 class Metrics:
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -340,8 +345,7 @@ class SnapshotStore:
         relative_path = relative_dir / filename
         destination = SNAPSHOT_ROOT / relative_path
         atomic_write(destination, image)
-        base_url = PUBLIC_BASE_URL or ""
-        url = f"{base_url}/snapshots/{relative_path.as_posix()}"
+        url = snapshot_url(relative_path.as_posix())
         item = {
             "id": f"{info['device']}-{stamp}-{info['event']}-{digest[:12]}",
             "device": info["device"],
@@ -369,7 +373,18 @@ class SnapshotStore:
 
     def manifest_bytes(self) -> bytes:
         with self._lock:
-            return json.dumps(self.manifest, separators=(",", ":")).encode()
+            # Rebuild URLs on read so changing the private gateway prefix also
+            # fixes snapshots already retained on the NFS volume.
+            snapshots = []
+            for item in self.manifest["snapshots"]:
+                current = dict(item)
+                filename = current.get("filename")
+                if isinstance(filename, str):
+                    current["url"] = snapshot_url(filename)
+                snapshots.append(current)
+            payload = dict(self.manifest)
+            payload["snapshots"] = snapshots
+            return json.dumps(payload, separators=(",", ":")).encode()
 
     def get_file(self, relative_path: str) -> Path | None:
         candidate = (SNAPSHOT_ROOT / relative_path).resolve()
@@ -472,7 +487,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             )
             self.send_header(
                 "Content-Security-Policy",
-                "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self' https://hass.iacob.co.uk http://192.168.1.90:8123",
+                "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self' https://hass.iacob.uk http://192.168.1.90:8123",
             )
             self.end_headers()
             self.wfile.write(body)

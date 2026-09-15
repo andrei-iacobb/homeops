@@ -41,7 +41,7 @@ spec:
                   name: petkit-snapshotter-secret
                   key: HASS_TOKEN
             - name: PUBLIC_BASE_URL
-              value: "https://petkit-snapshots.iacob.uk"
+              value: "https://hass.iacob.uk/petkit-snapshots"
             - name: STORAGE_DIR
               value: "/data"
             - name: INDEX_PATH

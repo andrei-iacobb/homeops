@@ -12,12 +12,18 @@ spec:
       namespace: network
       sectionName: https
   hostnames:
-    - petkit-snapshots.iacob.uk
+    - hass.iacob.uk
   rules:
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /petkit-snapshots
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - name: petkit-snapshotter
           port: 80
