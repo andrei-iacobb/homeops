@@ -260,7 +260,7 @@ data:
             key: ${HOMEPAGE_HASS_KEY}
       - PetKit snapshots:
           icon: mdi:image-multiple
-          href: https://petkit-snapshots.iacob.uk
+          href: https://petkit-snapshots.iacob.co.uk
           description: Pet feeder event archive
       - TrueNAS:
           icon: truenas.svg

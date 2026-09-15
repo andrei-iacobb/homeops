@@ -7,6 +7,7 @@ resources:
   - ./deployment.yaml
   - ./service.yaml
   - ./httproute.yaml
+  - ./httproute-external.yaml
   - ./servicemonitor.yaml
 configMapGenerator:
   - name: petkit-snapshotter-code
