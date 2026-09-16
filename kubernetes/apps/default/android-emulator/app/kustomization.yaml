@@ -6,3 +6,4 @@ resources:
   - ./ocirepository.yaml
   - ./service-loadbalancer.yaml
   - ./pvc-scratch.yaml
+  - ./networkpolicy.yaml

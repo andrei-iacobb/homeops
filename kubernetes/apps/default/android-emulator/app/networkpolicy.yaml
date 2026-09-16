@@ -1,0 +1,24 @@
+---
+# The default-ingress policy only admits other namespaces and the host, so
+# without this LAN clients hitting the LoadBalancer VIP are dropped as "world"
+# identity. noVNC still worked because it arrives via the envoy-internal pod in
+# the network namespace; only direct adb to the VIP was affected.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: android-emulator-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: android-emulator
+  ingress:
+    # Every internal segment the UniFi gateway serves - br0 (.1), br20, br30,
+    # br67 and both WireGuard pools (.2/.3). Kept as one /16 so a new VLAN does
+    # not silently lose access; this is private space only, not the internet.
+    - fromCIDR:
+        - 192.168.0.0/16
+      toPorts:
+        - ports:
+            - port: "5555"
+              protocol: TCP
