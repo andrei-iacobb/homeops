@@ -53,15 +53,19 @@ spec:
                   LOW=$((NOW - WINDOW_PAST_SECONDS))
                   HIGH=$((NOW + WINDOW_FUTURE_SECONDS))
 
-                  QUEUE_JSON=$(curl -fsS --max-time 10 -H "$AUTH" \
-                    "$SONARR_URL/api/v3/queue?pageSize=200&includeEpisode=true")
+                  # Spool the queue to a file instead of passing it on argv:
+                  # once it grows past the kernel's per-argument limit,
+                  # --argjson makes exec() fail with "Argument list too long".
+                  curl -fsS --max-time 10 -H "$AUTH" \
+                    "$SONARR_URL/api/v3/queue?pageSize=200&includeEpisode=true" \
+                    -o /tmp/queue.json
 
                   NEED=$(curl -fsS --max-time 10 -H "$AUTH" \
                     "$SONARR_URL/api/v3/wanted/missing?pageSize=100&sortKey=airDateUtc&sortDirection=descending&monitored=true" \
-                    | jq --argjson queue "$QUEUE_JSON" \
+                    | jq --slurpfile queue /tmp/queue.json \
                          --argjson low "$LOW" \
                          --argjson high "$HIGH" '
-                        ($queue.records // [] | map(.episodeId) | unique) as $qids
+                        ($queue[0].records // [] | map(.episodeId) | unique) as $qids
                         | [.records[]
                            | select(.airDateUtc != null)
                            | select(
