@@ -5,7 +5,10 @@ metadata:
   name: android-emulator-loadbalancer
   namespace: default
   annotations:
-    lbipam.cilium.io/ips: "192.168.1.15"
+    # Below the br0 DHCP pool (.10-.254). 192.168.1.15 was inside it and DHCP
+    # had already leased it to VM 108 (ninja-srv2019), so the gateway ARP-resolved
+    # the VIP to that Windows box and LAN/VPN adb went to the wrong host.
+    lbipam.cilium.io/ips: "192.168.1.2"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
