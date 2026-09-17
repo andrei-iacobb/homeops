@@ -31,6 +31,7 @@ resources:
   - ./inbi/ks.yaml
   - ./inbi-demo/ks.yaml
   - ./searxng/ks.yaml
+  - ./seedyn/ks.yaml
   - ./zipline/ks.yaml
   - ./sharerr/ks.yaml
   - ./replicarr/ks.yaml

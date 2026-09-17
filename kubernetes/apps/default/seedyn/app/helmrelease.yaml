@@ -1,0 +1,144 @@
+---
+# Seedyn - file -> permanent short URL. Fork of DavidIlie/seedyn with a
+# configurable OIDC issuer, built from git.iacob.co.uk/andrei/seedyn.
+# State lives in postgres (databases/seedyn) and MinIO (bucket seedyn); the
+# pod itself is stateless, so there is no PVC and no VolSync.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: seedyn
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: seedyn
+  interval: 1h
+  values:
+    controllers:
+      seedyn:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          migrate:
+            image: &image
+              repository: git.iacob.co.uk/andrei/seedyn
+              tag: master-7e8c091
+            command: ["node_modules/.bin/prisma", "migrate", "deploy"]
+            env:
+              NODE_ENV: production
+            envFrom: &envFrom
+              - secretRef:
+                  name: seedyn-secret
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+        containers:
+          app:
+            image: *image
+            env:
+              NODE_ENV: production
+              PORT: &port 3000
+              APP_URL: https://seedyn.iacob.co.uk
+              CDN_URL: https://i.iacob.co.uk
+              APP_HOSTS: seedyn.iacob.co.uk
+              MEDIA_HOSTS: i.iacob.co.uk
+              MEDIA_DOMAINS: iacob=https://i.iacob.co.uk
+              AUTH_OIDC_ISSUER: https://authentik.iacob.uk/application/o/seedyn/
+              AUTH_OIDC_NAME: Authentik
+              AUTH_OIDC_SCOPE: openid profile email seedyn
+              MINIO_URL: minio.databases.svc.cluster.local
+              MINIO_PORT: "9000"
+              MINIO_SECURE: "false"
+              MINIO_REGION: us-east-1
+              MINIO_BUCKET: seedyn
+              DIRECT_UPLOAD_MAX_BYTES: "2147483648"
+              DIRECT_UPLOAD_TRANSPORT: proxy
+              # Cloudflare -> envoy-external -> pod
+              TRUSTED_PROXY_HOPS: "2"
+              POD_IP:
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.podIP
+            envFrom: *envFrom
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthz
+                    port: *port
+                  initialDelaySeconds: 10
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 4
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/readyz
+                    port: *port
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthz
+                    port: *port
+                  periodSeconds: 5
+                  failureThreshold: 30
+            securityContext: *securityContext
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 2Gi
+    defaultPodOptions:
+      # authentik.iacob.uk only resolves on the LAN; the pod needs the issuer
+      # for OIDC discovery and token exchange, so pin it to envoy-internal.
+      hostAliases:
+        - ip: 192.168.1.7
+          hostnames: ["authentik.iacob.uk"]
+      imagePullSecrets:
+        - name: git-iacob-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      tmp:
+        type: emptyDir
+        sizeLimit: 4Gi
+        globalMounts:
+          - path: /tmp
+      next-cache:
+        type: emptyDir
+        advancedMounts:
+          seedyn:
+            app:
+              - path: /app/.next/cache
+    route:
+      app:
+        hostnames:
+          - seedyn.iacob.co.uk
+          - i.iacob.co.uk
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

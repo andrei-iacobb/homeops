@@ -674,6 +674,10 @@ data:
           icon: mdi-link-variant
           href: https://share.iacob.co.uk
           description: File & image sharing
+      - Seedyn:
+          icon: mdi-seed
+          href: https://seedyn.iacob.co.uk
+          description: Permanent short URLs for files
       - SearXNG:
           icon: searxng.svg
           href: https://searxng.iacob.uk
