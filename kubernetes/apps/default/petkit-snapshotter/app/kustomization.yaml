@@ -14,3 +14,7 @@ configMapGenerator:
       - snapshotter.py=resources/snapshotter.py
       - index.html=resources/index.html
       - petkit-gallery-card.js=resources/petkit-gallery-card.js
+    options:
+      annotations:
+        # the card uses JS template literals; keep Flux envsubst away from this ConfigMap
+        kustomize.toolkit.fluxcd.io/substitute: disabled
