@@ -462,16 +462,22 @@ class Collector:
 class RequestHandler(BaseHTTPRequestHandler):
     server: "SnapshotHTTPServer"
 
-    def _headers(self, content_type: str, length: int, cache_control: str = "no-store") -> None:
+    def _headers(
+        self, content_type: str, length: int, cache_control: str = "no-store", *, cors: bool = False
+    ) -> None:
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(length))
         self.send_header("Cache-Control", cache_control)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
+        if cors:
+            # The Lovelace card is loaded by the Home Assistant frontend on a
+            # different origin, which then fetches the manifest and images.
+            self.send_header("Access-Control-Allow-Origin", "*")
 
-    def _send(self, status: HTTPStatus, body: bytes, content_type: str) -> None:
+    def _send(self, status: HTTPStatus, body: bytes, content_type: str, *, cors: bool = False) -> None:
         self.send_response(status)
-        self._headers(content_type, len(body))
+        self._headers(content_type, len(body), cors=cors)
         self.end_headers()
         self.wfile.write(body)
 
@@ -493,7 +499,18 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
         if path == "/manifest.json":
-            self._send(HTTPStatus.OK, self.server.collector.store.manifest_bytes(), "application/json")
+            self._send(HTTPStatus.OK, self.server.collector.store.manifest_bytes(), "application/json", cors=True)
+            return
+        if path == "/card.js":
+            try:
+                body = self.server.card_path.read_bytes()
+            except OSError:
+                self._send(HTTPStatus.NOT_FOUND, b"not found\n", "text/plain; charset=utf-8")
+                return
+            self.send_response(HTTPStatus.OK)
+            self._headers("application/javascript; charset=utf-8", len(body), "public, max-age=60", cors=True)
+            self.end_headers()
+            self.wfile.write(body)
             return
         if path == "/metrics":
             self._send(HTTPStatus.OK, self.server.collector.metrics.render(self.server.collector.store), "text/plain; version=0.0.4")
@@ -516,7 +533,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
             content_type = mimetypes.guess_type(snapshot_path.name)[0] or "image/jpeg"
             self.send_response(HTTPStatus.OK)
-            self._headers(content_type, len(body), "public, max-age=31536000, immutable")
+            self._headers(content_type, len(body), "public, max-age=31536000, immutable", cors=True)
             self.end_headers()
             self.wfile.write(body)
             return
@@ -527,18 +544,22 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
 class SnapshotHTTPServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], collector: Collector, index_path: Path) -> None:
+    def __init__(
+        self, address: tuple[str, int], collector: Collector, index_path: Path, card_path: Path
+    ) -> None:
         super().__init__(address, RequestHandler)
         self.collector = collector
         self.index_path = index_path
+        self.card_path = card_path
 
 
 def main() -> None:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"), format="%(asctime)s %(levelname)s %(message)s")
     index_path = Path(os.environ.get("INDEX_PATH", "/app/index.html"))
+    card_path = Path(os.environ.get("CARD_PATH", "/app/petkit-gallery-card.js"))
     collector = Collector()
     stop = threading.Event()
-    http = SnapshotHTTPServer(("0.0.0.0", PORT), collector, index_path)
+    http = SnapshotHTTPServer(("0.0.0.0", PORT), collector, index_path, card_path)
     http_thread = threading.Thread(target=http.serve_forever, name="http", daemon=True)
     http_thread.start()
 

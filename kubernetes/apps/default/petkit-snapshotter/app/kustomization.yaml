@@ -13,3 +13,4 @@ configMapGenerator:
     files:
       - snapshotter.py=resources/snapshotter.py
       - index.html=resources/index.html
+      - petkit-gallery-card.js=resources/petkit-gallery-card.js
