@@ -12,10 +12,15 @@ Saving Sessions from Home Assistant and programs the Solis inverter:
   - Force-charge during Free Electricity windows (Power-ups), no rate check,
     any time of day (Octopus pays you to import).
   - Discharge during Saving Sessions to dodge grid usage
-  - All times are emitted in UTC because the inverter clock runs UTC+0 on
-    SolisCloud (no DST). The HACS solis integration ships HH,MM straight to
-    the inverter with no TZ conversion, so feeding it BST would charge an
-    hour late.
+  - Slot times are written in the inverter's OWN clock. The inverter takes
+    bare HH:MM and compares it to its internal time, which Andrei keeps on UK
+    local time (BST in summer) even though the SolisCloud station is labelled
+    UTC+0. Every run reads that clock live (cid 56), derives its offset from
+    UTC and converts the planned windows with it - so the script follows
+    whatever the inverter is set to, including the clocks changing. Writing
+    UTC on the assumption the station label was the truth fired every slot
+    an hour early through summer 2026 (2026-09-17: charged 08:30-09:30 BST at
+    27p/21p and skipped the 4.9p/6.7p hour at 15:00).
 
 Up to 3 charge slots and 3 discharge slots, written straight to the\nSolisCloud open API (window, current and the per-slot on/off switch).\nUnused slots are cleared and switched off.
 """
@@ -46,19 +51,22 @@ DISCHARGE_CURRENT = 50     # Amps
 CHARGE_WINDOW_START = os.environ.get("CHARGE_WINDOW_START", "00:00")
 CHARGE_WINDOW_END = os.environ.get("CHARGE_WINDOW_END", "00:00")
 
-# Max acceptable offset between the inverter's own clock and real UTC.
-# Anything beyond this almost certainly means the SolisCloud station was
-# flipped to a local-time TZ (e.g. Europe/London with DST), in which case
-# slot writes would be offset and we MUST refuse to push.
-#
-# Measured at the moment HASS received the reading (sensor last_changed minus
-# the reported timestamp), never against "now": the SolisCloud feed routinely
-# stalls for hours (gaps of 25-234 min between readings seen 2026-09-12), and
-# during a stall the newest reading ages by exactly one hour per hour. A
-# now-based comparison misread that as a broken clock and aborted 20 of 48
-# hourly runs on 2026-09-12/13. Feed latency at receipt is 0-23 min observed;
-# a station TZ mistake shows as ~60 min. 30 min splits the two.
-MAX_CLOCK_DRIFT_SECONDS = 30 * 60
+# The inverter's own clock, read live from SolisCloud every run (cid 56 =
+# Modbus system time, "YYYY-MM-DD HH:MM:SS" in whatever zone the inverter is
+# set to). Its distance from real UTC is snapped to the nearest whole hour
+# to get the zone offset (a UK inverter is on GMT or BST, never a half-hour
+# zone - snapping finer would let a 12 min drift pass as "UTC+01:15"); what
+# is left is genuine drift, measurable up to +-30 min. Above the WARN level
+# the run carries on (a slot boundary lands a few minutes into the adjacent
+# rate - cheaper than losing the day); above the ABORT level the snap itself
+# is ambiguous, so the schedule is cleared and the run exits until the clock
+# is corrected. (Observed 2026-09-17: BST, +4 min fast.)
+INVERTER_CLOCK_CID = "56"
+INVERTER_CLOCK_SNAP_SECONDS = 3600
+INVERTER_CLOCK_WARN_DRIFT_SECONDS = 10 * 60
+INVERTER_CLOCK_ABORT_DRIFT_SECONDS = 25 * 60
+# Set by verify_inverter_clock(); every slot time is written as UTC + this.
+INVERTER_UTC_OFFSET = None
 
 # Age of the newest inverter reading beyond which the run warns that the
 # SolisCloud feed is stale. Warning only: slot writes go through the
@@ -66,9 +74,8 @@ MAX_CLOCK_DRIFT_SECONDS = 30 * 60
 # leave a spent schedule on the inverter.
 STALE_FEED_WARN_SECONDS = 3 * 3600
 
-# How far back to look for a genuine inverter reading. No value change in
-# this window means the clock cannot be verified at all - abort, that is an
-# outage worth an alert, not a stall to ride through.
+# How far back to look for a genuine inverter reading in HASS. Only used to
+# judge telemetry freshness (warnings, and gating the charge-outcome check).
 CLOCK_HISTORY_WINDOW_SECONDS = 24 * 3600
 
 # Charge verification. SolisCloud's control API can accept a slot write,
@@ -110,8 +117,9 @@ CURRENT_DAY_RATES = "event.octopus_energy_electricity_23j0212061_1012934633517_c
 
 INVERTER_SN = os.environ.get("INVERTER_SN", "1031030229080043")
 
-# Inverter timestamp sensor - reports the inverter's own clock as a Unix
-# epoch in UTC. Used to detect SolisCloud TZ misconfiguration.
+# HASS sensor carrying SolisCloud's receipt timestamp for the newest inverter
+# reading (server-side epoch, NOT the inverter's clock). Only used to judge
+# how fresh the HASS telemetry is.
 INVERTER_TIMESTAMP_ENTITY = (
     f"sensor.solis_inverter_{INVERTER_SN}_solis_timestamp_measurements_received"
 )
@@ -565,11 +573,10 @@ def _last_genuine_inverter_reading():
 
     Not the live state's last_changed: HA rewrites last_changed to the
     restart time when it restores a sensor, so a restore landing mid-stall
-    makes a stale reading look freshly received. A reading stale by ~1h
-    restored "now" reads offset 0 and would cancel a genuine +1h clock error
-    exactly. A value transition in history is a real arrival with a real
-    time, and a restore never produces one (same value in, same value out).
-    Returns None if no transition exists in the window.
+    makes a stale reading look freshly received. A value transition in
+    history is a real arrival with a real time, and a restore never produces
+    one (same value in, same value out). Returns None if no transition
+    exists in the window.
     """
     since = (datetime.now(timezone.utc)
              - timedelta(seconds=CLOCK_HISTORY_WINDOW_SECONDS)).isoformat()
@@ -597,58 +604,84 @@ def _last_genuine_inverter_reading():
 
 
 def verify_inverter_clock():
-    """Abort if the inverter clock has drifted from real UTC.
+    """Read the inverter's own clock and derive the offset we must write
+    slot times in. Abort if the clock has genuinely drifted.
 
-    The HACS solis integration writes raw HH:MM to the inverter with no TZ
-    conversion. We emit times in UTC on the assumption that the SolisCloud
-    station is also UTC+0. If someone flips the station to Europe/London
-    (which honours DST), every slot would be applied 1h late from late
-    March to late October. That mistake cost real money before this check
-    existed - hence the hard abort.
+    The inverter compares bare HH:MM slot times against its internal clock,
+    so the only zone that matters is the one that clock is set to - not the
+    SolisCloud station label (UTC+0 here) and not the timestamp sensor in
+    HASS (a server-side receipt time). cid 56 is the inverter's system time
+    as a plain string; its distance from real UTC, snapped to the nearest
+    whole hour, is the zone offset, and the remainder is drift.
 
-    The offset is taken at receipt time (when HASS recorded the value
-    changing, minus the timestamp the value carries) so a stalled SolisCloud
-    feed reads as "stale", not as "clock wrong". See
-    _last_genuine_inverter_reading for why the live state's last_changed is
-    not good enough.
+    A DST change on the inverter shows up here as a new offset on the next
+    run, and the schedule is rewritten with it within 15 min.
+
+    The HASS feed staleness check stays as a warning only; it never proved
+    anything about the clock.
     """
-    state = hass_get_optional(INVERTER_TIMESTAMP_ENTITY)
-    if not state:
-        print(f"WARN: inverter timestamp sensor missing ({INVERTER_TIMESTAMP_ENTITY}); "
-              f"skipping clock-drift check")
-        return
+    global INVERTER_UTC_OFFSET
+    raw = None
+    try:
+        api = SolisCloud()
+        api.login()
+        # A live read is a 10-30s Modbus round trip; take the midpoint so the
+        # drift figure is not biased by the latency.
+        t0 = datetime.now(timezone.utc)
+        raw, _ = api.read(INVERTER_CLOCK_CID)
+        t1 = datetime.now(timezone.utc)
+    except SolisError as e:
+        print(f"ABORTING: cannot read the inverter clock from SolisCloud ({e}); "
+              f"slot writes would not reach it either. Investigate.")
+        sys.exit(2)
+    now = t0 + (t1 - t0) / 2
+    try:
+        inverter_dt = datetime.strptime(str(raw).strip(), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        print(f"ABORTING: inverter clock (cid {INVERTER_CLOCK_CID}) returned "
+              f"{raw!r}, not a timestamp. Clearing the schedule so no stale "
+              f"window keeps firing. Investigate.")
+        clear_schedule()
+        sys.exit(2)
+
+    delta = (inverter_dt - now.replace(tzinfo=None)).total_seconds()
+    offset = round(delta / INVERTER_CLOCK_SNAP_SECONDS) * INVERTER_CLOCK_SNAP_SECONDS
+    drift = delta - offset
+    sign = "+" if offset >= 0 else "-"
+    zone = f"UTC{sign}{abs(int(offset)) // 3600:02d}:{(abs(int(offset)) % 3600) // 60:02d}"
+    print(f"Inverter clock check: inverter says {inverter_dt:%Y-%m-%d %H:%M:%S}, "
+          f"real time {now:%H:%M:%S} UTC -> inverter runs {zone}, "
+          f"drift {drift:+.0f}s.")
+    if abs(offset) > 14 * 3600 or abs(drift) > INVERTER_CLOCK_ABORT_DRIFT_SECONDS:
+        # A schedule written on an earlier run recurs daily as bare HH:MM, so
+        # leaving it in place while aborting every 15 min would keep charging
+        # at times nobody priced. Clear first (needs no offset), then stop.
+        print(f"ABORTING: inverter clock is {offset / 3600:+.1f}h from UTC with "
+              f"{drift:+.0f}s left over - not a usable time zone reading. "
+              f"Clearing the schedule so no stale window keeps firing; correct "
+              f"the inverter time in the SolisCloud app.")
+        clear_schedule()
+        sys.exit(2)
+    if abs(drift) > INVERTER_CLOCK_WARN_DRIFT_SECONDS:
+        print(f"WARN: inverter clock drift {drift:+.0f}s - slot boundaries will "
+              f"land that far into the neighbouring rate. Correct the inverter "
+              f"time in the SolisCloud app.")
+    INVERTER_UTC_OFFSET = timedelta(seconds=offset)
 
     reading = _last_genuine_inverter_reading()
     if reading is None:
-        print(f"ABORTING: no new inverter reading in the last "
+        print(f"WARN: no new HASS inverter reading in the last "
               f"{CLOCK_HISTORY_WINDOW_SECONDS // 3600}h - the SolisCloud feed "
-              f"is down, the clock cannot be verified and slot writes would "
-              f"not reach the inverter anyway. Investigate.")
-        sys.exit(2)
-    inverter_epoch, received = reading
+              f"into HASS is down. Programming continues (it goes direct); "
+              f"the charge-outcome check cannot run until it recovers.")
+        return
+    _, received = reading
     if received.tzinfo is None:
         received = received.replace(tzinfo=timezone.utc)
-
-    now = datetime.now(timezone.utc)
-    inverter_dt = datetime.fromtimestamp(inverter_epoch, tz=timezone.utc)
-    offset = received.timestamp() - inverter_epoch
     age = (now - received).total_seconds()
-    print(f"Inverter clock check: reading stamped {inverter_dt:%Y-%m-%d %H:%M:%S} UTC, "
-          f"received by HASS {received:%H:%M:%S} UTC (offset {offset:+.0f}s), "
-          f"reading is {age / 60:.0f} min old.")
-
-    if abs(offset) > MAX_CLOCK_DRIFT_SECONDS:
-        print(f"ABORTING: inverter clock offset {offset:+.0f}s at receipt exceeds "
-              f"{MAX_CLOCK_DRIFT_SECONDS}s. Either the SolisCloud station TZ was "
-              f"changed away from UTC+0 (fix the station setting), or the feed "
-              f"just delivered an old reading after an outage - in that case "
-              f"the next run passes once a fresh reading lands.")
-        sys.exit(2)
-
     if age > STALE_FEED_WARN_SECONDS:
-        print(f"WARN: newest inverter reading is {age / 3600:.1f}h old - the "
-              f"SolisCloud feed has stalled. Clock verified from the last good "
-              f"reading; continuing.")
+        print(f"WARN: newest HASS inverter reading is {age / 3600:.1f}h old - "
+              f"the SolisCloud feed has stalled; continuing.")
 
 
 def _rate_at(rates, dt_utc):
@@ -662,12 +695,10 @@ def _rate_at(rates, dt_utc):
 
 
 def verify_written_slots_are_cheap(charge_windows, rates):
-    """Round-trip check: each slot we're about to write, interpreted as a UTC
-    wall-clock on the same day as the window, must correspond to a cheap rate.
-
-    Catches the historical bug class: slot times written in BST but applied
-    as UTC, putting the actual charge into expensive rates. If the slot's
-    UTC HH:MM doesn't land in a cheap Octopus rate, we abort.
+    """Round-trip check: the start and end instant of each window we are
+    about to write must both sit in a cheap Octopus rate. Catches merge or
+    rounding mistakes before they reach the inverter (zone handling is
+    covered separately by verify_inverter_clock).
 
     Free-electricity slots skip this check because their rates are
     irrelevant (Octopus pays you to use power).
@@ -678,8 +709,23 @@ def verify_written_slots_are_cheap(charge_windows, rates):
         start_dt = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
         end_dt = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
 
+        # Re-derive the start instant from the very string that will be
+        # written (inverter HH:MM on the window's inverter-clock date, minus
+        # the offset). A sign error in the offset would pass every check
+        # that only looks at ISO instants; this one does not.
+        written = _inverter_hhmm(w["start"])
+        inv_date = (start_dt + INVERTER_UTC_OFFSET).date()
+        hh, mm = (int(x) for x in written.split(":"))
+        rederived = (datetime.combine(inv_date, datetime.min.time(), tzinfo=timezone.utc)
+                     + timedelta(hours=hh, minutes=mm) - INVERTER_UTC_OFFSET)
+        if rederived != start_dt.replace(second=0, microsecond=0):
+            print(f"ABORTING: slot string {written} re-derives to "
+                  f"{rederived:%Y-%m-%d %H:%M UTC}, not {start_dt:%Y-%m-%d %H:%M UTC} - "
+                  f"inverter-clock conversion is wrong.")
+            return False
+
         # Sample the rate just inside start and just inside end.
-        probe_start = start_dt
+        probe_start = rederived
         probe_end = end_dt - timedelta(minutes=1)
         for label, probe in (("start", probe_start), ("end-1min", probe_end)):
             rate = _rate_at(rates, probe)
@@ -875,17 +921,59 @@ def _echo_register_value(recv):
 
 # ---------- Slot programming ----------
 
-def _utc_hhmm(iso_str):
-    """Take an ISO timestamp with offset, convert to UTC, return HH:MM.
+def split_at_inverter_midnight(windows):
+    """Split any window that would straddle 00:00 on the inverter's clock.
 
-    The Solis inverter clock runs in UTC+0 (per SolisCloud station settings)
-    and the API takes bare HH:MM with no TZ, so we must emit times in the
-    inverter's local clock = UTC.
+    Slots are bare HH:MM and how this firmware treats start > end (wrap,
+    reject, never fire) has never been established, so never write one.
+    Each half keeps the original tag; the first half ends at 23:59 inverter
+    time. Uses the offset measured this run, so must follow
+    verify_inverter_clock().
     """
+    if INVERTER_UTC_OFFSET is None:
+        raise RuntimeError("inverter clock offset unknown - "
+                           "verify_inverter_clock() must run first")
+    out = []
+    for w in windows:
+        start = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
+        end = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
+        inv_start = start + INVERTER_UTC_OFFSET
+        inv_end = end + INVERTER_UTC_OFFSET
+        # Midnight on the inverter clock after the window starts.
+        boundary = (inv_start + timedelta(days=1)).replace(hour=0, minute=0,
+                                                          second=0, microsecond=0)
+        if inv_end < boundary:
+            out.append(w)
+            continue
+        if inv_end == boundary:
+            # Ends exactly at inverter midnight: "23:30-00:00" reads as start >
+            # end on the inverter, so write it ending 23:59 instead.
+            out.append(dict(w, end=(end - timedelta(minutes=1)).isoformat()))
+            continue
+        cut = boundary - INVERTER_UTC_OFFSET  # back to a real instant
+        first = dict(w, end=(cut - timedelta(minutes=1)).isoformat())
+        second = dict(w, start=cut.isoformat())
+        print(f"  Window {inv_start:%H:%M}-{inv_end:%H:%M} inverter clock crosses "
+              f"its midnight - split into {inv_start:%H:%M}-23:59 and "
+              f"00:00-{inv_end:%H:%M}.")
+        out.extend([first, second])
+    return out
+
+
+def _inverter_hhmm(iso_str):
+    """ISO timestamp with offset -> HH:MM on the inverter's own clock.
+
+    The API takes bare HH:MM and the inverter compares it to its internal
+    time, so the value must be in whatever zone that clock is set to:
+    UTC plus the offset verify_inverter_clock() measured this run.
+    """
+    if INVERTER_UTC_OFFSET is None:
+        raise RuntimeError("inverter clock offset unknown - "
+                           "verify_inverter_clock() must run first")
     dt = datetime.fromisoformat(iso_str)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).strftime("%H:%M")
+    return (dt.astimezone(timezone.utc) + INVERTER_UTC_OFFSET).strftime("%H:%M")
 
 
 def _norm_hhmm(v):
@@ -934,7 +1022,7 @@ def _desired_slots(charge_windows, discharge_windows):
                 w = windows[i]
                 out[(kind, slot)] = {
                     "enabled": True,
-                    "window": f"{_utc_hhmm(w['start'])}-{_utc_hhmm(w['end'])}",
+                    "window": f"{_inverter_hhmm(w['start'])}-{_inverter_hhmm(w['end'])}",
                     "current": amps,
                     "tag": w.get("tag", ""),
                 }
@@ -1010,7 +1098,7 @@ def _apply(desired, force):
         need_window = force or window != d["window"]
         need_switch = force or switch_on[key] != d["enabled"]
         extra = f"  ({d['tag']})" if d["tag"] else ""
-        state = (f"{d['window']} UTC @ {d['current']}A, switch on" if d["enabled"]
+        state = (f"{d['window']} inverter clock @ {d['current']}A, switch on" if d["enabled"]
                  else "disabled")
         print(f"  {kind.capitalize()} slot {slot}: {state}{extra}")
         if need_switch:
@@ -1202,13 +1290,12 @@ def main():
     now_utc = datetime.now(timezone.utc)
     print(f"Solis Optimizer - run at {now_utc.strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Max Agile rate threshold: {MAX_RATE*100:.0f}p/kWh")
-    print(f"Inverter clock TZ: UTC+0 (SolisCloud station setting). "
-          f"All slot times below are in UTC.")
+    print("Slot times below are in the inverter's own clock (read live each run).")
     print()
 
-    # 0. Verify the inverter clock matches our UTC assumption before we
-    # touch any slot values. If the SolisCloud station was flipped to a
-    # DST-aware TZ, slot writes would silently be 1h offset.
+    # 0. Read the inverter clock and fix the zone offset every slot time is
+    # written in. Nothing is programmed if the clock cannot be read or has
+    # drifted.
     verify_inverter_clock()
     print()
 
@@ -1282,7 +1369,7 @@ def main():
 
     # Free Electricity always wins - tag and prepend, then merge.
     free_tagged = [{"start": s["start"], "end": s["end"], "tag": "free"} for s in free_sessions]
-    all_charge = merge_windows(free_tagged + cheap_windows)
+    all_charge = split_at_inverter_midnight(merge_windows(free_tagged + cheap_windows))
     # If merging produced > MAX_SLOTS, keep free-electricity ones plus cheapest.
     if len(all_charge) > MAX_SLOTS:
         free_first = [w for w in all_charge if "free" in (w.get("tag") or "")]
@@ -1298,13 +1385,13 @@ def main():
         {"start": s["start"], "end": s["end"], "tag": "saving session"}
         for s in saving_sessions
     ]
-    discharge_windows = merge_windows(discharge_windows)[:MAX_SLOTS]
+    discharge_windows = split_at_inverter_midnight(merge_windows(discharge_windows))[:MAX_SLOTS]
 
     # 5.5. Round-trip check: confirm each charge window we're about to write
-    # actually lands in cheap rates after our UTC conversion. Catches any
-    # future TZ bug class before it hits the inverter.
+    # actually lands in cheap rates. Catches merge/rounding mistakes before
+    # they hit the inverter.
     if all_charge:
-        print("Round-trip rate check on UTC-converted windows...")
+        print("Round-trip rate check on charge windows...")
         if not verify_written_slots_are_cheap(all_charge, upcoming):
             print("Clearing all charge slots due to round-trip check failure.")
             # Force the commit: if HASS already reads 00:00 the staged clear
