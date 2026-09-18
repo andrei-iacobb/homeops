@@ -100,6 +100,14 @@
     },
     {
       description: [
+        "linuxserver overseerr/calibre-web: ignore legacy date-style tags (2021.x) that sort above the real semver tags",
+      ],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["lscr.io/linuxserver/overseerr", "lscr.io/linuxserver/calibre-web"],
+      allowedVersions: "<2000",
+    },
+    {
+      description: [
         "Ignore lakker/pulsarr >=1.0 — GitHub releases use 1.x semver but Docker Hub only publishes 0.x tags",
       ],
       matchDatasources: ["docker"],
