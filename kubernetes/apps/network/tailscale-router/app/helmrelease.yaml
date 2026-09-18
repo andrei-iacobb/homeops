@@ -25,7 +25,7 @@ spec:
           app:
             image:
               repository: ghcr.io/tailscale/tailscale
-              tag: v1.33.158
+              tag: v1.102.4
             env:
               TZ: Europe/London
               TS_HOSTNAME: cluster-router
