@@ -188,7 +188,7 @@ spec:
             datasource: Prometheus
           kubernetes-views-pods:
             gnetId: 15760
-            revision: 40
+            revision: 39
             datasource: Prometheus
           kubernetes-views-global:
             gnetId: 15757
