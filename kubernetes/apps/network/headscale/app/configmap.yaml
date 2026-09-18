@@ -5,7 +5,9 @@ metadata:
   name: headscale-config
 data:
   config.yaml: |
-    server_url: https://headscale.iacob.uk
+    # Public URL: nodes register and poll the control plane from anywhere
+    # (CF tunnel -> envoy-external). Data plane is direct/DERP, not via CF.
+    server_url: https://headscale.iacob.co.uk
     listen_addr: 0.0.0.0:8080
     metrics_listen_addr: 0.0.0.0:9090
     private_key_path: /data/private.key
@@ -25,6 +27,12 @@ data:
         global:
           - 1.1.1.1
           - 8.8.8.8
+        # LAN names (*.iacob.uk -> envoy-internal etc.) resolve via the AdGuards,
+        # reachable through the tailscale-router subnet route.
+        split:
+          iacob.uk:
+            - 192.168.1.120
+            - 192.168.1.125
     derp:
       urls:
         - https://controlplane.tailscale.com/derpmap/default
