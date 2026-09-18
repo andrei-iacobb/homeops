@@ -34,8 +34,6 @@ spec:
               TS_ROUTES: 192.168.1.0/24
               TS_ACCEPT_DNS: "false"
               TS_EXTRA_ARGS: --login-server=https://headscale.iacob.co.uk
-              # Prevent containerboot from storing state in a k8s Secret.
-              TS_KUBE_SECRET: ""
               TS_ENABLE_HEALTH_CHECK: "true"
               TS_HEALTHCHECK_ADDR_PORT: 0.0.0.0:9002
             envFrom:
@@ -71,6 +69,11 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 512Mi
+    defaultPodOptions:
+      # Without a service-account token containerboot does not try to keep its
+      # state in a Kubernetes Secret (which needs RBAC); it uses TS_AUTHKEY and
+      # the PVC instead.
+      automountServiceAccountToken: false
     service:
       app:
         ports:
