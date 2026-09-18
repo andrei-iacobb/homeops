@@ -5,6 +5,6 @@ resources:
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./configmap.yaml
+  - ./backendtrafficpolicy.yaml
 components:
   - ../../../../components/volsync
-  - ./backendtrafficpolicy.yaml

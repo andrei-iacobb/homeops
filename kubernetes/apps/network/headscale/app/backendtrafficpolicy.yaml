@@ -11,10 +11,10 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      name: headscale
+      name: headscale-app
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: headscale-external
   httpUpgrade:
-    - protocol: websocket
-    - protocol: tailscale-control-protocol
+    - type: websocket
+    - type: tailscale-control-protocol
