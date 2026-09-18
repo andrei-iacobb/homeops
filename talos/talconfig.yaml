@@ -40,6 +40,33 @@ nodes:
         addresses:
           - "10.10.10.2/31"
         mtu: 9000
+  - hostname: "gpu-worker"
+    ipAddress: "192.168.1.86"
+    installDisk: "/dev/vda"
+    machineSpec:
+      secureboot: false
+    # schematic: qemu-guest-agent + nonfree-kmod-nvidia-production + nvidia-container-toolkit-production
+    talosImageURL: factory.talos.dev/installer/52223d70cd62926d81b640384b2ab9a5e9063d0613952e14e93b9702cdf8f625
+    controlPlane: false
+    nodeLabels:
+      nvidia.com/gpu.present: "true"
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "bc:24:11:0a:11:40"
+        dhcp: false
+        addresses:
+          - "192.168.1.86/24"
+        routes:
+          - gateway: "192.168.1.1"
+            network: 0.0.0.0/0
+        mtu: 1500
+      # 10G p2p link dl380<->dl360 (vmbr12)
+      - deviceSelector:
+          hardwareAddr: "bc:24:11:0a:11:41"
+        dhcp: false
+        addresses:
+          - "10.99.0.11/24"
+        mtu: 9000
 
 # Global patches
 patches:
@@ -54,4 +81,7 @@ controlPlane:
   patches:
     - "@./patches/controller/cluster.yaml"
 
-
+# Worker patches
+worker:
+  patches:
+    - "@./patches/worker/nvidia.yaml"

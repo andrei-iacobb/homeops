@@ -1,0 +1,11 @@
+# GPU worker: load the proprietary NVIDIA modules shipped by the
+# nonfree-kmod-nvidia-production extension (Quadro P1000 passed through from dl380).
+machine:
+  kernel:
+    modules:
+      - name: nvidia
+      - name: nvidia_uvm
+      - name: nvidia_drm
+      - name: nvidia_modeset
+  sysctls:
+    net.core.bpf_jit_harden: "1" # required by the NVIDIA container toolkit extension

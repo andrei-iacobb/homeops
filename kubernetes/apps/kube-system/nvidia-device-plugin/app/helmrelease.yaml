@@ -1,0 +1,37 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nvidia-device-plugin
+spec:
+  chart:
+    spec:
+      chart: nvidia-device-plugin
+      version: 0.20.0
+      sourceRef:
+        kind: HelmRepository
+        name: nvidia-device-plugin
+  interval: 1h
+  values:
+    # Only run on the Talos node that has the Quadro P1000 passed through (dl380 VM 114).
+    nodeSelector:
+      nvidia.com/gpu.present: "true"
+    runtimeClassName: nvidia
+    # Time-slice the single P1000 so several pods can request nvidia.com/gpu at once.
+    # Pascal has no MIG: VRAM (4 GB) is shared with no isolation, so keep the
+    # per-workload footprint in mind (Plex ~300 MB/stream, Frigate ~1-1.5 GB, small LLM ~2.5 GB).
+    config:
+      map:
+        default: |-
+          version: v1
+          flags:
+            migStrategy: none
+          sharing:
+            timeSlicing:
+              renameByDefault: false
+              failRequestsGreaterThanOne: false
+              resources:
+                - name: nvidia.com/gpu
+                  replicas: 4
+    gfd:
+      enabled: false
