@@ -3,8 +3,9 @@
 # T3 Code desktop / web / mobile clients). Image is dizys/t3code-docker: the
 # t3 server plus the claude, codex, cursor, opencode and grok CLIs, language
 # toolchains and a headless chromium MCP, with a pairing console on :3774.
-#   internal  https://beta.iacob.uk           pairing console at /__setup, mobile over WG
-#   public    https://beta.iacob.co.uk        Authentik OIDC at envoy (securitypolicy.yaml)
+# Internal only: https://beta.iacob.uk (pairing console at /__setup). Off-LAN
+# access is via WireGuard. Load balancing across the fleet is done by the T3
+# clients (Settings -> Connections -> Load balancing), not by anything here.
 # State: /home/t3 (sqlite, provider logins, worktrees) and /workspace (repos).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -132,16 +133,6 @@ spec:
             backendRefs:
               - identifier: app
                 port: *setup
-          - backendRefs:
-              - identifier: app
-                port: *port
-      external:
-        hostnames: ["beta.iacob.co.uk"]
-        parentRefs:
-          - name: envoy-external
-            namespace: network
-            sectionName: https
-        rules:
           - backendRefs:
               - identifier: app
                 port: *port

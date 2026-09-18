@@ -9,7 +9,6 @@ components:
 resources:
   - ./namespace.yaml
   - ./network-policies.yaml
-  - ./oidc-secret.sops.yaml
   - ./alpha/ks.yaml
   - ./beta/ks.yaml
   - ./gamma/ks.yaml

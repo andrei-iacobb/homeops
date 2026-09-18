@@ -10,7 +10,7 @@ metadata:
 spec:
   endpointSelector: {}
   ingress:
-    # Envoy Gateway ingress (HTTPRoutes - both internal and external)
+    # Envoy Gateway ingress (internal HTTPRoutes only)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: network
