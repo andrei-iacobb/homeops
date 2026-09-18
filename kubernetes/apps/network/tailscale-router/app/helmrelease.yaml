@@ -2,8 +2,10 @@
 # Subnet router for the headscale tailnet. Joins headscale as "cluster-router"
 # and advertises the LAN, so tailnet devices (Mac, phone) reach envoy-internal
 # and the *.iacob.uk apps (the T3 Code fleet in particular) without a public
-# route. Forwarding needs kernel tailscale + ip_forward, hence privileged and
-# /dev/net/tun. Node state lives on the PVC so the pre-auth key is used once.
+# route. Runs in userspace (netstack) mode: subnet routing for TCP/UDP works
+# without ip_forward, a tun device or privileges (ICMP through the router
+# does not, which is fine). Node state lives on the PVC so the pre-auth key
+# is used once.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -28,7 +30,7 @@ spec:
               TZ: Europe/London
               TS_HOSTNAME: cluster-router
               TS_STATE_DIR: /var/lib/tailscale
-              TS_USERSPACE: "false"
+              TS_USERSPACE: "true"
               TS_ROUTES: 192.168.1.0/24
               TS_ACCEPT_DNS: "false"
               TS_EXTRA_ARGS: --login-server=https://headscale.iacob.co.uk
@@ -61,7 +63,8 @@ spec:
                   periodSeconds: 5
                   failureThreshold: 60
             securityContext:
-              privileged: true
+              allowPrivilegeEscalation: false
+              capabilities: { drop: ["ALL"] }
             resources:
               requests:
                 cpu: 20m
@@ -81,9 +84,3 @@ spec:
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /var/lib/tailscale
-      tun:
-        type: hostPath
-        hostPath: /dev/net/tun
-        hostPathType: CharDevice
-        globalMounts:
-          - path: /dev/net/tun
