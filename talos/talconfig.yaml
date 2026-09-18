@@ -40,6 +40,13 @@ nodes:
         addresses:
           - "10.10.10.2/31"
         mtu: 9000
+      # 10G p2p link dl360<->dl380 (vmbr12) to the gpu-worker
+      - deviceSelector:
+          hardwareAddr: "bc:24:11:0a:11:42"
+        dhcp: false
+        addresses:
+          - "10.10.20.12/24"
+        mtu: 9000
   - hostname: "gpu-worker"
     ipAddress: "192.168.1.86"
     installDisk: "/dev/vda"
