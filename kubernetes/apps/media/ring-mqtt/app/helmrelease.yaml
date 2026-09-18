@@ -52,6 +52,12 @@ spec:
               tag: "5.9.3"
             env:
               TZ: Europe/London
+              # ring-mqtt reads RING_TOKEN; without it the RTSP bridge never authenticates
+              RING_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: ring-mqtt-secret
+                    key: RING_REFRESH_TOKEN
               MQTTHOST: mosquitto.databases.svc.cluster.local
               MQTTPORT: "1883"
               ENABLECAMERAS: "true"
