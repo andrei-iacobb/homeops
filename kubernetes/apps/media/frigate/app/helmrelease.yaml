@@ -28,9 +28,11 @@ spec:
           app:
             image:
               repository: ghcr.io/blakeblackshear/frigate
-              tag: "0.18.0"
+              # -tensorrt variant: ONNX detector + NVDEC on the Quadro P1000 (gpu-worker node)
+              tag: "0.18.0-tensorrt"
             env:
               TZ: Europe/London
+              NVIDIA_DRIVER_CAPABILITIES: all
             probes:
               liveness:
                 enabled: true
@@ -73,7 +75,13 @@ spec:
                 memory: 1Gi
               limits:
                 memory: 5Gi
+                nvidia.com/gpu: 1
     defaultPodOptions:
+      # Pin to the Talos node that has the Quadro P1000 passed through (VM 114 on dl380).
+      # The config PVC is openebs-hostpath (node-local), so it lives on that node too.
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      runtimeClassName: nvidia
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
@@ -135,6 +143,10 @@ spec:
             mqtt:
               host: mosquitto.databases.svc.cluster.local
               port: 1883
+
+            # NVDEC decode of every camera stream on the P1000
+            ffmpeg:
+              hwaccel_args: preset-nvidia
 
             go2rtc:
               streams:
@@ -327,10 +339,20 @@ spec:
                   track:
                     - person
 
+            # ONNX detector runs on the P1000 via TensorRT (the -tensorrt image).
+            # Model: YOLOv9-s exported at 320x320 per the Frigate docs, stored in the config PVC.
             detectors:
-              cpu:
-                type: cpu
-                num_threads: 4
+              onnx:
+                type: onnx
+
+            model:
+              model_type: yolo-generic
+              width: 320
+              height: 320
+              input_tensor: nchw
+              input_dtype: float
+              path: /config/model_cache/yolov9-s-320.onnx
+              labelmap_path: /labelmap/coco-80.txt
 
             # Ollama Generative AI for event descriptions
             # Requires a vision model (e.g., llava) — pull one via Ollama first
