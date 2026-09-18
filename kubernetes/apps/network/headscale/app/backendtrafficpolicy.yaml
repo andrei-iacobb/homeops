@@ -1,0 +1,20 @@
+---
+# Tailscale clients talk to headscale over the TS2021 noise protocol, which is
+# an HTTP/1.1 Upgrade to "tailscale-control-protocol". Envoy only honours the
+# websocket upgrade by default and answers 500 to anything else, so headscale
+# logged "no upgrade header in TS2021 request" and no node could register.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: headscale-upgrade
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: headscale
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: headscale-external
+  httpUpgrade:
+    - protocol: websocket
+    - protocol: tailscale-control-protocol
