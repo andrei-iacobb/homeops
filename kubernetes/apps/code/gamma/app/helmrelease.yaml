@@ -27,6 +27,18 @@ spec:
             image:
               repository: ghcr.io/dizys/t3code-docker
               tag: 0.4.5-full
+            # The image ships t3's resource-monitor sidecar without the exec
+            # bit, so the server cannot report cpu/memory and the client-side
+            # load balancing has nothing to go on. Fix the mode, then run the
+            # image's normal entrypoint.
+            command:
+              - /usr/bin/tini
+              - --
+              - bash
+              - -c
+              - |
+                chmod 755 /opt/npm-global/lib/node_modules/t3/dist/resource-monitor/linux-x64/t3-resource-monitor
+                exec /usr/local/bin/entrypoint.sh t3-serve
             env:
               TZ: Europe/London
               PUID: "1000"
