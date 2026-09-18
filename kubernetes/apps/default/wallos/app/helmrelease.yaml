@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: bellamy/wallos
-              tag: 5.4.2
+              tag: 5.4.5
             env:
               TZ: Europe/London
             probes:
