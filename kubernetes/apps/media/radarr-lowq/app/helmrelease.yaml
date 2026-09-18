@@ -23,7 +23,6 @@ spec:
               - -c
               - |
                 chown -R 568:568 /config
-                chown -R 568:568 /share /movies 2>/dev/null || true
                 if [ -f /config/config.xml ]; then
                   if ! grep -q '<ApiKey>' /config/config.xml; then
                     sed -i 's|</Config>|  <ApiKey>'"$RADARR_APIKEY"'</ApiKey>\n</Config>|' /config/config.xml
