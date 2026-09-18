@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: anythingllm
-      APP_PVC: anythingllm-data
+      APP_PVC: anythingllm
       VOLSYNC_SCHEDULE: "10 4 * * *"
       MOVER_UID: "1000"
       MOVER_GID: "1000"

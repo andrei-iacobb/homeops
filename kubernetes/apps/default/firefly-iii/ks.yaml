@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: firefly-iii
-      APP_PVC: firefly-iii-data
+      APP_PVC: firefly-iii
       VOLSYNC_SCHEDULE: "30 3 * * *"
       MOVER_UID: "33"
       MOVER_GID: "33"

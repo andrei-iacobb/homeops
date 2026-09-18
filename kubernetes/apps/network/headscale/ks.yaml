@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: headscale
-      APP_PVC: headscale-data
+      APP_PVC: headscale
       VOLSYNC_SCHEDULE: "20 4 * * *"
       MOVER_UID: "1000"
       MOVER_GID: "1000"

@@ -9,7 +9,7 @@ spec:
   postBuild:
     substitute:
       APP: arca
-      APP_PVC: arca-data
+      APP_PVC: arca
       VOLSYNC_SCHEDULE: "0 4 * * *"
       MOVER_UID: "0"
       MOVER_GID: "0"

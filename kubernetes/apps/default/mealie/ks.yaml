@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: mealie
-      APP_PVC: mealie-data
+      APP_PVC: mealie
       VOLSYNC_SCHEDULE: "0 4 * * *"
       MOVER_UID: "1000"
       MOVER_GID: "1000"

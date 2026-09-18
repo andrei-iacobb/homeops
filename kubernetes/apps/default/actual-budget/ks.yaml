@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: actual-budget
-      APP_PVC: actual-budget-data
+      APP_PVC: actual-budget
       VOLSYNC_SCHEDULE: "15 3 * * *"
       MOVER_UID: "1000"
       MOVER_GID: "1000"
