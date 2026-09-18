@@ -82,6 +82,9 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: home.iacob.uk
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -90,6 +93,9 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: home.iacob.uk
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
