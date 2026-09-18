@@ -35,6 +35,10 @@ spec:
               TS_ACCEPT_DNS: "false"
               TS_EXTRA_ARGS: --login-server=https://headscale.iacob.co.uk
               TS_ENABLE_HEALTH_CHECK: "true"
+              # containerboot switches to Kubernetes mode (state in a Secret,
+              # needs RBAC) whenever this kubelet-injected var is present.
+              # Container env wins over injected service env, so blank it.
+              KUBERNETES_SERVICE_HOST: ""
               TS_HEALTHCHECK_ADDR_PORT: 0.0.0.0:9002
             envFrom:
               - secretRef:
