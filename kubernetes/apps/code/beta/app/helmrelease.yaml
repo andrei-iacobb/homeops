@@ -1,0 +1,147 @@
+---
+# beta - T3 Code workspace (one environment server per pod, driven from the
+# T3 Code desktop / web / mobile clients). Image is dizys/t3code-docker: the
+# t3 server plus the claude, codex, cursor, opencode and grok CLIs, language
+# toolchains and a headless chromium MCP, with a pairing console on :3774.
+#   internal  https://beta.iacob.uk           pairing console at /__setup, mobile over WG
+#   public    https://beta.iacob.co.uk        Authentik OIDC at envoy (securitypolicy.yaml)
+# State: /home/t3 (sqlite, provider logins, worktrees) and /workspace (repos).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: beta
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: beta
+  interval: 1h
+  values:
+    controllers:
+      beta:
+        type: statefulset
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: ghcr.io/dizys/t3code-docker
+              tag: 0.4.5-full
+            env:
+              TZ: Europe/London
+              PUID: "1000"
+              PGID: "1000"
+              T3CODE_HOST: 0.0.0.0
+              T3CODE_PORT: &port 3773
+              T3_SETUP_PORT: &setup 3774
+              T3_SETUP_ENABLED: "1"
+              T3_SETUP_BASE_PATH: /__setup
+              T3_PUBLIC_URL: https://beta.iacob.uk
+              T3_WORKSPACE: /workspace
+              T3_AUTO_ADD_PROJECTS: "1"
+              T3_ALLOW_SUDO: "1"
+              T3_PAIR_TTL: 30d
+              T3_PRINT_PAIRING_ON_START: "0"
+            envFrom:
+              - secretRef:
+                  name: beta-secret
+            probes:
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /.well-known/t3/environment
+                    port: *port
+                  periodSeconds: 5
+                  failureThreshold: 60
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /.well-known/t3/environment
+                    port: *port
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /.well-known/t3/environment
+                    port: *port
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 4
+            # The entrypoint starts as root to fix ownership on the volumes,
+            # then drops to uid 1000 (gosu). Agents get passwordless sudo
+            # inside the container (T3_ALLOW_SUDO), so no caps are dropped.
+            securityContext:
+              readOnlyRootFilesystem: false
+            resources:
+              requests:
+                cpu: 500m
+                memory: 2Gi
+              limits:
+                cpu: "8"
+                memory: 24Gi
+    defaultPodOptions:
+      terminationGracePeriodSeconds: 30
+    service:
+      app:
+        controller: beta
+        ports:
+          http:
+            port: *port
+          setup:
+            port: *setup
+    persistence:
+      home:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        storageClass: openebs-hostpath
+        size: 20Gi
+        globalMounts:
+          - path: /home/t3
+      workspace:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        storageClass: openebs-hostpath
+        size: 60Gi
+        globalMounts:
+          - path: /workspace
+      shm:
+        type: emptyDir
+        medium: Memory
+        sizeLimit: 1Gi
+        globalMounts:
+          - path: /dev/shm
+    route:
+      internal:
+        hostnames: ["beta.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /__setup
+            backendRefs:
+              - identifier: app
+                port: *setup
+          - backendRefs:
+              - identifier: app
+                port: *port
+      external:
+        hostnames: ["beta.iacob.co.uk"]
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

@@ -1,0 +1,18 @@
+---
+# Public hostname so browsers off the LAN can complete OIDC logins (the code
+# workspaces' SecurityPolicies redirect here). Same backend as authentik.iacob.uk.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: authentik-external
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - authentik.iacob.co.uk
+  rules:
+    - backendRefs:
+        - name: authentik-server
+          port: 80

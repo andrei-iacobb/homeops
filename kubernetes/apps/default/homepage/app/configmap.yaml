@@ -248,6 +248,22 @@ data:
             - abbr: GH
               href: https://github.com/andrei-iacobb
   services.yaml: |
+    - Code:
+      - Alpha workspace:
+          icon: mdi-code-braces
+          href: https://alpha.iacob.uk
+          description: T3 Code fleet - alpha
+          siteMonitor: https://alpha.iacob.uk/.well-known/t3/environment
+      - Beta workspace:
+          icon: mdi-code-braces
+          href: https://beta.iacob.uk
+          description: T3 Code fleet - beta
+          siteMonitor: https://beta.iacob.uk/.well-known/t3/environment
+      - Gamma workspace:
+          icon: mdi-code-braces
+          href: https://gamma.iacob.uk
+          description: T3 Code fleet - gamma
+          siteMonitor: https://gamma.iacob.uk/.well-known/t3/environment
     - Infrastructure:
       - Home Assistant:
           icon: home-assistant.svg

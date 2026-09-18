@@ -1,0 +1,23 @@
+---
+# Authentik OIDC in front of the public route only. The internal route
+# (beta.iacob.uk) stays open for the mobile app and desktop pairing over WG,
+# because the OAuth2 filter answers non-browser clients with a redirect.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: beta-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: beta-external
+  oidc:
+    provider:
+      issuer: https://authentik.iacob.co.uk/application/o/code/
+    clientID: Nj6gFFzdZCqaaEC7N7vtfO4pPXWQLMCZgQ2BY9Dc
+    clientSecret:
+      name: code-oidc-secret
+    redirectURL: https://beta.iacob.co.uk/oauth2/callback
+    logoutPath: /oauth2/logout
+    scopes: ["openid", "profile", "email"]
+    refreshToken: true

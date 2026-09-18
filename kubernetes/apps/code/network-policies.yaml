@@ -1,0 +1,27 @@
+---
+# Code namespace: T3 Code workspace servers. Ingress only from the envoy
+# gateways, monitoring and kubelet probes. Egress is unrestricted - the agents
+# inside need git, package registries and the model providers.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: code-ingress
+  namespace: code
+spec:
+  endpointSelector: {}
+  ingress:
+    # Envoy Gateway ingress (HTTPRoutes - both internal and external)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+    # Intra-namespace
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: code
+    # Monitoring namespace (prometheus scraping)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+    # Kubelet health probes
+    - fromEntities:
+        - host
