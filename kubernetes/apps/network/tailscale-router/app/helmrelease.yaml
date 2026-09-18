@@ -39,7 +39,7 @@ spec:
               # needs RBAC) whenever this kubelet-injected var is present.
               # Container env wins over injected service env, so blank it.
               KUBERNETES_SERVICE_HOST: ""
-              TS_HEALTHCHECK_ADDR_PORT: 0.0.0.0:9002
+              TS_LOCAL_ADDR_PORT: 0.0.0.0:9002
             envFrom:
               - secretRef:
                   name: tailscale-router-secret
