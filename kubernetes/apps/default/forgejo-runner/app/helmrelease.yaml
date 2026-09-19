@@ -55,7 +55,11 @@ spec:
           dind:
             image:
               repository: docker
-              tag: 29-dind
+              # Pinned back from 29-dind on 2026-09-19: docker 29 dind hard-rebooted the
+              # Talos node four times on 2026-09-18, each within seconds of a CI job
+              # creating docker0 veths (kernel log went silent, no panic captured).
+              # Do not bump until tested on a non-production node.
+              tag: 27-dind
             args:
               - dockerd
               - --host=unix:///shared-run/docker.sock
