@@ -39,7 +39,7 @@ spec:
             runAsGroup: 0
           containers:
             - name: forgejo-backup
-              image: alpine:3.22
+              image: alpine:3.24
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
