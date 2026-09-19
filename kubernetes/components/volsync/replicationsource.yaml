@@ -1,4 +1,19 @@
 ---
+# Set MOVER_UID/MOVER_GID in the app's ks.yaml from whatever OWNS THE FILES on
+# the PVC, not from the app's securityContext. The restic mover can only read a
+# 0600 file it owns, and a mismatch does not fail loudly - the backup reports
+# Successful with those files quietly missing. Check with:
+#   kubectl exec -n <ns> <pod> -- find <mount> ! -readable -o -perm -0600 -ls
+# A PVC with 0600 files owned by more than one uid cannot be backed up this way
+# at all; it needs a privileged mover or the ownership unified first.
+#
+# To force a run: patch spec.trigger.manual (there is NO trigger annotation -
+# VolSync ignores annotations entirely). A merge patch adds `manual` alongside
+# `schedule`, so the cron schedule survives and no Flux reconcile is needed:
+#   kubectl patch replicationsource -n <ns> <name> --type merge \
+#     -p "{\"spec\":{\"trigger\":{\"manual\":\"$(date +%s)\"}}}"
+# Done when status.lastManualSync matches. `task volsync:backup-all` does this
+# for every source, `task volsync:clear-manual` removes the field again.
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
