@@ -115,6 +115,14 @@
       matchCurrentVersion: "!/^0\\./",
       enabled: false,
     },
+    {
+      description: [
+        "Hold docker dind at 27: docker:29-dind hard-rebooted the Talos node four times on 2026-09-18, every time a CI job created docker0 veths. Retest on a throwaway node before raising this.",
+      ],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["docker", "docker.io/library/docker"],
+      allowedVersions: "<28",
+    },
     // =====================
     // Grouping
     // =====================
