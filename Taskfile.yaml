@@ -38,9 +38,10 @@ tasks:
     # VolSync has no trigger annotation - the CRD only honours spec.trigger.manual
     # and spec.trigger.schedule. This task used to set a volsync.backube/trigger
     # annotation, which the operator ignored, so it silently did nothing.
-    # Patching spec.trigger.manual replaces the schedule until Flux reconciles the
-    # ReplicationSource back (within its 1h interval), which is the expected
-    # trade-off for a forced run.
+    # A merge patch adds `manual` alongside the existing `schedule` rather than
+    # replacing the trigger object, so the cron schedule survives and VolSync just
+    # prefers manual while the field is set. Flux reconciles the field away, or
+    # drop it now with volsync:clear-manual.
     cmd: |
       STAMP="$(date +%s)"
       kubectl get replicationsource -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' | \
@@ -51,7 +52,23 @@ tasks:
       done
       echo
       echo "Watch with: task volsync:status   (status.lastManualSync == $STAMP when done)"
-      echo "Flux restores the cron schedule on its next reconcile."
+      echo "Cron schedules are untouched. Clear the manual field with: task volsync:clear-manual"
+    preconditions:
+      - test -f {{.KUBECONFIG}}
+      - which kubectl
+
+  volsync:clear-manual:
+    desc: Remove a leftover spec.trigger.manual from every ReplicationSource
+    cmd: |
+      kubectl get replicationsource -A \
+        -o jsonpath='{range .items[?(@.spec.trigger.manual)]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' | \
+      while read ns name; do
+        [ -z "$ns" ] && continue
+        echo "Clearing manual trigger: $ns/$name"
+        kubectl patch replicationsource -n "$ns" "$name" --type json \
+          -p '[{"op":"remove","path":"/spec/trigger/manual"}]'
+      done
+      echo "Done."
     preconditions:
       - test -f {{.KUBECONFIG}}
       - which kubectl
