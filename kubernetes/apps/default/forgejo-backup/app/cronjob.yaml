@@ -48,10 +48,17 @@ spec:
                 limits:
                   memory: 1Gi
               env:
+                # sexy-pool is 832G at ~88% used (46G free as of 2026-09-19) and
+                # each archive is ~2.3G, so retention is deliberately short.
+                # Raise it only after reclaiming space on the pool.
                 - name: KEEP_DAILY
-                  value: "14"
+                  value: "7"
                 - name: KEEP_MONTHLY
-                  value: "6"
+                  value: "2"
+                # Refuse to run if the pool is nearly full, so a backup can never
+                # be the thing that fills it and breaks everything else on it.
+                - name: MIN_FREE_MB
+                  value: "12000"
               volumeMounts:
                 - name: forgejo-data
                   mountPath: /data
@@ -67,11 +74,18 @@ spec:
                   # read apart from a real failure. Pull in GNU tar.
                   apk add --no-cache tar >/dev/null
 
+                  FREE_MB=$(df -Pm /backup | tail -1 | awk '{print $4}')
+                  if [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then
+                    echo "[backup] ERROR only ${FREE_MB}MB free on the backup pool, need ${MIN_FREE_MB}MB."
+                    echo "[backup] Refusing to run rather than filling the pool. Free space or cut retention."
+                    exit 1
+                  fi
+
                   TS=$(date -u +"%Y%m%dT%H%M%SZ")
                   OUT="/backup/forgejo_${TS}.tar.gz"
                   TMP="${OUT}.partial"
 
-                  echo "[backup] source $(du -sh /data | cut -f1) -> ${OUT}"
+                  echo "[backup] source $(du -sh /data | cut -f1) -> ${OUT}, ${FREE_MB}MB free"
 
                   # Write to .partial first: a half-written tarball that still
                   # carries the final name would look like a good backup.
