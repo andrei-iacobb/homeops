@@ -62,6 +62,11 @@ spec:
                 - /bin/sh
                 - -euc
                 - |
+                  # Alpine ships busybox tar, which has no --warning and no
+                  # "file changed" exit code, so it cannot tell a live-server
+                  # read apart from a real failure. Pull in GNU tar.
+                  apk add --no-cache tar >/dev/null
+
                   TS=$(date -u +"%Y%m%dT%H%M%SZ")
                   OUT="/backup/forgejo_${TS}.tar.gz"
                   TMP="${OUT}.partial"
@@ -80,7 +85,10 @@ spec:
                   if [ "$rc" -ge 2 ]; then
                     echo "[backup] ERROR tar failed rc=$rc"; sed -n 1,20p /tmp/tar.err; rm -f "$TMP"; exit 1
                   fi
-                  [ "$rc" -eq 1 ] && echo "[backup] note: files changed during read (expected on a live server)"
+                  if [ "$rc" -eq 1 ]; then
+                    echo "[backup] note: files changed during read (expected on a live server)"
+                    sed -n 1,5p /tmp/tar.err
+                  fi
 
                   # Prove the archive is readable and actually contains the two
                   # things this job exists for, before it replaces anything.
