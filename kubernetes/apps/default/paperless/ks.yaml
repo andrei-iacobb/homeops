@@ -11,8 +11,8 @@ spec:
       APP: paperless
       APP_PVC: paperless
       VOLSYNC_SCHEDULE: "0 3 * * *"
-      MOVER_UID: "0"
-      MOVER_GID: "0"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
