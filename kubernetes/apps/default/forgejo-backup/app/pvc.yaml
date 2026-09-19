@@ -1,0 +1,15 @@
+---
+# Lives on TrueNAS sexy-pool via the nfs-data class
+# (192.168.1.67:/mnt/sexy-pool/k8s-data/default-forgejo-backup).
+# Deliberately a different medium from VolSync's restic-to-MinIO, so a MinIO or
+# restic-repo problem cannot take both copies of the git server with it.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: forgejo-backup
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: nfs-data
+  resources:
+    requests:
+      storage: 100Gi

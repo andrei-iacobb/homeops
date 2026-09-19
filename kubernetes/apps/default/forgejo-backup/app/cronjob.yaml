@@ -1,0 +1,123 @@
+---
+# Whole-PVC tarball of the Forgejo data directory onto TrueNAS sexy-pool.
+#
+# Why this exists alongside VolSync: the restic mover runs as a single uid, and
+# /data holds 0600 files owned by BOTH root (the 6 SSH host keys) and git/1000
+# (the bleve issue index), so no single mover uid can read all of it. This job
+# runs as root, so it captures everything including the host keys - the one part
+# of Forgejo that cannot be regenerated without every client seeing a key-changed
+# warning. See andrei-iacobb/homeops#690.
+#
+# The Postgres database is NOT in here; it lives in databases/postgres and is
+# dumped separately by databases/db-backup. A restore needs both.
+#
+# Consistency: this is a live tar, same as VolSync's Direct copyMethod. Git
+# objects are immutable so repos survive it; the bleve index may be torn and
+# rebuilds itself on demand.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: forgejo-backup
+spec:
+  schedule: "45 2 * * *" # after db-backup (02:00), before VolSync forgejo (03:30)
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          # The Forgejo PVC is RWO, so this pod must land on the node already
+          # mounting it or it will sit Pending forever.
+          nodeSelector:
+            kubernetes.io/hostname: home-cluster
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          containers:
+            - name: forgejo-backup
+              image: alpine:3.22
+              imagePullPolicy: IfNotPresent
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 1Gi
+              env:
+                - name: KEEP_DAILY
+                  value: "14"
+                - name: KEEP_MONTHLY
+                  value: "6"
+              volumeMounts:
+                - name: forgejo-data
+                  mountPath: /data
+                  readOnly: true
+                - name: backup
+                  mountPath: /backup
+              command:
+                - /bin/sh
+                - -euc
+                - |
+                  TS=$(date -u +"%Y%m%dT%H%M%SZ")
+                  OUT="/backup/forgejo_${TS}.tar.gz"
+                  TMP="${OUT}.partial"
+
+                  echo "[backup] source $(du -sh /data | cut -f1) -> ${OUT}"
+
+                  # Write to .partial first: a half-written tarball that still
+                  # carries the final name would look like a good backup.
+                  # --warning=no-file-changed keeps a file changing mid-read from
+                  # being fatal, but a real failure still exits non-zero (tar
+                  # exits 1 for "file changed", 2 for a genuine error).
+                  set +e
+                  tar -czf "$TMP" -C /data --warning=no-file-changed . 2>/tmp/tar.err
+                  rc=$?
+                  set -e
+                  if [ "$rc" -ge 2 ]; then
+                    echo "[backup] ERROR tar failed rc=$rc"; sed -n 1,20p /tmp/tar.err; rm -f "$TMP"; exit 1
+                  fi
+                  [ "$rc" -eq 1 ] && echo "[backup] note: files changed during read (expected on a live server)"
+
+                  # Prove the archive is readable and actually contains the two
+                  # things this job exists for, before it replaces anything.
+                  if ! tar -tzf "$TMP" >/tmp/list 2>/dev/null; then
+                    echo "[backup] ERROR archive is not readable"; rm -f "$TMP"; exit 1
+                  fi
+                  for want in "./ssh/ssh_host_ed25519_key" "./git/repositories"; do
+                    if ! grep -q "^${want}" /tmp/list; then
+                      echo "[backup] ERROR ${want} missing from archive"; rm -f "$TMP"; exit 1
+                    fi
+                  done
+                  mv "$TMP" "$OUT"
+                  echo "[backup] ok $(du -h "$OUT" | cut -f1), $(wc -l < /tmp/list) entries"
+
+                  echo "[retention] keep ${KEEP_DAILY} daily + ${KEEP_MONTHLY} monthly"
+                  ALL=$(ls -1 /backup | grep -E '^forgejo_.*\.tar\.gz$' | sort -r)
+                  i=0; months=""
+                  for f in $ALL; do
+                    if [ "$i" -lt "$KEEP_DAILY" ]; then i=$((i+1)); continue; fi
+                    ym=$(echo "$f" | sed -E 's/forgejo_([0-9]{6}).*/\1/')
+                    seen=$(echo "$months" | tr ';' '\n' | grep -c "^${ym}$" || true)
+                    count=$(echo "$months" | tr ';' '\n' | grep -v '^$' | sort -u | wc -l)
+                    if [ "$seen" -eq 0 ] && [ "$count" -lt "$KEEP_MONTHLY" ]; then
+                      months="${months}${ym};"
+                    else
+                      echo "[retention] delete $f"; rm -f "/backup/${f}"
+                    fi
+                  done
+
+                  # Leave a partial behind and the next run's disk maths is wrong.
+                  rm -f /backup/*.partial 2>/dev/null || true
+                  echo "[done] $(ls -1 /backup | grep -c '^forgejo_.*\.tar\.gz$') archives, $(df -h /backup | tail -1 | awk '{print $4}') free"
+          volumes:
+            - name: forgejo-data
+              persistentVolumeClaim:
+                claimName: forgejo
+                readOnly: true
+            - name: backup
+              persistentVolumeClaim:
+                claimName: forgejo-backup
