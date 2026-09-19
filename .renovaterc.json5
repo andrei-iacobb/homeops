@@ -100,15 +100,6 @@
     },
     {
       description: [
-        "Hold docker dind on 27: docker:29-dind in the forgejo-runner sidecar rebooted the Talos node four times on 2026-09-18 whenever a CI job started (andrei-iacobb/homeops#687)",
-      ],
-      matchDatasources: ["docker"],
-      matchPackageNames: ["docker"],
-      matchUpdateTypes: ["major"],
-      enabled: false,
-    },
-    {
-      description: [
         "linuxserver overseerr/calibre-web: ignore legacy date-style tags (2021.x) that sort above the real semver tags",
       ],
       matchDatasources: ["docker"],
@@ -126,7 +117,7 @@
     },
     {
       description: [
-        "Hold docker dind at 27: docker:29-dind hard-rebooted the Talos node four times on 2026-09-18, every time a CI job created docker0 veths. Retest on a throwaway node before raising this.",
+        "Hold docker dind at 27 (andrei-iacobb/homeops#687). The Talos node reboot on 2026-09-18 23:21 BST is the only one with instrumented evidence: a talosctl dmesg capture ends 21s earlier on docker0 veth churn from the forgejo-runner dind sidecar, which had just been bumped to 29-dind. Not proven, so this is a precaution. Retest on a throwaway node before raising it.",
       ],
       matchDatasources: ["docker"],
       matchPackageNames: ["docker", "docker.io/library/docker"],
