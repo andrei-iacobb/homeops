@@ -35,12 +35,23 @@ tasks:
 
   volsync:backup-all:
     desc: Trigger all VolSync backups simultaneously
+    # VolSync has no trigger annotation - the CRD only honours spec.trigger.manual
+    # and spec.trigger.schedule. This task used to set a volsync.backube/trigger
+    # annotation, which the operator ignored, so it silently did nothing.
+    # Patching spec.trigger.manual replaces the schedule until Flux reconciles the
+    # ReplicationSource back (within its 1h interval), which is the expected
+    # trade-off for a forced run.
     cmd: |
+      STAMP="$(date +%s)"
       kubectl get replicationsource -A -o jsonpath='{range .items[*]}{.metadata.namespace} {.metadata.name}{"\n"}{end}' | \
       while read ns name; do
         echo "Triggering backup: $ns/$name"
-        kubectl annotate replicationsource -n "$ns" "$name" volsync.backube/trigger="$(date +%s)" --overwrite
+        kubectl patch replicationsource -n "$ns" "$name" --type merge \
+          -p "{\"spec\":{\"trigger\":{\"manual\":\"$STAMP\"}}}"
       done
+      echo
+      echo "Watch with: task volsync:status   (status.lastManualSync == $STAMP when done)"
+      echo "Flux restores the cron schedule on its next reconcile."
     preconditions:
       - test -f {{.KUBECONFIG}}
       - which kubectl
@@ -49,7 +60,7 @@ tasks:
     desc: Show status of all VolSync ReplicationSources
     cmd: |
       echo "=== VolSync Backup Status ==="
-      kubectl get replicationsource -A -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,PVC:.spec.sourcePVC,LAST_SYNC:.status.lastSyncTime,SCHEDULE:.spec.trigger.schedule'
+      kubectl get replicationsource -A -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,PVC:.spec.sourcePVC,LAST_SYNC:.status.lastSyncTime,LAST_MANUAL:.status.lastManualSync,SCHEDULE:.spec.trigger.schedule'
       echo ""
       echo "=== Active Mover Pods ==="
       kubectl get pods -A -l volsync.backube/replicationsource --no-headers 2>/dev/null || echo "No active mover pods"
