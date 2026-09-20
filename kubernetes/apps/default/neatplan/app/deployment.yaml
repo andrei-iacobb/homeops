@@ -25,12 +25,15 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
         fsGroup: 1001
         fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         # Prisma migrations must land before the Next 16.3 app boots; the
         # migrator image's default CMD is `prisma migrate deploy`.
@@ -40,10 +43,23 @@ spec:
           envFrom:
             - secretRef:
                 name: neatplan-secret
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: migrate-tmp
+              mountPath: /tmp
       containers:
         - name: neatplan
           image: ghcr.io/andrei-iacobb/neatplan:1b9b49b
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           envFrom:
             - secretRef:
                 name: neatplan-secret
@@ -71,6 +87,10 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app/data
+            - name: tmp
+              mountPath: /tmp
+            - name: next-cache
+              mountPath: /app/.next/cache
           ports:
             - name: http
               containerPort: 4040
@@ -101,3 +121,12 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: neatplan-data
+        - name: migrate-tmp
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 256Mi

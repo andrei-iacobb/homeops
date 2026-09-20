@@ -22,9 +22,31 @@ spec:
           securityContext:
             runAsUser: 0
             fsGroup: 0
+          initContainers:
+            # Copy the pinned client from its image without downloading tools at
+            # job runtime. mc copies itself without relying on a shell in its image.
+            - name: fetch-mc
+              image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
+              imagePullPolicy: IfNotPresent
+              command: ["/usr/bin/mc"]
+              args: ["cp", "/usr/bin/mc", "/tools/mc"]
+              env:
+                # Keep any client configuration on the shared writable volume.
+                - name: HOME
+                  value: /tools
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
           containers:
             - name: pg-logical-backup
-              image: postgres:16-alpine
+              # Pin the backup client independently of the shared database server.
+              image: postgres:16.15-alpine@sha256:3c5c8892d184f738f4fe282d14ddaa613a38f00f4189d2d94725ebe6f2909ddb
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
@@ -70,22 +92,22 @@ spec:
                   value: "30"
                 - name: KEEP_MONTHLY
                   value: "12"
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
               command:
                 - /bin/sh
                 - -euc
                 - |
-                  echo "[setup] installing tools"
-                  apk add --no-cache ca-certificates curl >/dev/null
-
-                  # minio-client: alpine's `mc` is Midnight Commander, so fetch the
-                  # real one from dl.min.io. Retry to tolerate transient egress blips.
-                  n=0
-                  until curl -fsSL -o /usr/local/bin/mc \
-                      https://dl.min.io/client/mc/release/linux-amd64/mc; do
-                    n=$((n+1)); [ "$n" -ge 5 ] && echo "mc download failed" && exit 1
-                    echo "[setup] mc download retry $n"; sleep 5
-                  done
-                  chmod +x /usr/local/bin/mc
+                  # mc arrives from the init container through the shared emptyDir.
+                  # Set its executable mode explicitly and put /tools on PATH.
+                  export PATH="/tools:$PATH"
+                  chmod 0755 /tools/mc
+                  # Check compatibility before starting the database dump.
+                  if ! mc --version >/dev/null 2>&1; then
+                    echo "[setup] ERROR /tools/mc is not executable on this image" && exit 1
+                  fi
+                  echo "[setup] $(mc --version | head -1)"
 
                   TS=$(date -u +"%Y%m%dT%H%M%SZ")
                   FILE="/tmp/postgres_${TS}.sql.gz"
@@ -129,3 +151,7 @@ spec:
 
                   rm -f "$FILE"
                   echo "[done] backup complete"
+          volumes:
+            # Carries mc from the init container to the backup container.
+            - name: tools
+              emptyDir: {}
