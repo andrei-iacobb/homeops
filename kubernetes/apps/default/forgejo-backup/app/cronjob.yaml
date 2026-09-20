@@ -39,7 +39,11 @@ spec:
             runAsGroup: 0
           containers:
             - name: forgejo-backup
-              image: alpine:3.24
+              # Debian ships GNU tar in the base image. Alpine's is busybox and
+              # needed `apk add tar` at runtime, which made every backup depend
+              # on reaching the Alpine CDN - it failed exactly when the network
+              # was broken on 2026-09-20, which is when a backup matters most.
+              image: debian:13-slim
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
@@ -69,11 +73,6 @@ spec:
                 - /bin/sh
                 - -euc
                 - |
-                  # Alpine ships busybox tar, which has no --warning and no
-                  # "file changed" exit code, so it cannot tell a live-server
-                  # read apart from a real failure. Pull in GNU tar.
-                  apk add --no-cache tar >/dev/null
-
                   FREE_MB=$(df -Pm /backup | tail -1 | awk '{print $4}')
                   if [ "$FREE_MB" -lt "$MIN_FREE_MB" ]; then
                     echo "[backup] ERROR only ${FREE_MB}MB free on the backup pool, need ${MIN_FREE_MB}MB."
