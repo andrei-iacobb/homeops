@@ -124,6 +124,17 @@ spec:
               protocol: TCP
             - port: "9001"
               protocol: TCP
+    # envoy-internal only (LAN/WireGuard): console and S3 API. Never envoy-external.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9001"
+              protocol: TCP
     - fromEntities:
         - host
 ---
