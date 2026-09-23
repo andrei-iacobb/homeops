@@ -1,0 +1,87 @@
+---
+# cliproxy - CLIProxyAPI (router-for-me). One place holding the Claude and
+# Codex OAuth logins, served as Anthropic/OpenAI-compatible APIs to the T3
+# workspaces (in-cluster: http://cliproxy.code.svc.cluster.local:8317), devbox
+# and the Mac (https://cliproxy.iacob.uk). Clients authenticate with the
+# api-keys in cliproxy-secret. Logins are added via the management panel at
+# /management.html. The config is seeded onto the PVC once because the
+# management API rewrites it in place.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cliproxy
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: cliproxy
+  interval: 1h
+  values:
+    controllers:
+      cliproxy:
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        initContainers:
+          seed-config:
+            image:
+              repository: docker.io/library/busybox
+              tag: "1.37"
+            command:
+              - sh
+              - -c
+              - mkdir -p /data/auths && [ -f /data/config.yaml ] || cp /seed/config.yaml /data/config.yaml
+        containers:
+          app:
+            image:
+              repository: docker.io/eceasy/cli-proxy-api
+              tag: v7.3.15
+            command: ["./CLIProxyAPI", "-config", "/data/config.yaml"]
+            env:
+              TZ: Europe/London
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &port 8317
+                  periodSeconds: 30
+              readiness: *probe
+            resources:
+              requests:
+                cpu: 20m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+    service:
+      app:
+        controller: cliproxy
+        ports:
+          http:
+            port: *port
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        storageClass: openebs-hostpath
+        size: 1Gi
+        globalMounts:
+          - path: /data
+      seed:
+        type: secret
+        name: cliproxy-secret
+        advancedMounts:
+          cliproxy:
+            seed-config:
+              - path: /seed
+    route:
+      internal:
+        hostnames: ["cliproxy.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port

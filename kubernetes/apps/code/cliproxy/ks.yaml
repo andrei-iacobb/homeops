@@ -1,0 +1,33 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cliproxy
+  namespace: code
+spec:
+  targetNamespace: code
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: cliproxy
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  prune: true
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  path: ./kubernetes/apps/code/cliproxy/app
+  postBuild:
+    substitute:
+      APP: cliproxy
+      APP_PVC: cliproxy-data
+      VOLSYNC_SCHEDULE: "25 3 * * *"
+      MOVER_UID: "0"
+      MOVER_GID: "0"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret

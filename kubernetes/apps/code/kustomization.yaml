@@ -12,3 +12,4 @@ resources:
   - ./alpha/ks.yaml
   - ./beta/ks.yaml
   - ./gamma/ks.yaml
+  - ./cliproxy/ks.yaml
