@@ -25,6 +25,17 @@ spec:
                     key: DATABASE_URL
               DOMAIN: https://vault.iacob.co.uk
               SIGNUPS_ALLOWED: "false"
+              SSO_ENABLED: "true"
+              SSO_ONLY: "false"
+              SSO_SIGNUPS_MATCH_EMAIL: "true"
+              SSO_AUTHORITY: https://authentik.iacob.uk/application/o/vaultwarden/
+              SSO_CLIENT_ID: vaultwarden
+              SSO_CLIENT_SECRET:
+                valueFrom:
+                  secretKeyRef:
+                    name: vaultwarden-secret
+                    key: SSO_CLIENT_SECRET
+              SSO_SCOPES: email profile offline_access
               ADMIN_TOKEN:
                 valueFrom:
                   secretKeyRef:
@@ -56,6 +67,9 @@ spec:
                 cpu: 1000m
                 memory: 1Gi
     defaultPodOptions:
+      hostAliases:
+        - ip: 192.168.1.7
+          hostnames: ["authentik.iacob.uk"]
       securityContext:
         runAsNonRoot: false
         runAsUser: 1000
