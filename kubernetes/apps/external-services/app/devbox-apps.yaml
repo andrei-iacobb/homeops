@@ -45,7 +45,7 @@ spec:
       namespace: network
       sectionName: https
   hostnames:
-    - np.iacobapp.dev
+    - np.iacob.uk
   rules:
     - backendRefs:
         - name: devbox-apps
