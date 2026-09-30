@@ -180,3 +180,36 @@ data:
           name: Mealie
           provider: !KeyOf mealie
           meta_launch_url: https://mealie.iacob.uk
+  passkey-login.yaml: |
+    version: 1
+    metadata:
+      name: homeops-passkey-login
+    entries:
+      # Default login = Touch ID on a passkey right away (no username, no
+      # password). Password fallback: /if/flow/default-authentication-flow/
+      - model: authentik_flows.flow
+        id: passkey-flow
+        identifiers:
+          slug: passkey-authentication
+        attrs:
+          name: Passkey login
+          title: Sign in with your passkey
+          designation: authentication
+          authentication: require_unauthenticated
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf passkey-flow
+          order: 10
+        attrs:
+          stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, passkey-login]]
+      - model: authentik_flows.flowstagebinding
+        identifiers:
+          target: !KeyOf passkey-flow
+          order: 100
+        attrs:
+          stage: !Find [authentik_stages_user_login.userloginstage, [name, default-authentication-login]]
+      - model: authentik_brands.brand
+        identifiers:
+          domain: authentik-default
+        attrs:
+          flow_authentication: !KeyOf passkey-flow
