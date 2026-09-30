@@ -23,6 +23,17 @@ spec:
               BASE_URL: "https://mealie.iacob.uk"
               DB_ENGINE: sqlite
               NLTK_DATA: /app/data/nltk_data
+              # Authentik is the only login (auto-redirect), linked by email.
+              OIDC_AUTH_ENABLED: "true"
+              OIDC_CONFIGURATION_URL: https://authentik.iacob.uk/application/o/mealie/.well-known/openid-configuration
+              OIDC_CLIENT_ID: mealie
+              OIDC_PROVIDER_NAME: Authentik
+              OIDC_AUTO_REDIRECT: "true"
+              OIDC_SIGNUP_ENABLED: "false"
+              OIDC_ADMIN_GROUP: authentik Admins
+            envFrom:
+              - secretRef:
+                  name: mealie-secret
             probes:
               liveness: &probes
                 enabled: true
@@ -60,6 +71,9 @@ spec:
               limits:
                 memory: 512Mi
     defaultPodOptions:
+      hostAliases:
+        - ip: 192.168.1.7
+          hostnames: ["authentik.iacob.uk"]
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
