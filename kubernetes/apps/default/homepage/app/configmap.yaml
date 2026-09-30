@@ -8,29 +8,8 @@ metadata:
     app.kubernetes.io/name: homepage
 data:
   custom.css: |
-    /* Background rotation layers */
-    .bg-layer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-size: cover;
-      background-position: center;
-      z-index: -1;
-      transition: opacity 2s ease-in-out;
-    }
-    .bg-layer.active {
-      opacity: 1;
-    }
-    .bg-layer.inactive {
-      opacity: 0;
-    }
-
     /* Glassmorphism service cards */
     #page_container .service {
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       background: rgba(15, 23, 42, 0.82) !important;
       border: 1px solid rgba(148, 163, 184, 0.2) !important;
       border-radius: 16px !important;
@@ -43,8 +22,6 @@ data:
 
     /* Glassmorphism widget cards */
     #page_container .widget {
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       background: rgba(15, 23, 42, 0.78) !important;
       border: 1px solid rgba(148, 163, 184, 0.15) !important;
       border-radius: 16px !important;
@@ -52,8 +29,6 @@ data:
 
     /* Information widgets (top bar) — same as service cards */
     #information-widgets {
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       background: rgba(15, 23, 42, 0.82) !important;
       border: 1px solid rgba(148, 163, 184, 0.2) !important;
       border-radius: 16px !important;
@@ -132,48 +107,7 @@ data:
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(148, 163, 184, 0.5);
     }
-  custom.js: |
-    // Rotating nature backgrounds with crossfade
-    (function () {
-      const layer1 = document.createElement("div");
-      const layer2 = document.createElement("div");
-      layer1.className = "bg-layer active";
-      layer2.className = "bg-layer inactive";
-      document.body.prepend(layer2);
-      document.body.prepend(layer1);
-
-      let current = layer1;
-      let next = layer2;
-
-      function loadImage(url) {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(url);
-          img.onerror = reject;
-          img.src = url;
-        });
-      }
-
-      async function swap() {
-        try {
-          const url = "https://picsum.photos/1920/1080?random=" + Date.now();
-          const loaded = await loadImage(url);
-          next.style.backgroundImage = "url(" + loaded + ")";
-          next.className = "bg-layer active";
-          current.className = "bg-layer inactive";
-          const temp = current;
-          current = next;
-          next = temp;
-        } catch (e) {
-          // silently retry next cycle
-        }
-      }
-
-      // Load initial background
-      swap();
-      // Rotate every 60 seconds (less frequent = less bandwidth)
-      setInterval(swap, 60000);
-    })();
+  custom.js: ""
   docker.yaml: ""
   proxmox.yaml: |
     # pve:
@@ -188,9 +122,11 @@ data:
     color: slate
     headerStyle: clean
     statusStyle: dot
-    cardBlur: md
+    cardBlur: sm
     background:
-      image: https://picsum.photos/1920/1080?random=1
+      # Fixed seed so the browser and CDN cache it; ?random= fetched a new
+      # uncached photo on every load.
+      image: https://picsum.photos/seed/iacob-home/1920/1080
       brightness: 20
       saturate: 40
       opacity: 40
@@ -253,17 +189,17 @@ data:
           icon: mdi-code-braces
           href: https://alpha.iacob.uk
           description: T3 Code fleet - alpha
-          siteMonitor: https://alpha.iacob.uk/.well-known/t3/environment
+          siteMonitor: http://alpha.code.svc.cluster.local:3773/.well-known/t3/environment
       - Beta workspace:
           icon: mdi-code-braces
           href: https://beta.iacob.uk
           description: T3 Code fleet - beta
-          siteMonitor: https://beta.iacob.uk/.well-known/t3/environment
+          siteMonitor: http://beta.code.svc.cluster.local:3773/.well-known/t3/environment
       - Gamma workspace:
           icon: mdi-code-braces
           href: https://gamma.iacob.uk
           description: T3 Code fleet - gamma
-          siteMonitor: https://gamma.iacob.uk/.well-known/t3/environment
+          siteMonitor: http://gamma.code.svc.cluster.local:3773/.well-known/t3/environment
     - Infrastructure:
       - Home Assistant:
           icon: home-assistant.svg
@@ -275,7 +211,7 @@ data:
             url: https://hass.iacob.co.uk
             key: ${HOMEPAGE_HASS_KEY}
       - PetKit snapshots:
-          icon: mdi:image-multiple
+          icon: mdi-image-multiple
           href: https://hass.iacob.uk/petkit-snapshots/
           description: Pet feeder event archive
       - TrueNAS:
@@ -297,6 +233,18 @@ data:
             url: https://192.168.1.100:8006
             username: ${HOMEPAGE_PROXMOX_USER}
             password: ${HOMEPAGE_PROXMOX_PASS}
+      - Hermes:
+          icon: mdi-robot-happy-outline
+          href: https://hermes.iacob.uk
+          description: Hermes agent dashboard
+      - Zigbee2MQTT:
+          icon: zigbee2mqtt.svg
+          href: https://zigbee.iacob.uk
+          description: Zigbee devices (Pi 5)
+      - Fanwatch:
+          icon: mdi-fan
+          href: https://fan.iacob.uk
+          description: iLO fan control
       - iLO DL360:
           icon: mdi-server
           href: https://ilo1.iacob.uk
@@ -410,7 +358,7 @@ data:
           description: Photo backup
           widget:
             type: immich
-            url: http://immich-server.default.svc.cluster.local:2283
+            url: http://immich-server-app.default.svc.cluster.local:2283
             key: ${HOMEPAGE_IMMICH_KEY}
             version: 2
       - Echo:
@@ -437,6 +385,14 @@ data:
           icon: mdi-truck-fast-outline
           href: https://inbi-demo.iacobapp.dev
           description: Interactive Office and Tablet demo
+      - Slate:
+          icon: mdi-draw
+          href: https://slate.iacob.uk
+          description: Notes and whiteboard
+      - Informate:
+          icon: mdi-newspaper-variant-outline
+          href: https://informate.iacob.co.uk
+          description: AI news digest
       - Postplan:
           icon: mdi-file-document-outline
           href: https://plans.iacob.uk
@@ -465,7 +421,7 @@ data:
           icon: plex.svg
           href: https://plex.iacob.uk
           description: Media server
-          siteMonitor: https://plex.iacob.uk/identity
+          siteMonitor: http://plex.media.svc.cluster.local:32400/identity
       - Sonarr:
           icon: sonarr.svg
           href: https://sonarr.iacob.uk
@@ -486,11 +442,6 @@ data:
           icon: lidarr.svg
           href: https://lidarr.iacob.uk
           description: Music management
-          widget:
-            type: lidarr
-            url: http://lidarr.media.svc.cluster.local:8686
-            key: ${HOMEPAGE_LIDARR_KEY}
-            enableQueue: true
       - Readarr:
           icon: readarr.svg
           href: https://readarr.iacob.uk
@@ -547,7 +498,7 @@ data:
           href: https://calibre-web.iacob.uk
           description: eBook library
       - Lazylibrarian:
-          icon: lazylibrarian.svg
+          icon: lazylibrarian.png
           href: https://lazylibrarian.iacob.uk
           description: Book metadata
       - Tdarr:
@@ -559,11 +510,11 @@ data:
           href: https://recyclarr.iacob.uk
           description: TRaSH guides sync
       - Huntarr:
-          icon: huntarr.svg
+          icon: huntarr.png
           href: https://huntarr.iacob.uk
           description: Hunt missing media
       - Recommendarr:
-          icon: recommendarr.svg
+          icon: mdi-movie-star
           href: https://recommendarr.iacob.uk
           description: Media recommendations
       - Pulsarr:
@@ -590,6 +541,14 @@ data:
           icon: mdi-television-play
           href: https://ersatztv.iacob.uk
           description: Fake live TV channels
+      - Frigate:
+          icon: frigate.svg
+          href: https://frigate.iacob.uk
+          description: NVR and object detection
+      - Ring MQTT:
+          icon: mdi-doorbell-video
+          href: https://ring-mqtt.iacob.uk
+          description: Ring cameras bridge
       - Scrypted:
           icon: mdi-camera-wireless
           href: https://scrypted.iacob.uk
@@ -600,7 +559,7 @@ data:
           href: https://ollama.iacob.uk
           description: LLM server
       - Open WebUI:
-          icon: openwebui.svg
+          icon: open-webui.svg
           href: https://openwebui.iacob.co.uk
           description: AI chat interface
       - Arca:
@@ -645,6 +604,10 @@ data:
           icon: pgadmin.svg
           href: https://pgadmin.iacob.uk
           description: PostgreSQL admin
+      - Qdrant:
+          icon: qdrant.svg
+          href: https://qdrant.iacob.uk/dashboard
+          description: Vector database
       - MinIO:
           icon: minio.svg
           href: https://minio.iacob.uk
@@ -678,6 +641,10 @@ data:
           icon: mdi-cloud-upload
           href: https://drop.iacob.uk
           description: File drop / WebDAV
+      - Syncthing:
+          icon: syncthing.svg
+          href: https://syncthing.iacob.uk
+          description: File sync
       - Filebrowser:
           icon: mdi-folder
           href: https://files.iacob.uk
@@ -706,6 +673,10 @@ data:
           icon: mdi-cash-multiple
           href: https://budget.iacob.uk
           description: Personal finance
+      - Firefly III:
+          icon: firefly.svg
+          href: https://firefly.iacob.uk
+          description: Finance manager
       - Wallos:
           icon: mdi-credit-card-clock
           href: https://wallos.iacob.uk

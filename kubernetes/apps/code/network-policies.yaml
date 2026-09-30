@@ -25,3 +25,12 @@ spec:
     # Kubelet health probes
     - fromEntities:
         - host
+    # Homepage status dots (siteMonitor on /.well-known/t3/environment)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+            app.kubernetes.io/name: homepage
+      toPorts:
+        - ports:
+            - port: "3773"
+              protocol: TCP
