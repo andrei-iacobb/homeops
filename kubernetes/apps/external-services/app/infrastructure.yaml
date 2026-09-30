@@ -12,6 +12,10 @@ spec:
         port: 443
   tls:
     insecureSkipVerify: true
+    # TrueNAS picks h2 when offered, and its UI websocket (/api/current)
+    # cannot upgrade over an h2 upstream connection: the UI loads forever.
+    alpnProtocols:
+      - http/1.1
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
