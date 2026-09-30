@@ -531,6 +531,51 @@ def safety_check(windows, rates):
     return True
 
 
+def filter_safe_windows(windows, rates, label="window"):
+    """Drop only the windows that actually contain an expensive half-hour;
+    keep every window that is genuinely all-cheap.
+
+    Both safety_check() and verify_written_slots_are_cheap() historically
+    caused the caller to clear_schedule()/apply_schedule([], ...) on the
+    first violation found anywhere - wiping out every OTHER charge window
+    too, even ones with nothing to do with the violation. That killed a
+    whole night's cheap overnight charging over one offending half-hour
+    elsewhere (2026-09-29/30: a 00:00-05:30 UTC window was cleared entirely
+    because its last half-hour hit 20.5p, discarding the genuinely-cheap
+    00:00-05:00 portion too).
+
+    find_cheap_windows() already only ever merges strictly <=MAX_RATE
+    consecutive half-hours into a window, so in the normal case this drops
+    nothing - it exists as defense in depth for any future bug (a merge
+    edge case, inverter-midnight split, stale cache) that could let an
+    expensive half-hour slip into an otherwise-cheap window, without that
+    bug being able to take down the rest of the schedule too.
+
+    Returns (safe_windows, dropped_windows).
+    """
+    expensive = [r for r in rates if r["value_inc_vat"] > MAX_RATE]
+    safe, dropped = [], []
+    for w in windows:
+        ws = datetime.fromisoformat(w["start"])
+        we = datetime.fromisoformat(w["end"])
+        bad = None
+        for r in expensive:
+            rs = datetime.fromisoformat(r["start"])
+            re_end = datetime.fromisoformat(r["end"])
+            if rs < we and re_end > ws:
+                bad = r
+                break
+        if bad is None:
+            safe.append(w)
+        else:
+            print(f"  DROPPING {label} {w['start'][11:16]}-{w['end'][11:16]}: "
+                  f"{bad['value_inc_vat']*100:.1f}p rate at "
+                  f"{bad['start'][11:16]}-{bad['end'][11:16]} overlaps it. "
+                  f"Other clean windows are kept, not wiped.")
+            dropped.append(w)
+    return safe, dropped
+
+
 def merge_windows(windows):
     """Merge overlapping/adjacent {'start','end'} windows. Returns sorted list."""
     if not windows:
@@ -700,19 +745,27 @@ def verify_written_slots_are_cheap(charge_windows, rates):
     rounding mistakes before they reach the inverter (zone handling is
     covered separately by verify_inverter_clock).
 
-    Free-electricity slots skip this check because their rates are
-    irrelevant (Octopus pays you to use power).
+    Free-electricity slots skip the rate check (their rates are irrelevant -
+    Octopus pays you to use power) but still get the re-derivation check.
+
+    Returns (safe_windows, dropped_windows). A re-derivation mismatch is a
+    conversion bug, not a market condition that applies to one window only,
+    so it hard-aborts the whole run rather than silently dropping a window
+    (sys.exit(3), caller never sees a return in that case).
     """
+    safe, dropped = [], []
     for w in charge_windows:
-        if "free" in (w.get("tag") or ""):
-            continue
+        is_free = "free" in (w.get("tag") or "")
         start_dt = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
         end_dt = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
 
         # Re-derive the start instant from the very string that will be
         # written (inverter HH:MM on the window's inverter-clock date, minus
         # the offset). A sign error in the offset would pass every check
-        # that only looks at ISO instants; this one does not.
+        # that only looks at ISO instants; this one does not. A mismatch
+        # here means the conversion math itself is wrong, not that this one
+        # window happens to be priced badly - that is not something we can
+        # safely work around by dropping just this window, so abort hard.
         written = _inverter_hhmm(w["start"])
         inv_date = (start_dt + INVERTER_UTC_OFFSET).date()
         hh, mm = (int(x) for x in written.split(":"))
@@ -722,23 +775,35 @@ def verify_written_slots_are_cheap(charge_windows, rates):
             print(f"ABORTING: slot string {written} re-derives to "
                   f"{rederived:%Y-%m-%d %H:%M UTC}, not {start_dt:%Y-%m-%d %H:%M UTC} - "
                   f"inverter-clock conversion is wrong.")
-            return False
+            return None, None
+
+        if is_free:
+            safe.append(w)
+            continue
 
         # Sample the rate just inside start and just inside end.
         probe_start = rederived
         probe_end = end_dt - timedelta(minutes=1)
+        bad_rate = None
+        bad_label = None
+        bad_probe = None
         for label, probe in (("start", probe_start), ("end-1min", probe_end)):
             rate = _rate_at(rates, probe)
             if rate is None:
                 # No rate data for that instant (e.g. far in past) - skip.
                 continue
             if rate > MAX_RATE:
-                print(f"ABORTING: slot {w['start']} -> {w['end']} {label}-probe "
-                      f"@ {probe:%Y-%m-%d %H:%M UTC} has rate "
-                      f"{rate*100:.1f}p > {MAX_RATE*100:.0f}p cap. "
-                      f"Refusing to charge during expensive rates.")
-                return False
-    return True
+                bad_rate, bad_label, bad_probe = rate, label, probe
+                break
+        if bad_rate is None:
+            safe.append(w)
+        else:
+            print(f"  DROPPING round-trip window {w['start']} -> {w['end']}: "
+                  f"{bad_label}-probe @ {bad_probe:%Y-%m-%d %H:%M UTC} has rate "
+                  f"{bad_rate*100:.1f}p > {MAX_RATE*100:.0f}p cap. Other clean "
+                  f"windows are kept, not wiped.")
+            dropped.append(w)
+    return safe, dropped
 
 
 # ---------- SolisCloud API (direct inverter I/O) ----------
@@ -1359,12 +1424,14 @@ def main():
         w["tag"] = f"agile {w['avg_rate']*100:.1f}p"
 
     if cheap_windows:
-        print("Running safety check on cheap windows...")
-        if not safety_check(cheap_windows, upcoming):
-            print("ABORTING - expensive rate detected inside a charge window")
-            clear_schedule()
-            sys.exit(1)
-        print("  PASSED")
+        print("Checking each cheap window for an expensive half-hour...")
+        cheap_windows, dropped = filter_safe_windows(cheap_windows, upcoming, label="agile window")
+        if dropped:
+            print(f"  Dropped {len(dropped)} window(s); keeping "
+                  f"{len(cheap_windows)} clean window(s) rather than wiping "
+                  f"the whole schedule.")
+        else:
+            print("  PASSED - every window is clean")
         print()
 
     # Free Electricity always wins - tag and prepend, then merge.
@@ -1389,17 +1456,24 @@ def main():
 
     # 5.5. Round-trip check: confirm each charge window we're about to write
     # actually lands in cheap rates. Catches merge/rounding mistakes before
-    # they hit the inverter.
+    # they hit the inverter. Drops only the offending window(s) - a
+    # conversion bug still hard-aborts (see verify_written_slots_are_cheap).
     if all_charge:
         print("Round-trip rate check on charge windows...")
-        if not verify_written_slots_are_cheap(all_charge, upcoming):
-            print("Clearing all charge slots due to round-trip check failure.")
+        safe_charge, rt_dropped = verify_written_slots_are_cheap(all_charge, upcoming)
+        if safe_charge is None:
+            print("Clearing all charge slots due to round-trip conversion failure.")
             # Force the commit: if HASS already reads 00:00 the staged clear
             # would push nothing and the inverter would keep charging on the
             # windows this check just rejected.
             apply_schedule([], discharge_windows, force=True)
             sys.exit(3)
-        print("  PASSED")
+        all_charge = safe_charge
+        if rt_dropped:
+            print(f"  Dropped {len(rt_dropped)} window(s) on round-trip check; "
+                  f"keeping {len(all_charge)} clean window(s).")
+        else:
+            print("  PASSED")
         print()
 
     # 6. Apply. Re-write everything once a day as insurance, gated on the
