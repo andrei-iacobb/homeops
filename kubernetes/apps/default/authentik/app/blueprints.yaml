@@ -78,6 +78,9 @@ data:
         attrs:
           client_type: public
           client_id: authentik-cli
+          redirect_uris:
+            - matching_mode: regex
+              url: ^http://(localhost|127\.0\.0\.1)(:\d+)?(/.*)?$
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
           invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
           signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
