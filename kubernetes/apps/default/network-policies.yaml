@@ -31,3 +31,23 @@ spec:
     # Kubelet health probes
     - fromEntities:
         - host
+---
+# Apps that trust Authentik identity headers or have no login of their own:
+# only the gateway (and kubelet probes) may reach them, never other pods.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: sso-only-apps
+  namespace: default
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [code-server, paperless]
+  ingressDeny:
+    - fromEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: [default, media, ai, monitoring]
