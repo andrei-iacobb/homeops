@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./plex/ks.yaml
   - ./jellyfin/ks.yaml

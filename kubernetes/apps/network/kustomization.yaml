@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./sso-bypass.yaml
   # cloudflare-ddns removed: it only updated wg.iacob.co.uk -> home WAN IP, which
   # leaked the home address. WG endpoint deleted from DNS; deployment no longer needed.
   - ./cloudflare-dns/ks.yaml

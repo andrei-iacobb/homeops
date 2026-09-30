@@ -1,0 +1,15 @@
+---
+# Routes on envoy-internal that must stay reachable without Authentik
+# (native clients, APIs, webhooks). A route-level SecurityPolicy replaces the
+# gateway-wide forward auth in network/envoy-gateway/app/sso.yaml.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: sso-bypass
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: loki
+  authorization:
+    defaultAction: Allow

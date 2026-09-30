@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-blueprints
+data:
+  forward-auth.yaml: |
+    version: 1
+    metadata:
+      name: homeops-forward-auth
+    entries:
+      # Domain-level forward auth for everything on envoy-internal (*.iacob.uk).
+      # Envoy calls the embedded outpost via the SecurityPolicy in
+      # kubernetes/apps/network/envoy-gateway/app/sso.yaml.
+      - model: authentik_providers_proxy.proxyprovider
+        id: forward-auth
+        identifiers:
+          name: forward-auth-iacob-uk
+        attrs:
+          mode: forward_domain
+          external_host: https://authentik.iacob.uk
+          cookie_domain: iacob.uk
+          access_token_validity: days=30
+          intercept_header_auth: true
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/proxy/scope-proxy]]
+          # Domain mode matches against the full URL. These paths carry their
+          # own API key / token auth and are hit by apps and phones, not browsers.
+          skip_path_regex: |
+            ^https://(sonarr|radarr|lidarr|readarr|prowlarr)\.iacob\.uk/(api|ping|feed)(/.*)?$
+            ^https://(sabnzbd|bazarr|tautulli|paperless|mealie|frigate|firefly)\.iacob\.uk/api(/.*)?$
+            ^https://overseerr\.iacob\.uk/api/v1(/.*)?$
+            ^https://tasks\.iacob\.uk/api/v1(/.*)?$
+            ^https://n8n\.iacob\.uk/(webhook|webhook-test|webhook-waiting|form|form-test)(/.*)?$
+      - model: authentik_core.application
+        identifiers:
+          slug: homelab
+        attrs:
+          name: Homelab
+          provider: !KeyOf forward-auth
+          meta_launch_url: https://home.iacob.uk
+      - model: authentik_outposts.outpost
+        identifiers:
+          managed: goauthentik.io/outposts/embedded
+        attrs:
+          providers:
+            - !KeyOf forward-auth
+  agent.yaml: |
+    version: 1
+    metadata:
+      name: homeops-agent
+    entries:
+      # authentik Agent (endpoint devices + `ak` CLI login), per
+      # https://docs.goauthentik.io/endpoint-devices/authentik-agent/configuration/
+      - model: authentik_flows.flow
+        id: device-code-flow
+        identifiers:
+          slug: default-device-code-flow
+        attrs:
+          name: Device code flow
+          title: Device code flow
+          designation: stage_configuration
+          authentication: require_authenticated
+      - model: authentik_brands.brand
+        identifiers:
+          domain: authentik-default
+        attrs:
+          flow_device_code: !KeyOf device-code-flow
+      - model: authentik_providers_oauth2.oauth2provider
+        id: authentik-cli
+        identifiers:
+          name: authentik-cli
+        attrs:
+          client_type: public
+          client_id: authentik-cli
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-authentik_api]]
+      - model: authentik_core.application
+        identifiers:
+          slug: authentik-cli
+        attrs:
+          name: authentik-cli
+          provider: !KeyOf authentik-cli
+      - model: authentik_endpoints_connectors_agent.agentconnector
+        identifiers:
+          name: authentik Agent
+        attrs:
+          enabled: true
+          jwt_federation_providers:
+            - !KeyOf authentik-cli

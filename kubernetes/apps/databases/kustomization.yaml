@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./postgres/ks.yaml
   - ./db-backup/ks.yaml

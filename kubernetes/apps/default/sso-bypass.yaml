@@ -1,0 +1,30 @@
+---
+# Routes on envoy-internal that must stay reachable without Authentik
+# (native clients, APIs, webhooks). A route-level SecurityPolicy replaces the
+# gateway-wide forward auth in network/envoy-gateway/app/sso.yaml.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: sso-bypass
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: authentik
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: vaultwarden-internal
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: immich-server-app
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: sftpgo-webdav
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: inbi-s3
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: petkit-snapshotter
+  authorization:
+    defaultAction: Allow

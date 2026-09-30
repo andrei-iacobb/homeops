@@ -1,0 +1,16 @@
+---
+# Lets the envoy-internal forward-auth SecurityPolicy (network ns) call the
+# embedded outpost on authentik-server.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: authentik-forward-auth
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: network
+  to:
+    - group: ""
+      kind: Service
+      name: authentik-server

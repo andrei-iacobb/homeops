@@ -8,6 +8,7 @@ components:
 
 resources:
   - ./namespace.yaml
+  - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./alpha/ks.yaml
   - ./beta/ks.yaml

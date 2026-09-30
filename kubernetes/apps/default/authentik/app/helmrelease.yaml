@@ -17,6 +17,9 @@ spec:
     authentik:
       existingSecret:
         secretName: authentik-secret
+    blueprints:
+      configMaps:
+        - authentik-blueprints
     postgresql:
       enabled: false
     server:
