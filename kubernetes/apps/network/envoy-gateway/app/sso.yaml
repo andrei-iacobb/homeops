@@ -1,0 +1,39 @@
+---
+# Authentik forward auth for every route on envoy-internal's https listener.
+# Provider + skip paths: default/authentik/app/blueprints.yaml.
+# Per-route opt-outs: <namespace>/sso-bypass.yaml (plus media/plex via plex-cors).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: authentik-forward-auth
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: envoy-internal
+      sectionName: https
+  extAuth:
+    headersToExtAuth:
+      - cookie
+      - x-forwarded-host
+      - x-forwarded-proto
+      - x-forwarded-for
+    http:
+      backendRefs:
+        - name: authentik-server
+          namespace: default
+          port: 80
+      path: /outpost.goauthentik.io/auth/envoy
+      # Identity headers for apps that trust them (no wildcard support).
+      headersToBackend:
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-entitlements
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
+        - x-authentik-jwt
+        - x-authentik-meta-app
+        - x-authentik-meta-provider
+        - x-authentik-meta-outpost
+        - x-authentik-meta-version
