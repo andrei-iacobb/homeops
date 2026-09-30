@@ -93,6 +93,10 @@ spec:
               limits:
                 memory: 64Mi
     defaultPodOptions:
+      hostAliases:
+        # OIDC discovery for "Login with Authentik" (authentik is internal-only)
+        - ip: 192.168.1.7
+          hostnames: ["authentik.iacob.uk"]
       securityContext:
         runAsNonRoot: false
         runAsUser: 1000
