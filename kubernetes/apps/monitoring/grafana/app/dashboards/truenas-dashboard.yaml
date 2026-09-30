@@ -12,74 +12,198 @@ data:
       "annotations": {
         "list": []
       },
+      "description": "TrueNAS pools and apps, VolSync restic backups to TrueNAS MinIO, backup CronJobs and Syncthing sync.",
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
       "id": null,
-      "links": [],
+      "links": [
+        {
+          "type": "link",
+          "title": "Home Overview",
+          "url": "/d/home-overview",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Kubernetes",
+          "url": "/d/kubernetes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Nodes",
+          "url": "/d/nodes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Proxmox",
+          "url": "/d/proxmox",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Server Hardware",
+          "url": "/d/ilo",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Storage & Backups",
+          "url": "/d/truenas",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Network",
+          "url": "/d/network",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "GPU",
+          "url": "/d/gpu",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "CLI Proxy",
+          "url": "/d/ai-agents",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Platform",
+          "url": "/d/platform",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Prometheus",
+          "url": "https://prometheus.iacob.uk/query",
+          "icon": "external link",
+          "keepTime": false,
+          "includeVars": false,
+          "targetBlank": true,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        }
+      ],
       "liveNow": false,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "type": "stat",
+          "title": "TrueNAS API",
           "fieldConfig": {
             "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
               "color": {
                 "mode": "thresholds"
               },
               "mappings": [
                 {
+                  "type": "value",
                   "options": {
                     "0": {
-                      "text": "DOWN",
+                      "text": "Down",
                       "color": "red"
                     },
                     "1": {
-                      "text": "UP",
+                      "text": "Up",
                       "color": "green"
                     }
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
                   }
-                ]
-              },
-              "unit": "none"
+                }
+              ]
             },
             "overrides": []
           },
-          "gridPos": {
-            "h": 4,
-            "w": 4,
-            "x": 0,
-            "y": 0
-          },
-          "id": 1,
           "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
             "reduceOptions": {
-              "values": false,
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": ""
+              "fields": "",
+              "values": false
             },
-            "textMode": "value"
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
           },
           "targets": [
             {
@@ -88,27 +212,31 @@ data:
                 "uid": "prometheus"
               },
               "expr": "max by (host) (truenas_replication_up)",
-              "legendFormat": "TrueNAS API",
-              "refId": "A"
+              "refId": "A",
+              "legendFormat": "{{host}}",
+              "instant": true,
+              "range": false
             }
           ],
-          "title": "API Status",
-          "type": "stat"
-        },
-        {
+          "description": "truenas_replication_up is the exporter's API reachability flag, labelled by host.",
+          "id": 1,
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
-          },
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Lowest pool free",
           "fieldConfig": {
             "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "decimals": 1,
-              "max": 100,
-              "min": 0,
-              "mappings": [],
+              "unit": "percent",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -117,7 +245,7 @@ data:
                     "value": null
                   },
                   {
-                    "color": "yellow",
+                    "color": "orange",
                     "value": 10
                   },
                   {
@@ -126,28 +254,29 @@ data:
                   }
                 ]
               },
-              "unit": "percent"
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "decimals": 1
             },
             "overrides": []
           },
-          "gridPos": {
-            "h": 8,
-            "w": 20,
-            "x": 4,
-            "y": 0
-          },
-          "id": 2,
           "options": {
-            "orientation": "auto",
             "reduceOptions": {
-              "values": false,
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": ""
+              "fields": "",
+              "values": false
             },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
           },
           "targets": [
             {
@@ -155,55 +284,395 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (pool) (truenas_pool_free_percent)",
-              "legendFormat": "{{pool}}",
-              "refId": "A"
+              "expr": "min by (host) (truenas_pool_free_percent)",
+              "refId": "A",
+              "legendFormat": "{{host}}",
+              "instant": true,
+              "range": false
             }
           ],
-          "title": "Pool Free Space %",
-          "type": "gauge"
+          "id": 2,
+          "gridPos": {
+            "x": 4,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
+          "type": "stat",
+          "title": "Unhealthy pools",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(1 - truenas_pool_healthy)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 3,
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "TrueNAS reports health separately from ONLINE status. CORRUPT_DATA requires investigation."
+        },
+        {
+          "type": "stat",
+          "title": "VolSync out of sync",
           "fieldConfig": {
             "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
               "color": {
-                "mode": "palette-classic"
+                "mode": "thresholds"
               },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(volsync_volume_out_of_sync)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 4,
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Oldest CronJob success",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "dtdurations",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 93600
+                  },
+                  {
+                    "color": "red",
+                    "value": 172800
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max(time() - kube_cronjob_status_last_successful_time)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Longest time since any CronJob last succeeded (backups, renovate, sync jobs).",
+          "id": 5,
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Syncthing need (all peers)",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(syncthing_model_folder_summary{scope=\"need\",type=\"bytes\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 6,
+          "gridPos": {
+            "x": 20,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "TrueNAS pools",
+          "collapsed": false,
+          "panels": [],
+          "id": 7,
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "Pool used",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "100 - max by (host, pool) (truenas_pool_free_percent)",
+              "refId": "A",
+              "legendFormat": "{{pool}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 8,
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 8,
+            "h": 7
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Pool capacity",
+          "fieldConfig": {
+            "defaults": {
               "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 15,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
                 },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
+                "filterable": false
               },
-              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -213,104 +682,32 @@ data:
                   }
                 ]
               },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 8
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": [
-                "lastNotNull",
-                "min"
-              ],
-              "displayMode": "table",
-              "placement": "right"
-            },
-            "tooltip": {
-              "mode": "multi"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "max by (pool) (truenas_pool_free_percent)",
-              "legendFormat": "{{pool}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Pool Free Space % Over Time",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
               "color": {
                 "mode": "thresholds"
-              },
-              "custom": {
-                "align": "left",
-                "cellOptions": {
-                  "type": "auto"
-                },
-                "filterable": false,
-                "inspect": false
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "transparent",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "decbytes"
+              }
             },
             "overrides": [
               {
                 "matcher": {
-                  "id": "byName",
-                  "options": "Pool"
+                  "id": "byRegexp",
+                  "options": "Allocated|Free|Size"
                 },
                 "properties": [
                   {
-                    "id": "custom.width",
-                    "value": 110
+                    "id": "unit",
+                    "value": "bytes"
                   }
                 ]
               },
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Used %"
+                  "options": "Free %"
                 },
                 "properties": [
                   {
                     "id": "unit",
                     "value": "percent"
-                  },
-                  {
-                    "id": "min",
-                    "value": 0
-                  },
-                  {
-                    "id": "max",
-                    "value": 100
                   },
                   {
                     "id": "decimals",
@@ -319,9 +716,7 @@ data:
                   {
                     "id": "custom.cellOptions",
                     "value": {
-                      "type": "gauge",
-                      "mode": "gradient",
-                      "valueDisplayMode": "text"
+                      "type": "color-text"
                     }
                   },
                   {
@@ -330,221 +725,683 @@ data:
                       "mode": "absolute",
                       "steps": [
                         {
-                          "color": "green",
+                          "color": "red",
                           "value": null
                         },
                         {
-                          "color": "yellow",
-                          "value": 70
-                        },
-                        {
                           "color": "orange",
-                          "value": 85
+                          "value": 10
                         },
                         {
-                          "color": "red",
-                          "value": 95
+                          "color": "green",
+                          "value": 20
                         }
                       ]
                     }
                   }
                 ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Used"
-                },
-                "properties": [
-                  {
-                    "id": "decimals",
-                    "value": 2
-                  },
-                  {
-                    "id": "custom.width",
-                    "value": 90
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Free"
-                },
-                "properties": [
-                  {
-                    "id": "decimals",
-                    "value": 2
-                  },
-                  {
-                    "id": "custom.width",
-                    "value": 90
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Total"
-                },
-                "properties": [
-                  {
-                    "id": "decimals",
-                    "value": 2
-                  },
-                  {
-                    "id": "custom.width",
-                    "value": 90
-                  }
-                ]
               }
             ]
           },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 16
-          },
-          "id": 4,
           "options": {
             "showHeader": true,
-            "cellHeight": "md",
+            "cellHeight": "sm",
             "footer": {
               "show": false,
               "reducer": [
                 "sum"
               ],
+              "countRows": false,
               "fields": ""
-            },
-            "sortBy": [
-              {
-                "displayName": "Used %",
-                "desc": true
-              }
-            ]
+            }
           },
-          "pluginVersion": "11.0.0",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "host",
+                    "pool",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C",
+                    "Value #D"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "host": "Host",
+                  "pool": "Pool",
+                  "Value #A": "Allocated",
+                  "Value #B": "Free",
+                  "Value #C": "Size",
+                  "Value #D": "Free %"
+                },
+                "indexByName": {
+                  "host": 0,
+                  "pool": 1,
+                  "Value #A": 2,
+                  "Value #B": 3,
+                  "Value #C": 4,
+                  "Value #D": 5
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
-              "format": "table",
+              "expr": "max by (host, pool) (truenas_pool_allocated_bytes)",
+              "refId": "A",
               "instant": true,
-              "refId": "Used"
+              "range": false,
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (pool) (truenas_pool_size_bytes - truenas_pool_allocated_bytes)",
-              "format": "table",
+              "expr": "max by (host, pool) (truenas_pool_free_bytes)",
+              "refId": "B",
               "instant": true,
-              "refId": "Free"
+              "range": false,
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (pool) (truenas_pool_size_bytes)",
-              "format": "table",
+              "expr": "max by (host, pool) (truenas_pool_size_bytes)",
+              "refId": "C",
               "instant": true,
-              "refId": "Total"
+              "range": false,
+              "format": "table"
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "100 * (max by (pool) (truenas_pool_allocated_bytes) / max by (pool) (truenas_pool_size_bytes))",
-              "format": "table",
+              "expr": "max by (host, pool) (truenas_pool_free_percent)",
+              "refId": "D",
               "instant": true,
-              "refId": "UsedPct"
+              "range": false,
+              "format": "table"
             }
           ],
+          "id": 9,
+          "gridPos": {
+            "x": 8,
+            "y": 5,
+            "w": 16,
+            "h": 7
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Pool health and status",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Healthy"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Unhealthy",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Healthy",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
           "transformations": [
             {
-              "id": "joinByField",
+              "id": "filterFieldsByName",
               "options": {
-                "byField": "pool",
-                "mode": "outer"
+                "include": {
+                  "names": [
+                    "host",
+                    "pool",
+                    "status_code",
+                    "Value #A"
+                  ]
+                }
               }
             },
             {
               "id": "organize",
               "options": {
-                "excludeByName": {
-                  "Time 1": true,
-                  "Time 2": true,
-                  "Time 3": true,
-                  "Time 4": true
-                },
                 "indexByName": {
-                  "pool": 0,
-                  "Value #Used": 1,
-                  "Value #Free": 2,
-                  "Value #Total": 3,
-                  "Value #UsedPct": 4
+                  "host": 0,
+                  "pool": 1,
+                  "status_code": 2,
+                  "Value #A": 3
                 },
                 "renameByName": {
+                  "host": "Server",
                   "pool": "Pool",
-                  "Value #Used": "Used",
-                  "Value #Free": "Free",
-                  "Value #Total": "Total",
-                  "Value #UsedPct": "Used %"
-                }
+                  "status_code": "Status",
+                  "Value #A": "Healthy"
+                },
+                "excludeByName": {}
               }
             }
           ],
-          "title": "Pool Capacity",
-          "type": "table"
-        },
-        {
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by(host,pool)(truenas_pool_healthy) * on(host,pool) group_left(status_code) max by(host,pool,status_code)(truenas_pool_status_info)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 10,
+          "gridPos": {
+            "x": 0,
+            "y": 12,
+            "w": 12,
+            "h": 8
+          },
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "Pool health can be false while status is ONLINE. Reported status codes include CORRUPT_DATA."
+        },
+        {
+          "type": "table",
+          "title": "Scrub errors and age",
           "fieldConfig": {
             "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Last scrub age"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "host",
+                    "pool",
+                    "Value #A",
+                    "Value #B"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "indexByName": {
+                  "host": 0,
+                  "pool": 1,
+                  "Value #A": 2,
+                  "Value #B": 3
+                },
+                "renameByName": {
+                  "host": "Server",
+                  "pool": "Pool",
+                  "Value #A": "Scrub errors",
+                  "Value #B": "Last scrub age"
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by(host,pool)(truenas_pool_scrub_errors)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "time() - max by(host,pool)(truenas_pool_last_scrub_timestamp_seconds)",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 11,
+          "gridPos": {
+            "x": 12,
+            "y": 12,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Current recorded scrub errors and time since the last scrub. Missing timestamps remain unavailable."
+        },
+        {
+          "type": "timeseries",
+          "title": "Scrub errors",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
               "color": {
                 "mode": "palette-classic"
               },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 10
+                  },
+                  {
+                    "color": "transparent",
+                    "value": 20
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by(host,pool)(truenas_pool_scrub_errors)",
+              "refId": "A",
+              "legendFormat": "{{host}} / {{pool}}",
+              "range": true
+            }
+          ],
+          "id": 12,
+          "gridPos": {
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Gauge from the current or last scrub record; it is not a cumulative counter."
+        },
+        {
+          "type": "timeseries",
+          "title": "Last scrub age",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
               "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 15,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
                 },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 10
+                  },
+                  {
+                    "color": "transparent",
+                    "value": 20
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "time() - max by(host,pool)(truenas_pool_last_scrub_timestamp_seconds)",
+              "refId": "A",
+              "legendFormat": "{{host}} / {{pool}}",
+              "range": true
+            }
+          ],
+          "id": 13,
+          "gridPos": {
+            "x": 12,
+            "y": 20,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Age of the last recorded scrub timestamp. Missing data is unavailable."
+        },
+        {
+          "type": "timeseries",
+          "title": "Pool free",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
                 },
+                "thresholdsStyle": {
+                  "mode": "dashed"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 10
+                  },
+                  {
+                    "color": "transparent",
+                    "value": 20
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, pool) (truenas_pool_free_percent)",
+              "refId": "A",
+              "legendFormat": "{{pool}}",
+              "range": true
+            }
+          ],
+          "id": 14,
+          "gridPos": {
+            "x": 0,
+            "y": 28,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Pool allocated",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
                 "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
+                  "mode": "none",
+                  "group": "A"
                 }
               },
-              "mappings": [],
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, pool) (truenas_pool_allocated_bytes)",
+              "refId": "A",
+              "legendFormat": "{{pool}}",
+              "range": true
+            }
+          ],
+          "id": 15,
+          "gridPos": {
+            "x": 12,
+            "y": 28,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "TrueNAS apps",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -554,27 +1411,385 @@ data:
                   }
                 ]
               },
-              "unit": "decbytes"
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "State"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "1": {
+                            "text": "Running",
+                            "color": "green"
+                          },
+                          "0.5": {
+                            "text": "Deploying",
+                            "color": "orange"
+                          },
+                          "0": {
+                            "text": "Stopped",
+                            "color": "red"
+                          },
+                          "-1": {
+                            "text": "Crashed",
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "host",
+                    "app",
+                    "version",
+                    "train",
+                    "Value #A"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "host": "Host",
+                  "app": "App",
+                  "version": "Version",
+                  "train": "Train",
+                  "Value #A": "State"
+                },
+                "indexByName": {
+                  "host": 0,
+                  "app": 1,
+                  "version": 2,
+                  "train": 3,
+                  "Value #A": 4
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, app, version, train) (truenas_app_state * on(host, app) group_left(version, train) truenas_app_info)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "description": "MinIO here is the VolSync and pg_dumpall backup target.",
+          "id": 16,
+          "gridPos": {
+            "x": 0,
+            "y": 36,
+            "w": 12,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "VolSync",
+          "collapsed": false,
+          "panels": [],
+          "id": 17,
+          "gridPos": {
+            "x": 0,
+            "y": 41,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "VolSync sources",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Out of sync"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "In sync",
+                            "color": "green"
+                          },
+                          "1": {
+                            "text": "Out of sync",
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Median duration"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Missed (24h)"
+                },
+                "properties": [
+                  {
+                    "id": "decimals",
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Out of sync",
+                "desc": true
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "obj_namespace",
+                    "obj_name",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C",
+                    "Value #D"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "obj_namespace": "Namespace",
+                  "obj_name": "Source",
+                  "Value #A": "Out of sync",
+                  "Value #B": "Missed (24h)",
+                  "Value #C": "Median duration",
+                  "Value #D": "Syncs since restart"
+                },
+                "indexByName": {
+                  "obj_namespace": 0,
+                  "obj_name": 1,
+                  "Value #A": 2,
+                  "Value #B": 3,
+                  "Value #C": 4,
+                  "Value #D": 5
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (obj_namespace, obj_name) (volsync_volume_out_of_sync)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (obj_namespace, obj_name) (increase(volsync_missed_intervals_total[24h]))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (obj_namespace, obj_name) (volsync_sync_duration_seconds{quantile=\"0.5\"})",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (obj_namespace, obj_name) (volsync_sync_duration_seconds_count)",
+              "refId": "D",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 18,
+          "gridPos": {
+            "x": 0,
+            "y": 42,
+            "w": 14,
+            "h": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Out of sync / missed intervals",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
             },
             "overrides": []
           },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 16
-          },
-          "id": 5,
           "options": {
             "legend": {
-              "calcs": [
-                "lastNotNull"
-              ],
               "displayMode": "table",
-              "placement": "right"
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
             },
             "tooltip": {
-              "mode": "multi"
+              "mode": "multi",
+              "sort": "desc"
             }
           },
           "targets": [
@@ -583,33 +1798,1007 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (pool) (truenas_pool_allocated_bytes)",
-              "legendFormat": "{{pool}}",
-              "refId": "A"
+              "expr": "sum(volsync_volume_out_of_sync)",
+              "refId": "A",
+              "legendFormat": "out of sync",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(increase(volsync_missed_intervals_total[$__rate_interval]))",
+              "refId": "B",
+              "legendFormat": "missed intervals",
+              "range": true
             }
           ],
-          "title": "Pool Allocated Over Time",
-          "type": "timeseries"
+          "id": 19,
+          "gridPos": {
+            "x": 14,
+            "y": 42,
+            "w": 10,
+            "h": 6
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "Slowest syncs (median, top 10)",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 600
+                  },
+                  {
+                    "color": "red",
+                    "value": 1800
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "topk(10, max by (obj_namespace, obj_name) (volsync_sync_duration_seconds{quantile=\"0.5\"}))",
+              "refId": "A",
+              "legendFormat": "{{obj_namespace}}/{{obj_name}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 20,
+          "gridPos": {
+            "x": 0,
+            "y": 54,
+            "w": 10,
+            "h": 6
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Backup and scheduled jobs",
+          "collapsed": false,
+          "panels": [],
+          "id": 21,
+          "gridPos": {
+            "x": 0,
+            "y": 60,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "CronJobs",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "Last success|Last scheduled|Next run in"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dtdurations"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Suspended"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "orange"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Last success",
+                "desc": true
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "namespace",
+                    "cronjob",
+                    "schedule",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C",
+                    "Value #D"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "Namespace",
+                  "cronjob": "CronJob",
+                  "schedule": "Schedule",
+                  "Value #A": "Last success",
+                  "Value #B": "Last scheduled",
+                  "Value #C": "Next run in",
+                  "Value #D": "Suspended"
+                },
+                "indexByName": {
+                  "namespace": 0,
+                  "cronjob": 1,
+                  "schedule": 2,
+                  "Value #A": 3,
+                  "Value #B": 4,
+                  "Value #C": 5,
+                  "Value #D": 6
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (namespace, cronjob, schedule) ((time() - kube_cronjob_status_last_successful_time) * on(namespace, cronjob) group_left(schedule) kube_cronjob_info)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (namespace, cronjob, schedule) ((time() - kube_cronjob_status_last_schedule_time) * on(namespace, cronjob) group_left(schedule) kube_cronjob_info)",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (namespace, cronjob, schedule) ((kube_cronjob_next_schedule_time - time()) * on(namespace, cronjob) group_left(schedule) kube_cronjob_info)",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (namespace, cronjob, schedule) (kube_cronjob_spec_suspend * on(namespace, cronjob) group_left(schedule) kube_cronjob_info)",
+              "refId": "D",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 22,
+          "gridPos": {
+            "x": 0,
+            "y": 61,
+            "w": 14,
+            "h": 9
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Failed backup Jobs (7d)",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "s",
+              "noValue": "No failed backup Jobs in 7d"
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "namespace",
+                    "owner_kind",
+                    "owner_name",
+                    "job_name",
+                    "Value"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "Namespace",
+                  "owner_kind": "Owner kind",
+                  "owner_name": "Owner",
+                  "job_name": "Job",
+                  "Value": "Age"
+                },
+                "indexByName": {
+                  "namespace": 0,
+                  "owner_kind": 1,
+                  "owner_name": 2,
+                  "job_name": 3,
+                  "Value": 4
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(kube_job_failed{condition=\"true\"} > 0) * on(namespace, job_name) group_left(owner_kind, owner_name) (kube_job_owner{owner_name=~\".*backup.*\"} or kube_job_owner{job_name=~\"volsync-.*\"}) * on(namespace, job_name) group_left() ((time() - kube_job_created) < 604800)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "description": "Failed Jobs owned by backup CronJobs (pg-logical-backup, forgejo-backup) and failed VolSync mover Jobs.",
+          "id": 23,
+          "gridPos": {
+            "x": 14,
+            "y": 61,
+            "w": 10,
+            "h": 9
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Syncthing",
+          "collapsed": false,
+          "panels": [],
+          "id": 24,
+          "gridPos": {
+            "x": 0,
+            "y": 70,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Syncthing instances",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Down",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "Up",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "up{job=\"syncthing\"}",
+              "refId": "A",
+              "legendFormat": "Hub (cluster)",
+              "instant": true,
+              "range": false
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "up{job=\"syncthing-arch\"}",
+              "refId": "B",
+              "legendFormat": "Arch desktop",
+              "instant": true,
+              "range": false
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "up{job=\"syncthing-mac\"}",
+              "refId": "C",
+              "legendFormat": "MacBook",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Arch and MacBook are expected Down while powered off.",
+          "id": 25,
+          "gridPos": {
+            "x": 0,
+            "y": 71,
+            "w": 8,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Active connections",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (syncthing_connections_active)",
+              "refId": "A",
+              "legendFormat": "{{job}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 26,
+          "gridPos": {
+            "x": 8,
+            "y": 71,
+            "w": 8,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Conflicts",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (syncthing_model_folder_conflicts_total)",
+              "refId": "A",
+              "legendFormat": "{{job}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 27,
+          "gridPos": {
+            "x": 16,
+            "y": 71,
+            "w": 8,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Need bytes per folder",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "syncthing_model_folder_summary{scope=\"need\",type=\"bytes\"}",
+              "refId": "A",
+              "legendFormat": "{{job}} {{folder}}",
+              "range": true
+            }
+          ],
+          "id": 28,
+          "gridPos": {
+            "x": 0,
+            "y": 75,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Protocol throughput",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (rate(syncthing_protocol_sent_bytes_total[$__rate_interval]))",
+              "refId": "A",
+              "legendFormat": "{{job}} sent",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (rate(syncthing_protocol_recv_bytes_total[$__rate_interval]))",
+              "refId": "B",
+              "legendFormat": "{{job}} received",
+              "range": true
+            }
+          ],
+          "id": 29,
+          "gridPos": {
+            "x": 12,
+            "y": 75,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Folders",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "Size|Need"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bytes"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "State"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Idle",
+                            "color": "green"
+                          }
+                        }
+                      },
+                      {
+                        "type": "range",
+                        "options": {
+                          "from": 1,
+                          "to": 100,
+                          "result": {
+                            "text": "Busy",
+                            "color": "orange"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "job",
+                    "folder",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C",
+                    "Value #D"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "job": "Instance",
+                  "folder": "Folder",
+                  "Value #A": "Size",
+                  "Value #B": "Files",
+                  "Value #C": "Need",
+                  "Value #D": "State"
+                },
+                "indexByName": {
+                  "job": 0,
+                  "folder": 1,
+                  "Value #A": 2,
+                  "Value #B": 3,
+                  "Value #C": 4,
+                  "Value #D": 5
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (job, folder) (syncthing_model_folder_summary{scope=\"global\",type=\"bytes\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (job, folder) (syncthing_model_folder_summary{scope=\"global\",type=\"files\"})",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (job, folder) (syncthing_model_folder_summary{scope=\"need\",type=\"bytes\"})",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (job, folder) (syncthing_model_folder_state)",
+              "refId": "D",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 30,
+          "gridPos": {
+            "x": 0,
+            "y": 83,
+            "w": 24,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
-      "refresh": "30s",
-      "schemaVersion": 38,
-      "style": "dark",
+      "refresh": "1m",
+      "schemaVersion": 39,
       "tags": [
+        "homeops",
         "truenas",
-        "storage"
+        "backups"
       ],
       "templating": {
         "list": []
       },
       "time": {
-        "from": "now-6h",
+        "from": "now-3h",
         "to": "now"
       },
       "timepicker": {},
-      "timezone": "",
-      "title": "TrueNAS Monitoring",
+      "timezone": "browser",
+      "title": "Storage & Backups",
       "uid": "truenas",
-      "version": 2,
+      "version": 1,
       "weekStart": ""
     }

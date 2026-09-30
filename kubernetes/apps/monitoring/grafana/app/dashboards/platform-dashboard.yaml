@@ -1,0 +1,2506 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  platform.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "description": "Flux, cert-manager, Prometheus, Alertmanager, exporter coverage and etcd as seen by the API server.",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [
+        {
+          "type": "link",
+          "title": "Home Overview",
+          "url": "/d/home-overview",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Kubernetes",
+          "url": "/d/kubernetes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Nodes",
+          "url": "/d/nodes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Proxmox",
+          "url": "/d/proxmox",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Server Hardware",
+          "url": "/d/ilo",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Storage & Backups",
+          "url": "/d/truenas",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Network",
+          "url": "/d/network",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "GPU",
+          "url": "/d/gpu",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "CLI Proxy",
+          "url": "/d/ai-agents",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Platform",
+          "url": "/d/platform",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Prometheus",
+          "url": "https://prometheus.iacob.uk/query",
+          "icon": "external link",
+          "keepTime": false,
+          "includeVars": false,
+          "targetBlank": true,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        }
+      ],
+      "liveNow": false,
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Flux not Ready",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "count(flux_resource_info) - count(flux_resource_info{ready=\"True\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 1,
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Flux suspended",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "count(flux_resource_info) - count(flux_resource_info{suspended=\"False\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 2,
+          "gridPos": {
+            "x": 4,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Certs expiring < 14d",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum((certmanager_certificate_expiration_timestamp_seconds - time()) < bool 1209600)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "links": [
+            {
+              "title": "cert-manager logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22cert-manager%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 3,
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Targets down",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(1 - up)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 4,
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Prometheus config",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Reload failed",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "Loaded",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min(prometheus_config_last_reload_successful)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 5,
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Alertmanager config",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Reload failed",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "Loaded",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min(alertmanager_config_last_reload_successful)",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 6,
+          "gridPos": {
+            "x": 20,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Flux",
+          "collapsed": false,
+          "panels": [],
+          "id": 7,
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Flux resources not Ready or suspended",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "noValue": "All Flux resources Ready and not suspended"
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "kind",
+                    "exported_namespace",
+                    "name",
+                    "ready",
+                    "suspended",
+                    "reason",
+                    "revision"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "kind": "Kind",
+                  "exported_namespace": "Namespace",
+                  "name": "Name",
+                  "ready": "Ready",
+                  "suspended": "Suspended",
+                  "reason": "Reason",
+                  "revision": "Revision"
+                },
+                "indexByName": {
+                  "kind": 0,
+                  "exported_namespace": 1,
+                  "name": 2,
+                  "ready": 3,
+                  "suspended": 4,
+                  "reason": 5,
+                  "revision": 6
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "flux_resource_info{ready!=\"True\"} or flux_resource_info{suspended!=\"False\"}",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 8,
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 16,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "Resources by kind",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "count by (kind) (flux_resource_info)",
+              "refId": "A",
+              "legendFormat": "{{kind}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 9,
+          "gridPos": {
+            "x": 16,
+            "y": 5,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Flux instance",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "name",
+                    "ready",
+                    "reason",
+                    "revision",
+                    "registry"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "name": "Instance",
+                  "ready": "Ready",
+                  "reason": "Reason",
+                  "revision": "Revision",
+                  "registry": "Registry"
+                },
+                "indexByName": {
+                  "name": 0,
+                  "ready": 1,
+                  "reason": 2,
+                  "revision": 3,
+                  "registry": 4
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "flux_instance_info",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 10,
+          "gridPos": {
+            "x": 0,
+            "y": 13,
+            "w": 24,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Certificates",
+          "collapsed": false,
+          "panels": [],
+          "id": 11,
+          "gridPos": {
+            "x": 0,
+            "y": 17,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Certificates",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "Expires in|Renews in"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dtdurations"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Expires in"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "red",
+                          "value": null
+                        },
+                        {
+                          "color": "orange",
+                          "value": 604800
+                        },
+                        {
+                          "color": "green",
+                          "value": 1209600
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Ready"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Expires in",
+                "desc": false
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "exported_namespace",
+                    "name",
+                    "issuer_name",
+                    "Value #A",
+                    "Value #C",
+                    "Value #B"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "exported_namespace": "Namespace",
+                  "name": "Certificate",
+                  "issuer_name": "Issuer",
+                  "Value #A": "Expires in",
+                  "Value #C": "Renews in",
+                  "Value #B": "Ready"
+                },
+                "indexByName": {
+                  "exported_namespace": 0,
+                  "name": 1,
+                  "issuer_name": 2,
+                  "Value #A": 3,
+                  "Value #C": 4,
+                  "Value #B": 5
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (exported_namespace, name, issuer_name) (certmanager_certificate_expiration_timestamp_seconds - time())",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (exported_namespace, name, issuer_name) (certmanager_certificate_ready_status{condition=\"True\"})",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (exported_namespace, name, issuer_name) (certmanager_certificate_renewal_timestamp_seconds - time())",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "links": [
+            {
+              "title": "cert-manager logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22cert-manager%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 12,
+          "gridPos": {
+            "x": 0,
+            "y": 18,
+            "w": 16,
+            "h": 7
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "ClusterIssuers",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Ready"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "name",
+                    "Value"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "name": "Issuer",
+                  "Value": "Ready"
+                },
+                "indexByName": {
+                  "name": 0,
+                  "Value": 1
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (name) (certmanager_clusterissuer_ready_status{condition=\"True\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 13,
+          "gridPos": {
+            "x": 16,
+            "y": 18,
+            "w": 8,
+            "h": 7
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Prometheus and Alertmanager",
+          "collapsed": false,
+          "panels": [],
+          "id": 14,
+          "gridPos": {
+            "x": 0,
+            "y": 25,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Samples ingested",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(rate(prometheus_tsdb_head_samples_appended_total[$__rate_interval]))",
+              "refId": "A",
+              "legendFormat": "samples/s",
+              "range": true
+            }
+          ],
+          "links": [
+            {
+              "title": "monitoring logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22monitoring%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 15,
+          "gridPos": {
+            "x": 0,
+            "y": 26,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Head series",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(prometheus_tsdb_head_series)",
+              "refId": "A",
+              "legendFormat": "series",
+              "range": true
+            }
+          ],
+          "id": 16,
+          "gridPos": {
+            "x": 8,
+            "y": 26,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Rule evaluation failures",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "bars",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "noValue": "No rule evaluation failures"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "sum"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (rule_group) (increase(prometheus_rule_evaluation_failures_total[$__rate_interval])) > 0",
+              "refId": "A",
+              "legendFormat": "{{rule_group}}",
+              "range": true
+            }
+          ],
+          "id": 17,
+          "gridPos": {
+            "x": 16,
+            "y": 26,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Alerts by state",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (state) (alertmanager_alerts)",
+              "refId": "A",
+              "legendFormat": "{{state}}",
+              "range": true
+            }
+          ],
+          "id": 18,
+          "gridPos": {
+            "x": 0,
+            "y": 34,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Notifications",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (integration) (rate(alertmanager_notifications_total[$__rate_interval]))",
+              "refId": "A",
+              "legendFormat": "{{integration}} sent",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (integration) (rate(alertmanager_notifications_failed_total[$__rate_interval]))",
+              "refId": "B",
+              "legendFormat": "{{integration}} failed",
+              "range": true
+            }
+          ],
+          "description": "Per second. Alerts go Alertmanager to n8n to Discord.",
+          "id": 19,
+          "gridPos": {
+            "x": 8,
+            "y": 34,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "TSDB storage",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(prometheus_tsdb_storage_blocks_bytes)",
+              "refId": "A",
+              "legendFormat": "blocks",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(prometheus_tsdb_wal_storage_size_bytes)",
+              "refId": "B",
+              "legendFormat": "WAL",
+              "range": true
+            }
+          ],
+          "id": 20,
+          "gridPos": {
+            "x": 16,
+            "y": 34,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Exporter coverage",
+          "collapsed": false,
+          "panels": [],
+          "id": 21,
+          "gridPos": {
+            "x": 0,
+            "y": 42,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Scrape jobs",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Down",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Up",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Scrape time"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "s"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Status",
+                "desc": false
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "job",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C",
+                    "Value #D",
+                    "Value #E"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "job": "Job",
+                  "Value #A": "Status",
+                  "Value #B": "Targets",
+                  "Value #C": "Up",
+                  "Value #D": "Scrape time",
+                  "Value #E": "Samples"
+                },
+                "indexByName": {
+                  "job": 0,
+                  "Value #A": 1,
+                  "Value #B": 2,
+                  "Value #C": 3,
+                  "Value #D": 4,
+                  "Value #E": 5
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (job) (up)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "count by (job) (up)",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (up)",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (job) (scrape_duration_seconds)",
+              "refId": "D",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (scrape_samples_scraped)",
+              "refId": "E",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 22,
+          "gridPos": {
+            "x": 0,
+            "y": 43,
+            "w": 14,
+            "h": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Targets down by job",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "noValue": "No targets down"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (job) (1 - up) > 0",
+              "refId": "A",
+              "legendFormat": "{{job}}",
+              "range": true
+            }
+          ],
+          "id": 23,
+          "gridPos": {
+            "x": 14,
+            "y": 43,
+            "w": 10,
+            "h": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "etcd (from API server)",
+          "collapsed": false,
+          "panels": [],
+          "id": 24,
+          "gridPos": {
+            "x": 0,
+            "y": 55,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "etcd requests",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (operation) (rate(etcd_requests_total[$__rate_interval]))",
+              "refId": "A",
+              "legendFormat": "{{operation}}",
+              "range": true
+            }
+          ],
+          "description": "Talos etcd is not scraped directly; these are the API server's client-side etcd metrics.",
+          "id": 25,
+          "gridPos": {
+            "x": 0,
+            "y": 56,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "etcd p99 latency",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "histogram_quantile(0.99, sum by (le, operation) (rate(etcd_request_duration_seconds_bucket[$__rate_interval])))",
+              "refId": "A",
+              "legendFormat": "{{operation}}",
+              "range": true
+            }
+          ],
+          "id": 26,
+          "gridPos": {
+            "x": 8,
+            "y": 56,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "etcd request errors",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "noValue": "No etcd request errors"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (operation) (rate(etcd_request_errors_total[$__rate_interval])) > 0",
+              "refId": "A",
+              "legendFormat": "{{operation}}",
+              "range": true
+            }
+          ],
+          "id": 27,
+          "gridPos": {
+            "x": 16,
+            "y": 56,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Home Assistant API",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "homeassistant_api_up",
+              "instant": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 28,
+          "gridPos": {
+            "x": 0,
+            "y": 64,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "HA entities unavailable",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "homeassistant_entities{state=\"unavailable\"}",
+              "instant": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 29,
+          "gridPos": {
+            "x": 6,
+            "y": 64,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Log pipeline up",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "min(up{job=~\"loki|alloy\"})",
+              "instant": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 30,
+          "gridPos": {
+            "x": 12,
+            "y": 64,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Qdrant up",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "min(up{job=\"qdrant\"})",
+              "instant": true,
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ],
+          "links": [
+            {
+              "title": "Flux logs",
+              "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22loki%22%3A%7B%22datasource%22%3A%22Loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bnamespace%3D%5C%22flux-system%5C%22%7D%22%2C%22datasource%22%3A%22Loki%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-1h%22%2C%22to%22%3A%22now%22%7D%7D%7D",
+              "targetBlank": true
+            }
+          ],
+          "id": 31,
+          "gridPos": {
+            "x": 18,
+            "y": 64,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        }
+      ],
+      "refresh": "1m",
+      "schemaVersion": 39,
+      "tags": [
+        "homeops"
+      ],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-3h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Platform",
+      "uid": "platform",
+      "version": 1,
+      "weekStart": ""
+    }
