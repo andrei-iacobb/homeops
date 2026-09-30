@@ -11,5 +11,8 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: minio-s3
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: qdrant
   authorization:
     defaultAction: Allow
