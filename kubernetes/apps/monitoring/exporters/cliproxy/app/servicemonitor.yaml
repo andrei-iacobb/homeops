@@ -2,13 +2,13 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: sys-dashboard-arch
+  name: cliproxy-exporter
   labels:
-    app: sys-dashboard-arch
+    app: cliproxy-exporter
 spec:
   selector:
     matchLabels:
-      app: sys-dashboard-arch
+      app: cliproxy-exporter
   endpoints:
     - port: metrics
       interval: 30s

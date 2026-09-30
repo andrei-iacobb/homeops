@@ -2,17 +2,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ai-agents-dashboard
+  name: nodes-dashboard
   namespace: monitoring
   labels:
     grafana_dashboard: '1'
 data:
-  ai-agents.json: |
+  nodes.json: |
     {
       "annotations": {
         "list": []
       },
-      "description": "CLI proxy (cliproxy, ns code) usage from its usage queue, exported as Prometheus counters. Counters are collected from exporter deployment onward; there is no history before that. Upstream proxy restarts or usage-queue expiry can leave gaps. Token counts are raw usage, not billed spend. Duration is a mean from usage records; there are no buckets, so no percentiles.",
+      "description": "Talos node resources from node-exporter.",
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
@@ -155,87 +155,10 @@ data:
       "panels": [
         {
           "type": "stat",
-          "title": "Exporter",
+          "title": "CPU used",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "type": "value",
-                  "options": {
-                    "0": {
-                      "text": "Down",
-                      "color": "red"
-                    },
-                    "1": {
-                      "text": "Up",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "auto",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "wideLayout": true,
-            "showPercentChange": false
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "max(cliproxy_exporter_up)",
-              "refId": "A",
-              "instant": true,
-              "range": false
-            }
-          ],
-          "id": 1,
-          "gridPos": {
-            "x": 0,
-            "y": 0,
-            "w": 4,
-            "h": 4
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Last successful collect",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
+              "unit": "percent",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -245,11 +168,11 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 300
+                    "value": 75
                   },
                   {
                     "color": "red",
-                    "value": 900
+                    "value": 90
                   }
                 ]
               },
@@ -257,7 +180,7 @@ data:
                 "mode": "thresholds"
               },
               "mappings": [],
-              "noValue": "No data - exporter not reporting"
+              "decimals": 1
             },
             "overrides": []
           },
@@ -283,17 +206,90 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "time() - max(cliproxy_exporter_last_success_timestamp_seconds)",
+              "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"} * 100",
               "refId": "A",
+              "legendFormat": "{{nodename}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 1,
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 5,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Memory used",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "decimals": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"} * 100",
+              "refId": "A",
+              "legendFormat": "{{nodename}}",
               "instant": true,
               "range": false
             }
           ],
           "id": 2,
           "gridPos": {
-            "x": 4,
+            "x": 5,
             "y": 0,
-            "w": 4,
+            "w": 5,
             "h": 4
           },
           "datasource": {
@@ -303,16 +299,24 @@ data:
         },
         {
           "type": "stat",
-          "title": "Requests (range)",
+          "title": "/var used",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "percent",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 75
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
                   }
                 ]
               },
@@ -320,8 +324,7 @@ data:
                 "mode": "thresholds"
               },
               "mappings": [],
-              "decimals": 0,
-              "noValue": "No data - exporter not reporting"
+              "decimals": 1
             },
             "overrides": []
           },
@@ -347,17 +350,19 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(cliproxy_requests_total[$__range]))",
+              "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/var\",fstype=~\"xfs|ext4|btrfs\"} / node_filesystem_size_bytes{mountpoint=\"/var\",fstype=~\"xfs|ext4|btrfs\"}) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"} * 100",
               "refId": "A",
+              "legendFormat": "{{nodename}}",
               "instant": true,
               "range": false
             }
           ],
+          "description": "EPHEMERAL partition; openebs-hostpath PVCs share it on home-cluster.",
           "id": 3,
           "gridPos": {
-            "x": 8,
+            "x": 10,
             "y": 0,
-            "w": 4,
+            "w": 5,
             "h": 4
           },
           "datasource": {
@@ -367,7 +372,7 @@ data:
         },
         {
           "type": "stat",
-          "title": "Failed requests (range)",
+          "title": "Load / cores",
           "fieldConfig": {
             "defaults": {
               "unit": "percentunit",
@@ -380,30 +385,19 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 0.02
+                    "value": 0.8
                   },
                   {
                     "color": "red",
-                    "value": 0.1
+                    "value": 1
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [
-                {
-                  "type": "special",
-                  "options": {
-                    "match": "nan",
-                    "result": {
-                      "text": "No requests in range"
-                    }
-                  }
-                }
-              ],
-              "decimals": 1,
-              "noValue": "No data - exporter not reporting"
+              "mappings": [],
+              "decimals": 0
             },
             "overrides": []
           },
@@ -429,18 +423,18 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)) / sum(increase(cliproxy_requests_total[$__range]))",
+              "expr": "(node_load5 / on(instance) count by (instance) (node_cpu_seconds_total{mode=\"idle\"})) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
               "refId": "A",
+              "legendFormat": "{{nodename}}",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Share of requests whose status is not 2xx/ok/success.",
           "id": 4,
           "gridPos": {
-            "x": 12,
+            "x": 15,
             "y": 0,
-            "w": 4,
+            "w": 5,
             "h": 4
           },
           "datasource": {
@@ -450,10 +444,10 @@ data:
         },
         {
           "type": "stat",
-          "title": "Tokens (range)",
+          "title": "Uptime",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "dtdurations",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -466,9 +460,7 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
-              "decimals": 0,
-              "noValue": "No data - exporter not reporting"
+              "mappings": []
             },
             "overrides": []
           },
@@ -494,77 +486,14 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
+              "expr": "(time() - node_boot_time_seconds) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
               "refId": "A",
+              "legendFormat": "{{nodename}}",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Raw token usage, not billed spend.",
           "id": 5,
-          "gridPos": {
-            "x": 16,
-            "y": 0,
-            "w": 4,
-            "h": 4
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Models used (range)",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "auto",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "wideLayout": true,
-            "showPercentChange": false
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total[$__range])) > bool 0)",
-              "refId": "A",
-              "instant": true,
-              "range": false
-            }
-          ],
-          "id": 6,
           "gridPos": {
             "x": 20,
             "y": 0,
@@ -577,286 +506,8 @@ data:
           }
         },
         {
-          "type": "row",
-          "title": "Usage",
-          "collapsed": false,
-          "panels": [],
-          "id": 7,
-          "gridPos": {
-            "x": 0,
-            "y": 4,
-            "w": 24,
-            "h": 1
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Requests by provider",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "reqps",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider) (rate(cliproxy_requests_total[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{provider}}",
-              "range": true
-            }
-          ],
-          "id": 8,
-          "gridPos": {
-            "x": 0,
-            "y": 5,
-            "w": 12,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Requests by status",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "reqps",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (status) (rate(cliproxy_requests_total[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{status}}",
-              "range": true
-            }
-          ],
-          "id": 9,
-          "gridPos": {
-            "x": 12,
-            "y": 5,
-            "w": 12,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Tokens by type",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "normal",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (type) (rate(cliproxy_tokens_total{type!=\"total\"}[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{type}}",
-              "range": true
-            }
-          ],
-          "description": "Tokens per second. Raw usage, not billed spend.",
-          "id": 10,
-          "gridPos": {
-            "x": 0,
-            "y": 13,
-            "w": 12,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Tokens by model",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "normal",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (rate(cliproxy_tokens_total{type=\"total\"}[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{provider}} {{model}}",
-              "range": true
-            }
-          ],
-          "id": 11,
-          "gridPos": {
-            "x": 12,
-            "y": 13,
-            "w": 12,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
           "type": "table",
-          "title": "Usage by model (range)",
+          "title": "Node identity",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -877,31 +528,18 @@ data:
               },
               "color": {
                 "mode": "thresholds"
-              },
-              "unit": "short"
+              }
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byRegexp",
-                  "options": "Requests|Failed|Tokens"
-                },
-                "properties": [
-                  {
-                    "id": "decimals",
-                    "value": 0
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Mean duration"
+                  "options": "Memory|/var size"
                 },
                 "properties": [
                   {
                     "id": "unit",
-                    "value": "s"
+                    "value": "bytes"
                   }
                 ]
               }
@@ -917,13 +555,7 @@ data:
               ],
               "countRows": false,
               "fields": ""
-            },
-            "sortBy": [
-              {
-                "displayName": "Requests",
-                "desc": true
-              }
-            ]
+            }
           },
           "transformations": [
             {
@@ -935,12 +567,15 @@ data:
               "options": {
                 "include": {
                   "names": [
-                    "provider",
-                    "model",
+                    "node",
+                    "internal_ip",
+                    "os_image",
+                    "kernel_version",
+                    "kubelet_version",
+                    "container_runtime_version",
                     "Value #A",
                     "Value #B",
-                    "Value #C",
-                    "Value #D"
+                    "Value #C"
                   ]
                 }
               }
@@ -949,20 +584,26 @@ data:
               "id": "organize",
               "options": {
                 "renameByName": {
-                  "provider": "Provider",
-                  "model": "Model",
-                  "Value #A": "Requests",
-                  "Value #B": "Failed",
-                  "Value #C": "Tokens",
-                  "Value #D": "Mean duration"
+                  "node": "Node",
+                  "internal_ip": "IP",
+                  "os_image": "OS",
+                  "kernel_version": "Kernel",
+                  "kubelet_version": "Kubelet",
+                  "container_runtime_version": "Runtime",
+                  "Value #A": "Cores",
+                  "Value #B": "Memory",
+                  "Value #C": "/var size"
                 },
                 "indexByName": {
-                  "provider": 0,
-                  "model": 1,
-                  "Value #A": 2,
-                  "Value #B": 3,
-                  "Value #C": 4,
-                  "Value #D": 5
+                  "node": 0,
+                  "internal_ip": 1,
+                  "os_image": 2,
+                  "kernel_version": 3,
+                  "kubelet_version": 4,
+                  "container_runtime_version": 5,
+                  "Value #A": 6,
+                  "Value #B": 7,
+                  "Value #C": 8
                 },
                 "excludeByName": {}
               }
@@ -974,7 +615,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total[$__range]))",
+              "expr": "max by (node, internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) (label_replace(count by (instance) (node_cpu_seconds_total{mode=\"idle\"}) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}, \"node\", \"$1\", \"nodename\", \"(.*)\") * on(node) group_left(internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) kube_node_info)",
               "refId": "A",
               "instant": true,
               "range": false,
@@ -985,7 +626,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)",
+              "expr": "max by (node, internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) (label_replace(node_memory_MemTotal_bytes * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}, \"node\", \"$1\", \"nodename\", \"(.*)\") * on(node) group_left(internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) kube_node_info)",
               "refId": "B",
               "instant": true,
               "range": false,
@@ -996,30 +637,36 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
+              "expr": "max by (node, internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) (label_replace(node_filesystem_size_bytes{mountpoint=\"/var\",fstype=~\"xfs|ext4|btrfs\"} * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}, \"node\", \"$1\", \"nodename\", \"(.*)\") * on(node) group_left(internal_ip, os_image, kernel_version, kubelet_version, container_runtime_version) kube_node_info)",
               "refId": "C",
               "instant": true,
               "range": false,
               "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_request_duration_seconds_sum[$__range])) / sum by (provider, model) (increase(cliproxy_request_duration_seconds_count[$__range]))",
-              "refId": "D",
-              "instant": true,
-              "range": false,
-              "format": "table"
             }
           ],
-          "id": 12,
+          "id": 6,
           "gridPos": {
             "x": 0,
-            "y": 21,
+            "y": 4,
             "w": 24,
-            "h": 9
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "CPU and memory",
+          "collapsed": false,
+          "panels": [],
+          "id": 7,
+          "gridPos": {
+            "x": 0,
+            "y": 9,
+            "w": 24,
+            "h": 1
           },
           "datasource": {
             "type": "prometheus",
@@ -1028,11 +675,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Mean request duration",
+          "title": "CPU used",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "s",
+              "unit": "percent",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -1048,7 +695,7 @@ data:
               "color": {
                 "mode": "palette-classic"
               },
-              "noValue": "No data - exporter not reporting"
+              "max": 100
             },
             "overrides": []
           },
@@ -1073,19 +720,323 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider) (rate(cliproxy_request_duration_seconds_sum[$__rate_interval])) / sum by (provider) (rate(cliproxy_request_duration_seconds_count[$__rate_interval]))",
+              "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"} * 100",
               "refId": "A",
-              "legendFormat": "{{provider}}",
+              "legendFormat": "{{nodename}}",
               "range": true
             }
           ],
-          "description": "Mean only; the exporter has no histogram buckets.",
+          "id": 8,
+          "gridPos": {
+            "x": 0,
+            "y": 10,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "CPU by mode",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "normal",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (instance, mode) (rate(node_cpu_seconds_total{mode!=\"idle\"}[$__rate_interval])) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}} {{mode}}",
+              "range": true
+            }
+          ],
+          "description": "Cores busy per mode.",
+          "id": 9,
+          "gridPos": {
+            "x": 8,
+            "y": 10,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Load average (5m)",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "node_load5 * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}}",
+              "range": true
+            }
+          ],
+          "id": 10,
+          "gridPos": {
+            "x": 16,
+            "y": 10,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Memory",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}} used",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "node_memory_MemTotal_bytes * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "B",
+              "legendFormat": "{{nodename}} total",
+              "range": true
+            }
+          ],
+          "id": 11,
+          "gridPos": {
+            "x": 0,
+            "y": 18,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Memory pressure (PSI)",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(node_pressure_memory_waiting_seconds_total[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}} memory",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(node_pressure_cpu_waiting_seconds_total[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "B",
+              "legendFormat": "{{nodename}} cpu",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(node_pressure_io_waiting_seconds_total[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "C",
+              "legendFormat": "{{nodename}} io",
+              "range": true
+            }
+          ],
+          "description": "Share of time tasks were stalled waiting on the resource.",
+          "id": 12,
+          "gridPos": {
+            "x": 12,
+            "y": 18,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Disk and network",
+          "collapsed": false,
+          "panels": [],
           "id": 13,
           "gridPos": {
             "x": 0,
-            "y": 30,
-            "w": 8,
-            "h": 8
+            "y": 26,
+            "w": 24,
+            "h": 1
           },
           "datasource": {
             "type": "prometheus",
@@ -1094,11 +1045,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Exporter polls",
+          "title": "/var used",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "percent",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -1114,7 +1065,7 @@ data:
               "color": {
                 "mode": "palette-classic"
               },
-              "noValue": "No data - exporter not reporting"
+              "max": 100
             },
             "overrides": []
           },
@@ -1139,17 +1090,16 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (result) (rate(cliproxy_exporter_polls_total[$__rate_interval]))",
+              "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/var\",fstype=~\"xfs|ext4|btrfs\"} / node_filesystem_size_bytes{mountpoint=\"/var\",fstype=~\"xfs|ext4|btrfs\"}) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"} * 100",
               "refId": "A",
-              "legendFormat": "{{result}}",
+              "legendFormat": "{{nodename}}",
               "range": true
             }
           ],
-          "description": "Usage-queue polls per second. Failures or gaps mean usage for that window may be missing.",
           "id": 14,
           "gridPos": {
-            "x": 8,
-            "y": 30,
+            "x": 0,
+            "y": 27,
             "w": 8,
             "h": 8
           },
@@ -1160,13 +1110,13 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Invalid usage records",
+          "title": "Disk throughput",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "Bps",
               "custom": {
-                "drawStyle": "bars",
+                "drawStyle": "line",
                 "lineWidth": 1,
                 "fillOpacity": 10,
                 "showPoints": "never",
@@ -1179,8 +1129,7 @@ data:
               },
               "color": {
                 "mode": "palette-classic"
-              },
-              "noValue": "No invalid records"
+              }
             },
             "overrides": []
           },
@@ -1190,7 +1139,8 @@ data:
               "placement": "bottom",
               "showLegend": true,
               "calcs": [
-                "sum"
+                "lastNotNull",
+                "max"
               ]
             },
             "tooltip": {
@@ -1204,17 +1154,293 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (reason) (increase(cliproxy_exporter_invalid_records_total[$__rate_interval])) > 0",
+              "expr": "rate(node_disk_read_bytes_total{device=~\"vd.*|sd.*|nvme.*\"}[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
               "refId": "A",
-              "legendFormat": "{{reason}}",
+              "legendFormat": "{{nodename}} {{device}} read",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(node_disk_written_bytes_total{device=~\"vd.*|sd.*|nvme.*\"}[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "B",
+              "legendFormat": "{{nodename}} {{device}} write",
               "range": true
             }
           ],
-          "description": "Queue records the exporter rejected (bad fields, overflow, or labels that looked like secrets).",
           "id": 15,
           "gridPos": {
+            "x": 8,
+            "y": 27,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Disk busy",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "max": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "rate(node_disk_io_time_seconds_total{device=~\"vd.*|sd.*|nvme.*\"}[$__rate_interval]) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}} {{device}}",
+              "range": true
+            }
+          ],
+          "id": 16,
+          "gridPos": {
             "x": 16,
-            "y": 30,
+            "y": 27,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Network receive",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (instance) (rate(node_network_receive_bytes_total{device=~\"en.*|eth.*\"}[$__rate_interval])) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}}",
+              "range": true
+            }
+          ],
+          "id": 17,
+          "gridPos": {
+            "x": 0,
+            "y": 35,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Network transmit",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{device=~\"en.*|eth.*\"}[$__rate_interval])) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}}",
+              "range": true
+            }
+          ],
+          "id": 18,
+          "gridPos": {
+            "x": 8,
+            "y": 35,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Network errors and drops",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (instance) (rate(node_network_receive_errs_total{device=~\"en.*|eth.*\"}[$__rate_interval]) + rate(node_network_transmit_errs_total{device=~\"en.*|eth.*\"}[$__rate_interval])) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "A",
+              "legendFormat": "{{nodename}} errors",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (instance) (rate(node_network_receive_drop_total{device=~\"en.*|eth.*\"}[$__rate_interval]) + rate(node_network_transmit_drop_total{device=~\"en.*|eth.*\"}[$__rate_interval])) * on(instance) group_left(nodename) node_uname_info{nodename=~\"$node\"}",
+              "refId": "B",
+              "legendFormat": "{{nodename}} drops",
+              "range": true
+            }
+          ],
+          "id": 19,
+          "gridPos": {
+            "x": 16,
+            "y": 35,
             "w": 8,
             "h": 8
           },
@@ -1227,12 +1453,43 @@ data:
       "refresh": "1m",
       "schemaVersion": 39,
       "tags": [
-        "homeops",
-        "ai",
-        "cliproxy"
+        "homeops"
       ],
       "templating": {
-        "list": []
+        "list": [
+          {
+            "type": "query",
+            "name": "node",
+            "label": "Node",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "definition": "label_values(node_uname_info, nodename)",
+            "query": {
+              "query": "label_values(node_uname_info, nodename)",
+              "refId": "node-var"
+            },
+            "refresh": 2,
+            "sort": 1,
+            "multi": true,
+            "includeAll": true,
+            "current": {
+              "selected": true,
+              "text": [
+                "All"
+              ],
+              "value": [
+                "$__all"
+              ]
+            },
+            "hide": 0,
+            "options": [],
+            "regex": "",
+            "skipUrlSync": false,
+            "allValue": ".*"
+          }
+        ]
       },
       "time": {
         "from": "now-3h",
@@ -1240,8 +1497,8 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "CLI Proxy - Usage & Reliability",
-      "uid": "ai-agents",
+      "title": "Nodes",
+      "uid": "nodes",
       "version": 1,
       "weekStart": ""
     }

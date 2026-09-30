@@ -5,480 +5,2037 @@ metadata:
   name: ilo-dashboard
   namespace: monitoring
   labels:
-    grafana_dashboard: "1"
+    grafana_dashboard: '1'
 data:
   ilo.json: |
     {
-      "annotations": { "list": [] },
+      "annotations": {
+        "list": []
+      },
+      "description": "DL380 Gen9 (192.168.1.180) and DL360 Gen9 (192.168.1.175) hardware health from iLO 4 Redfish.",
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
       "id": null,
-      "links": [],
+      "links": [
+        {
+          "type": "link",
+          "title": "Home Overview",
+          "url": "/d/home-overview",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Kubernetes",
+          "url": "/d/kubernetes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Nodes",
+          "url": "/d/nodes",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Proxmox",
+          "url": "/d/proxmox",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Server Hardware",
+          "url": "/d/ilo",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Storage & Backups",
+          "url": "/d/truenas",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Network",
+          "url": "/d/network",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "GPU",
+          "url": "/d/gpu",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "CLI Proxy",
+          "url": "/d/ai-agents",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Platform",
+          "url": "/d/platform",
+          "icon": "dashboard",
+          "keepTime": true,
+          "includeVars": false,
+          "targetBlank": false,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        },
+        {
+          "type": "link",
+          "title": "Prometheus",
+          "url": "https://prometheus.iacob.uk/query",
+          "icon": "external link",
+          "keepTime": false,
+          "includeVars": false,
+          "targetBlank": true,
+          "asDropdown": false,
+          "tags": [],
+          "tooltip": ""
+        }
+      ],
       "liveNow": false,
-      "refresh": "30s",
-      "schemaVersion": 39,
-      "style": "dark",
-      "tags": ["ilo", "hpe", "hardware"],
-      "templating": { "list": [] },
-      "time": { "from": "now-6h", "to": "now" },
-      "timepicker": {},
-      "timezone": "browser",
-      "title": "HP iLO Monitoring",
-      "uid": "ilo",
-      "version": 1,
-      "weekStart": "",
       "panels": [
         {
-          "id": 1,
-          "title": "Hardware",
           "type": "stat",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 4, "x": 0, "y": 0 },
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
-            "orientation": "auto",
-            "reduceOptions": { "calcs": ["min"], "fields": "", "values": false },
-            "textMode": "value",
-            "wideLayout": true
-          },
+          "title": "Hardware health",
           "fieldConfig": {
             "defaults": {
-              "color": { "mode": "thresholds" },
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
               "mappings": [
-                { "type": "value", "options": {
-                  "0": { "text": "FAULT", "color": "red", "index": 1 },
-                  "1": { "text": "HEALTHY", "color": "green", "index": 0 }
-                }}
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Unhealthy",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "OK",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(min by (host) (ilo_power_supply_healthy) * min by (host) (ilo_chassis_fan_healthy) * min by (host) (ilo_chassis_temperature_healthy) * min by (host) (ilo_processor_healthy) * min by (host) (ilo_memory_dimm_healthy) * min by (host) (ilo_storage_disk_healthy)) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Product of PSU, fan, temperature, CPU, DIMM and disk health flags per server.",
+          "id": 1,
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "iLO API reachable",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Down",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "Up",
+                      "color": "green"
+                    }
+                  }
+                }
+              ]
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "ilo_power_up * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 2,
+          "gridPos": {
+            "x": 6,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Hottest CPU",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 65
+                  },
+                  {
+                    "color": "red",
+                    "value": 75
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"}) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 3,
+          "gridPos": {
+            "x": 10,
+            "y": 0,
+            "w": 5,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Inlet",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 27
+                  },
+                  {
+                    "color": "red",
+                    "value": 32
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*Inlet.*\"}) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 4,
+          "gridPos": {
+            "x": 15,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Power draw",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_power_current_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "id": 5,
+          "gridPos": {
+            "x": 19,
+            "y": 0,
+            "w": 5,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "state-timeline",
+          "title": "Component health",
+          "maxDataPoints": 200,
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "Unhealthy",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "OK",
+                      "color": "green"
+                    }
+                  }
+                }
               ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "green", "value": 1 }
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
                 ]
               },
-              "unit": "none"
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "fillOpacity": 80,
+                "lineWidth": 0
+              }
             },
             "overrides": []
           },
-          "targets": [
-            {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "min(ilo_power_supply_healthy) * min(ilo_chassis_fan_healthy) * min(ilo_chassis_temperature_healthy) * min(ilo_processor_healthy) * min(ilo_memory_dimm_healthy) * min(ilo_storage_disk_healthy)",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "title": "CPU Temperature",
-          "type": "gauge",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 20, "x": 4, "y": 0 },
           "options": {
-            "orientation": "auto",
-            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "sizing": "auto",
-            "minVizHeight": 200,
-            "minVizWidth": 200,
-            "text": { "titleSize": 20, "valueSize": 56 }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": { "mode": "thresholds" },
-              "decimals": 1,
-              "displayName": "${__field.labels.host}",
-              "mappings": [],
-              "max": 90,
-              "min": 20,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "light-green", "value": 35 },
-                  { "color": "yellow", "value": 55 },
-                  { "color": "orange", "value": 70 },
-                  { "color": "red", "value": 80 }
-                ]
-              },
-              "unit": "celsius",
-              "custom": { "neutral": 20, "barWidth": 0.35 }
-            },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "192.168.1.175" }, "properties": [{ "id": "displayName", "value": "DL360" }] },
-              { "matcher": { "id": "byName", "options": "192.168.1.180" }, "properties": [{ "id": "displayName", "value": "DL380" }] }
-            ]
-          },
-          "targets": [
-            {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"})",
-              "legendFormat": "{{host}}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 3,
-          "title": "Temperature Over Time",
-          "type": "timeseries",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
-          "options": {
+            "showValue": "never",
+            "mergeValues": true,
+            "rowHeight": 0.85,
+            "alignValue": "left",
             "legend": {
-              "calcs": ["lastNotNull", "mean", "max"],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
+              "showLegend": false,
+              "displayMode": "list",
+              "placement": "bottom"
             },
-            "tooltip": { "mode": "multi", "sort": "desc" }
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
           },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_power_supply_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}} PSU",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_chassis_fan_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "B",
+              "legendFormat": "{{server}} Fans",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_chassis_temperature_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "C",
+              "legendFormat": "{{server}} Temp",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_processor_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "D",
+              "legendFormat": "{{server}} CPU",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_memory_dimm_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "E",
+              "legendFormat": "{{server}} DIMMs",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "min by (host) (ilo_storage_disk_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "F",
+              "legendFormat": "{{server}} Disks",
+              "range": true
+            }
+          ],
+          "id": 6,
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 24,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Thermals and fans",
+          "collapsed": false,
+          "panels": [],
+          "id": 7,
+          "gridPos": {
+            "x": 0,
+            "y": 12,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "CPU temperature",
+          "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "color": { "mode": "palette-classic" },
-              "displayName": "${__field.labels.host}",
+              "unit": "celsius",
               "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
                 "drawStyle": "line",
-                "fillOpacity": 18,
-                "gradientMode": "opacity",
-                "hideFrom": { "tooltip": false, "viz": false, "legend": false },
-                "insertNulls": false,
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": { "type": "linear" },
+                "lineWidth": 1,
+                "fillOpacity": 10,
                 "showPoints": "never",
                 "spanNulls": false,
-                "stacking": { "group": "A", "mode": "none" },
-                "thresholdsStyle": { "mode": "off" }
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
               },
-              "mappings": [],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
-              "unit": "celsius"
+              "color": {
+                "mode": "palette-classic"
+              }
             },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "192.168.1.175" }, "properties": [{ "id": "displayName", "value": "DL360" }] },
-              { "matcher": { "id": "byName", "options": "192.168.1.180" }, "properties": [{ "id": "displayName", "value": "DL380" }] }
-            ]
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
           },
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (host) (ilo_chassis_temperature_current{name=~\".*CPU.*\"})",
-              "legendFormat": "{{host}}",
-              "refId": "A"
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, name) (ilo_chassis_temperature_current{name=~\".*CPU.*\"}) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}} {{name}}",
+              "range": true
             }
-          ]
+          ],
+          "id": 8,
+          "gridPos": {
+            "x": 0,
+            "y": 13,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "id": 4,
-          "title": "Power Draw",
-          "type": "gauge",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true,
-            "sizing": "auto",
-            "minVizHeight": 180,
-            "minVizWidth": 180,
-            "text": { "titleSize": 20, "valueSize": 48 }
-          },
+          "type": "timeseries",
+          "title": "Inlet and PCI temperature",
+          "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "color": { "mode": "thresholds" },
-              "decimals": 0,
-              "displayName": "${__field.labels.host}",
-              "mappings": [],
-              "max": 750,
+              "unit": "celsius",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, name) (ilo_chassis_temperature_current{name=~\".*Inlet.*|.*PCI.*\"}) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}} {{name}}",
+              "range": true
+            }
+          ],
+          "description": "21-PCI 1 on the DL380 is the HBA; ~84C there is genuine.",
+          "id": 9,
+          "gridPos": {
+            "x": 8,
+            "y": 13,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Fan speed",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, name) (ilo_chassis_fan_current_percent) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}} {{name}}",
+              "range": true
+            }
+          ],
+          "description": "08-HD Max is suppressed by ilo-fan-offset on each Proxmox host.",
+          "id": 10,
+          "gridPos": {
+            "x": 16,
+            "y": 13,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "Sensors closest to critical (top 12)",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
               "min": 0,
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "light-green", "value": 200 },
-                  { "color": "yellow", "value": 350 },
-                  { "color": "orange", "value": 500 },
-                  { "color": "red", "value": 650 }
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 75
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
                 ]
               },
-              "unit": "watt",
-              "custom": { "neutral": 0, "barWidth": 0.35 }
-            },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "192.168.1.175" }, "properties": [{ "id": "displayName", "value": "DL360" }] },
-              { "matcher": { "id": "byName", "options": "192.168.1.180" }, "properties": [{ "id": "displayName", "value": "DL380" }] }
-            ]
-          },
-          "targets": [
-            {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (host) (ilo_power_current_watt)",
-              "legendFormat": "{{host}}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 5,
-          "title": "Power Consumption Over Time",
-          "type": "timeseries",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-          "options": {
-            "legend": {
-              "calcs": ["lastNotNull", "mean", "max"],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
-            },
-            "tooltip": { "mode": "multi", "sort": "desc" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": { "mode": "palette-classic" },
-              "displayName": "${__field.labels.host}",
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 22,
-                "gradientMode": "opacity",
-                "hideFrom": { "tooltip": false, "viz": false, "legend": false },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": { "type": "linear" },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": { "group": "A", "mode": "none" },
-                "thresholdsStyle": { "mode": "off" }
+              "color": {
+                "mode": "thresholds"
               },
-              "mappings": [],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
-              "unit": "watt"
+              "max": 100
             },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "192.168.1.175" }, "properties": [{ "id": "displayName", "value": "DL360" }] },
-              { "matcher": { "id": "byName", "options": "192.168.1.180" }, "properties": [{ "id": "displayName", "value": "DL380" }] }
-            ]
+            "overrides": []
           },
-          "targets": [
-            {
-              "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "max by (host) (ilo_power_current_watt)",
-              "legendFormat": "{{host}}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "id": 6,
-          "title": "Hardware Health Timeline",
-          "type": "state-timeline",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 24 },
           "options": {
-            "alignValue": "left",
-            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-            "mergeValues": true,
-            "rowHeight": 0.92,
-            "showValue": "never",
-            "tooltip": { "mode": "single", "sort": "none" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": { "mode": "thresholds" },
-              "custom": {
-                "fillOpacity": 80,
-                "lineWidth": 0,
-                "spanNulls": false,
-                "insertNulls": false,
-                "hideFrom": { "tooltip": false, "viz": false, "legend": false }
-              },
-              "mappings": [
-                { "type": "value", "options": {
-                  "0": { "text": "FAIL", "color": "red", "index": 1 },
-                  "1": { "text": "OK", "color": "green", "index": 0 }
-                }}
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
               ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "topk(12, max by (host, name) (ilo_chassis_temperature_current / (ilo_chassis_temperature_critical > 0))) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\") * 100",
+              "refId": "A",
+              "legendFormat": "{{server}} {{name}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Current reading as a share of the iLO critical threshold.",
+          "id": 11,
+          "gridPos": {
+            "x": 0,
+            "y": 21,
+            "w": 12,
+            "h": 9
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "All temperature sensors",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "green", "value": 1 }
+                  {
+                    "color": "green",
+                    "value": null
+                  }
                 ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "Current|Critical"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "celsius"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Health"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Unhealthy",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Current",
+                "desc": true
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "name",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "name": "Sensor",
+                  "Value #A": "Current",
+                  "Value #B": "Critical",
+                  "Value #C": "Health"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "name": 1,
+                  "Value #A": 2,
+                  "Value #B": 3,
+                  "Value #C": 4
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, name) (max by (host, name) (ilo_chassis_temperature_current) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, name) (max by (host, name) (ilo_chassis_temperature_critical) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, name) (min by (host, name) (ilo_chassis_temperature_healthy) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 12,
+          "gridPos": {
+            "x": 12,
+            "y": 21,
+            "w": 12,
+            "h": 9
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Power",
+          "collapsed": false,
+          "panels": [],
+          "id": 13,
+          "gridPos": {
+            "x": 0,
+            "y": 30,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Power consumption",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
               }
             },
             "overrides": []
           },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
           "targets": [
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_power_supply_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 Power", "refId": "A" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_chassis_fan_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 Fans", "refId": "B" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_chassis_temperature_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 Temp", "refId": "C" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_processor_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 CPU", "refId": "D" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_memory_dimm_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 RAM", "refId": "E" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_storage_disk_healthy{host=\"192.168.1.175\"})", "legendFormat": "DL360 Disks", "refId": "F" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_power_supply_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 Power", "refId": "G" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_chassis_fan_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 Fans", "refId": "H" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_chassis_temperature_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 Temp", "refId": "I" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_processor_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 CPU", "refId": "J" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_memory_dimm_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 RAM", "refId": "K" },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "min(ilo_storage_disk_healthy{host=\"192.168.1.180\"})", "legendFormat": "DL380 Disks", "refId": "L" }
-          ]
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_power_current_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "A",
+              "legendFormat": "{{server}} current",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host) (ilo_power_average_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\")",
+              "refId": "B",
+              "legendFormat": "{{server}} average",
+              "range": true
+            }
+          ],
+          "id": 14,
+          "gridPos": {
+            "x": 0,
+            "y": 31,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "id": 7,
-          "title": "Storage Disks",
           "type": "table",
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 32 },
-          "options": {
-            "cellHeight": "sm",
-            "footer": { "show": false, "reducer": ["sum"], "fields": "" },
-            "showHeader": true,
-            "sortBy": [{ "displayName": "Server", "desc": false }, { "displayName": "Bay", "desc": false }]
-          },
-          "pluginVersion": "11.0.0",
+          "title": "Power supplies",
           "fieldConfig": {
             "defaults": {
-              "color": { "mode": "thresholds" },
               "custom": {
-                "align": "left",
-                "cellOptions": { "type": "auto" },
-                "filterable": true,
-                "inspect": false
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
               },
-              "mappings": [],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "transparent", "value": null }] }
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
             },
             "overrides": [
-              { "matcher": { "id": "byName", "options": "Server" },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Health"
+                },
                 "properties": [
-                  { "id": "custom.width", "value": 90 },
-                  { "id": "mappings", "value": [
-                    { "type": "value", "options": {
-                      "192.168.1.175": { "text": "DL360", "index": 0 },
-                      "192.168.1.180": { "text": "DL380", "index": 1 }
-                    }}
-                  ]}
-                ]},
-              { "matcher": { "id": "byName", "options": "Bay" },
-                "properties": [{ "id": "custom.width", "value": 80 }]},
-              { "matcher": { "id": "byName", "options": "Type" },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Unhealthy",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Enabled"
+                },
                 "properties": [
-                  { "id": "custom.cellOptions", "value": { "type": "color-text" }},
-                  { "id": "custom.width", "value": 70 },
-                  { "id": "mappings", "value": [
-                    { "type": "value", "options": {
-                      "SSD": { "color": "blue", "index": 0 },
-                      "HDD": { "color": "orange", "index": 1 }
-                    }}
-                  ]}
-                ]},
-              { "matcher": { "id": "byName", "options": "Model" },
-                "properties": [{ "id": "custom.width", "value": 160 }]},
-              { "matcher": { "id": "byName", "options": "Serial" },
-                "properties": [{ "id": "custom.width", "value": 180 }]},
-              { "matcher": { "id": "byName", "options": "Capacity" },
-                "properties": [
-                  { "id": "unit", "value": "decbytes" },
-                  { "id": "decimals", "value": 0 },
-                  { "id": "custom.width", "value": 100 }
-                ]},
-              { "matcher": { "id": "byName", "options": "Fail Predicted" },
-                "properties": [
-                  { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic" }},
-                  { "id": "custom.width", "value": 110 },
-                  { "id": "mappings", "value": [
-                    { "type": "value", "options": {
-                      "0": { "text": "OK", "color": "green", "index": 0 },
-                      "1": { "text": "PREDICTED FAIL", "color": "red", "index": 1 }
-                    }}
-                  ]},
-                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [
-                    { "color": "green", "value": null },
-                    { "color": "red", "value": 1 }
-                  ]}}
-                ]},
-              { "matcher": { "id": "byName", "options": "Health" },
-                "properties": [
-                  { "id": "custom.cellOptions", "value": { "type": "color-background", "mode": "basic", "applyToRow": false }},
-                  { "id": "custom.width", "value": 80 },
-                  { "id": "mappings", "value": [
-                    { "type": "value", "options": {
-                      "0": { "text": "FAIL", "color": "red", "index": 1 },
-                      "1": { "text": "OK", "color": "green", "index": 0 }
-                    }}
-                  ]},
-                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [
-                    { "color": "red", "value": null },
-                    { "color": "green", "value": 1 }
-                  ]}}
-                ]}
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
             ]
           },
-          "targets": [
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "ilo_storage_disk_capacity_byte * 1024", "refId": "Capacity", "format": "table", "instant": true },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "ilo_storage_disk_failure_predicted", "refId": "FailPred", "format": "table", "instant": true },
-            { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "ilo_storage_disk_healthy", "refId": "Health", "format": "table", "instant": true }
-          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
           "transformations": [
-            { "id": "joinByField", "options": { "byField": "serial_number", "mode": "outer" } },
-            { "id": "organize", "options": {
-              "excludeByName": {
-                "Time 1": true, "Time 2": true, "Time 3": true,
-                "__name__ 1": true, "__name__ 2": true, "__name__ 3": true,
-                "container 1": true, "container 2": true, "container 3": true,
-                "endpoint 1": true, "endpoint 2": true, "endpoint 3": true,
-                "instance 1": true, "instance 2": true, "instance 3": true,
-                "job 1": true, "job 2": true, "job 3": true,
-                "namespace 1": true, "namespace 2": true, "namespace 3": true,
-                "pod 1": true, "pod 2": true, "pod 3": true,
-                "service 1": true, "service 2": true, "service 3": true,
-                "name 1": true, "name 2": true, "name 3": true,
-                "host 2": true, "host 3": true,
-                "location 2": true, "location 3": true,
-                "model 2": true, "model 3": true,
-                "media_type 2": true, "media_type 3": true
-              },
-              "indexByName": {
-                "host 1": 0,
-                "location 1": 1,
-                "media_type 1": 2,
-                "model 1": 3,
-                "serial_number": 4,
-                "Value #Capacity": 5,
-                "Value #FailPred": 6,
-                "Value #Health": 7
-              },
-              "renameByName": {
-                "host 1": "Server",
-                "location 1": "Bay",
-                "media_type 1": "Type",
-                "model 1": "Model",
-                "serial_number": "Serial",
-                "Value #Capacity": "Capacity",
-                "Value #FailPred": "Fail Predicted",
-                "Value #Health": "Health"
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "serial",
+                    "Value #A",
+                    "Value #B"
+                  ]
+                }
               }
-            }}
-          ]
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "serial": "PSU serial",
+                  "Value #A": "Health",
+                  "Value #B": "Enabled"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "serial": 1,
+                  "Value #A": 2,
+                  "Value #B": 3
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, serial) (ilo_power_supply_healthy * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, serial) (ilo_power_supply_enabled * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 15,
+          "gridPos": {
+            "x": 12,
+            "y": 31,
+            "w": 6,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Power envelope",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "watt"
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "Value #A": "Min",
+                  "Value #B": "Max",
+                  "Value #C": "PSU capacity"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "Value #A": 1,
+                  "Value #B": 2,
+                  "Value #C": 3
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server) (max by (host) (ilo_power_min_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server) (max by (host) (ilo_power_max_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server) (max by (host) (ilo_power_capacity_watt) * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 16,
+          "gridPos": {
+            "x": 18,
+            "y": 31,
+            "w": 6,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Inventory",
+          "collapsed": false,
+          "panels": [],
+          "id": 17,
+          "gridPos": {
+            "x": 0,
+            "y": 39,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Systems",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Memory"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bytes"
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "host",
+                    "model",
+                    "serial",
+                    "bios_version",
+                    "firmware_version",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "host": "iLO",
+                  "model": "Model",
+                  "serial": "Serial",
+                  "bios_version": "BIOS",
+                  "firmware_version": "iLO firmware",
+                  "Value #A": "Cores",
+                  "Value #B": "Memory",
+                  "Value #C": "PSU capacity"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "host": 1,
+                  "model": 2,
+                  "serial": 3,
+                  "bios_version": 4,
+                  "firmware_version": 5,
+                  "Value #A": 6,
+                  "Value #B": 7,
+                  "Value #C": 8
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, model, serial, bios_version, firmware_version) (sum by (host) (ilo_processor_core_count) * on(host) group_left(server, model, serial, bios_version) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\") * on(host) group_left(firmware_version) ilo_manager_info)",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, model, serial, bios_version, firmware_version) (sum by (host) (ilo_memory_dimm_byte) * on(host) group_left(server, model, serial, bios_version) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\") * on(host) group_left(firmware_version) ilo_manager_info)",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, model, serial, bios_version, firmware_version) (sum by (host) (ilo_power_capacity_watt) * on(host) group_left(server, model, serial, bios_version) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\") * on(host) group_left(firmware_version) ilo_manager_info)",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 18,
+          "gridPos": {
+            "x": 0,
+            "y": 40,
+            "w": 24,
+            "h": 5
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Disks",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Capacity"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bytes"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Health"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Unhealthy",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failure predicted"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "green"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Health",
+                "desc": false
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "location",
+                    "media_type",
+                    "model",
+                    "serial_number",
+                    "Value #A",
+                    "Value #B",
+                    "Value #C"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "location": "Bay",
+                  "media_type": "Media",
+                  "model": "Model",
+                  "serial_number": "Serial",
+                  "Value #A": "Capacity",
+                  "Value #B": "Health",
+                  "Value #C": "Failure predicted"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "location": 1,
+                  "media_type": 2,
+                  "model": 3,
+                  "serial_number": 4,
+                  "Value #A": 5,
+                  "Value #B": 6,
+                  "Value #C": 7
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, location, media_type, model, serial_number) (ilo_storage_disk_capacity_byte * 1024 * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, location, media_type, model, serial_number) (ilo_storage_disk_healthy * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, location, media_type, model, serial_number) (ilo_storage_disk_failure_predicted * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "C",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "description": "iLO reports capacity in KiB; converted to bytes.",
+          "id": 19,
+          "gridPos": {
+            "x": 0,
+            "y": 45,
+            "w": 16,
+            "h": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "DIMMs",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Size"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "bytes"
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Health"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "Unhealthy",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "OK",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "server",
+                    "name",
+                    "Value #A",
+                    "Value #B"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "server": "Server",
+                  "name": "Slot",
+                  "Value #A": "Size",
+                  "Value #B": "Health"
+                },
+                "indexByName": {
+                  "server": 0,
+                  "name": 1,
+                  "Value #A": 2,
+                  "Value #B": 3
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, name) (ilo_memory_dimm_byte * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (host, server, name) (ilo_memory_dimm_healthy * on(host) group_left(server) label_replace(ilo_system_info, \"server\", \"$1\", \"model\", \"ProLiant (DL[0-9]+).*\"))",
+              "refId": "B",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 20,
+          "gridPos": {
+            "x": 16,
+            "y": 45,
+            "w": 8,
+            "h": 12
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
-      ]
+      ],
+      "refresh": "1m",
+      "schemaVersion": 39,
+      "tags": [
+        "homeops"
+      ],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-3h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Server Hardware",
+      "uid": "ilo",
+      "version": 1,
+      "weekStart": ""
     }

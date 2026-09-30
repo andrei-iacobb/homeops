@@ -1,43 +1,664 @@
-# Home Assistant Lovelace dashboard - Homeops Monitoring
-#
-# This is what's currently deployed in Home Assistant at /dashboard-homelab.
-# Each iframe card embeds a single Grafana panel from grafana.iacob.uk.
-# Card_mod (HACS) is required for the overlay that hides the "Powered by
-# Grafana" badge that anonymous viewers always see.
-#
-# To re-install or duplicate:
-#   1. Settings -> Dashboards -> Add Dashboard -> New from scratch
-#   2. Open it -> Edit -> three dots -> Raw configuration editor
-#   3. Paste this YAML, Save.
-
-title: Homelab Monitoring
+# Native Home Assistant MQTT sensors. Source freshness and expiry prevent stale readings.
+# Install with the Lovelace raw configuration editor at dashboard-homelab.
+title: Homelab
 views:
-  - title: Overview
-    icon: mdi:view-dashboard
-    path: overview
-    type: sections
-    max_columns: 4
-    sections:
-      - type: grid
-        column_span: 4
-        cards:
-          - { type: heading, heading: Status, heading_style: title }
-          - &iframe_overview
-            type: iframe
-            url: https://grafana.iacob.uk/d-solo/truenas/truenas-monitoring?orgId=1&theme=dark&kiosk=1&refresh=30s&from=now-1h&to=now&panelId=1
-            aspect_ratio: 100%
-            grid_options: { columns: 6, rows: 4 }
-            card_mod:
-              style: |
-                ha-card { position: relative; overflow: hidden; }
-                ha-card::after {
-                  content: "";
-                  position: absolute;
-                  top: 5px; right: 5px;
-                  width: 130px; height: 28px;
-                  background: #181b1f;
-                  border-radius: 3px;
-                  z-index: 99;
-                  pointer-events: none;
-                }
-          # ... see deployed config; full layout has Storage, Servers, DNS, Cluster tabs
+- title: Overview
+  icon: mdi:view-dashboard
+  path: overview
+  type: sections
+  max_columns: 4
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Health
+      heading_style: title
+    - type: tile
+      entity: sensor.homelab_truenas_unhealthy_pools
+      name: Unhealthy storage pools
+    - type: tile
+      entity: sensor.homelab_cluster_nodes_ready
+    - type: tile
+      entity: sensor.homelab_cluster_deployments_unavailable
+    - type: tile
+      entity: sensor.homelab_cluster_targets_down
+    - type: tile
+      entity: sensor.homelab_home_cluster_disk_free
+      name: home-cluster /var free
+    - type: tile
+      entity: sensor.homelab_truenas_ssd_used
+      name: SSD pool used
+    - type: tile
+      entity: sensor.homelab_truenas_sexy_pool_used
+      name: sexy-pool used
+  - type: grid
+    cards:
+    - type: heading
+      heading: Servers
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_dl360_cpu_temperature
+      name: DL360 CPU
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 85
+    - type: gauge
+      entity: sensor.homelab_dl380_cpu_temperature
+      name: DL380 CPU
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 85
+    - type: tile
+      entity: sensor.homelab_dl360_power
+      name: DL360 power
+    - type: tile
+      entity: sensor.homelab_dl380_power
+      name: DL380 power
+  - type: grid
+    cards:
+    - type: heading
+      heading: Last 24 hours
+      heading_style: title
+    - type: history-graph
+      title: Rack power
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_dl360_power
+      - sensor.homelab_dl380_power
+    - type: history-graph
+      title: CPU usage
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_home_cluster_cpu_usage
+      - sensor.homelab_gpu_worker_cpu_usage
+  - type: grid
+    cards:
+    - type: heading
+      heading: Links
+      heading_style: title
+    - type: button
+      name: Grafana overview
+      icon: mdi:chart-box-outline
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://grafana.iacob.uk/d/home-overview
+    - type: button
+      name: Scrape targets down
+      icon: mdi:target
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=up+%3D%3D+0&g0.tab=0
+    - type: button
+      name: Rack power history
+      icon: mdi:flash
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=max+by+%28job%29+%28ilo_power_current_watt%29&g0.tab=0
+    - type: button
+      name: Unavailable deployments
+      icon: mdi:kubernetes
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=kube_deployment_status_replicas_unavailable+%3E+0&g0.tab=0
+- title: Servers
+  icon: mdi:server
+  path: servers
+  type: sections
+  max_columns: 4
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: DL360
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_dl360_cpu_temperature
+      name: CPU
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 85
+    - type: gauge
+      entity: sensor.homelab_dl360_inlet_temperature
+      name: Inlet
+      min: 0
+      max: 45
+      needle: true
+      severity:
+        green: 0
+        yellow: 30
+        red: 35
+    - type: tile
+      entity: sensor.homelab_dl360_fan_speed
+    - type: tile
+      entity: sensor.homelab_dl360_power
+    - type: history-graph
+      title: DL360 last 24 hours
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_dl360_cpu_temperature
+      - sensor.homelab_dl360_inlet_temperature
+      - sensor.homelab_dl360_fan_speed
+      - sensor.homelab_dl360_power
+  - type: grid
+    cards:
+    - type: heading
+      heading: DL380
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_dl380_cpu_temperature
+      name: CPU
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 70
+        red: 85
+    - type: gauge
+      entity: sensor.homelab_dl380_inlet_temperature
+      name: Inlet
+      min: 0
+      max: 45
+      needle: true
+      severity:
+        green: 0
+        yellow: 30
+        red: 35
+    - type: tile
+      entity: sensor.homelab_dl380_fan_speed
+    - type: tile
+      entity: sensor.homelab_dl380_power
+    - type: history-graph
+      title: DL380 last 24 hours
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_dl380_cpu_temperature
+      - sensor.homelab_dl380_inlet_temperature
+      - sensor.homelab_dl380_fan_speed
+      - sensor.homelab_dl380_power
+  - type: grid
+    cards:
+    - type: heading
+      heading: Kubernetes nodes
+      heading_style: title
+    - type: entities
+      title: home-cluster
+      state_color: false
+      entities:
+      - entity: sensor.homelab_home_cluster_cpu_usage
+        name: CPU
+      - entity: sensor.homelab_home_cluster_memory_used
+        name: Memory
+      - entity: sensor.homelab_home_cluster_disk_free
+        name: /var free
+    - type: entities
+      title: gpu-worker
+      state_color: false
+      entities:
+      - entity: sensor.homelab_gpu_worker_cpu_usage
+        name: CPU
+      - entity: sensor.homelab_gpu_worker_memory_used
+        name: Memory
+      - entity: sensor.homelab_gpu_worker_disk_free
+        name: /var free
+    - type: history-graph
+      title: Node memory last 24 hours
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_home_cluster_memory_used
+      - sensor.homelab_gpu_worker_memory_used
+  - type: grid
+    cards:
+    - type: heading
+      heading: Links
+      heading_style: title
+    - type: button
+      name: Grafana hardware
+      icon: mdi:chart-box-outline
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://grafana.iacob.uk/d/ilo
+    - type: button
+      name: CPU temperature history
+      icon: mdi:thermometer
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=max+by+%28job%29+%28ilo_chassis_temperature_current%7Bname%3D~%22.%2ACPU.%2A%22%7D%29&g0.tab=0
+    - type: button
+      name: Inlet temperature history
+      icon: mdi:thermometer-low
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=max+by+%28job%29+%28ilo_chassis_temperature_current%7Bname%3D~%22.%2AInlet+Ambient.%2A%22%7D%29&g0.tab=0
+    - type: button
+      name: Fan speed history
+      icon: mdi:fan
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=max+by+%28job%29+%28ilo_chassis_fan_current_percent%29&g0.tab=0
+    - type: button
+      name: Power history
+      icon: mdi:flash
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=max+by+%28job%29+%28ilo_power_current_watt%29&g0.tab=0
+    - type: button
+      name: Node CPU history
+      icon: mdi:cpu-64-bit
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+%281+-+avg+by+%28instance%29+%28rate%28node_cpu_seconds_total%7Bjob%3D%22node-exporter%22%2Cmode%3D%22idle%22%7D%5B2m%5D%29%29%29&g0.tab=0
+    - type: button
+      name: Node memory history
+      icon: mdi:memory
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+%281+-+node_memory_MemAvailable_bytes%7Bjob%3D%22node-exporter%22%7D+%2F+node_memory_MemTotal_bytes%7Bjob%3D%22node-exporter%22%7D%29&g0.tab=0
+- title: Storage
+  icon: mdi:database
+  path: storage
+  type: sections
+  max_columns: 4
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: TrueNAS pools
+      heading_style: title
+    - type: tile
+      entity: sensor.homelab_truenas_unhealthy_pools
+      name: Unhealthy storage pools
+    - type: gauge
+      entity: sensor.homelab_truenas_ssd_used
+      name: SSD
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 85
+        red: 95
+    - type: gauge
+      entity: sensor.homelab_truenas_plex_used
+      name: plex
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 85
+        red: 95
+    - type: gauge
+      entity: sensor.homelab_truenas_sexy_pool_used
+      name: sexy-pool
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 85
+        red: 95
+  - type: grid
+    cards:
+    - type: heading
+      heading: Node disks
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_home_cluster_disk_free
+      name: home-cluster /var free
+      min: 0
+      max: 100
+      needle: true
+    - type: gauge
+      entity: sensor.homelab_gpu_worker_disk_free
+      name: gpu-worker /var free
+      min: 0
+      max: 100
+      needle: true
+  - type: grid
+    cards:
+    - type: heading
+      heading: Last 7 days
+      heading_style: title
+    - type: history-graph
+      title: Pool used
+      hours_to_show: 168
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_truenas_ssd_used
+      - sensor.homelab_truenas_plex_used
+      - sensor.homelab_truenas_sexy_pool_used
+    - type: history-graph
+      title: Node /var free
+      hours_to_show: 168
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_home_cluster_disk_free
+      - sensor.homelab_gpu_worker_disk_free
+  - type: grid
+    cards:
+    - type: heading
+      heading: Links
+      heading_style: title
+    - type: button
+      name: Grafana storage
+      icon: mdi:chart-box-outline
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://grafana.iacob.uk/d/truenas
+    - type: button
+      name: Pool used history
+      icon: mdi:database
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+max+by+%28host%2C+pool%29+%28truenas_pool_allocated_bytes%29+%2F+max+by+%28host%2C+pool%29+%28truenas_pool_size_bytes%29&g0.tab=0
+    - type: button
+      name: Node /var free history
+      icon: mdi:harddisk
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+node_filesystem_avail_bytes%7Bjob%3D%22node-exporter%22%2Cmountpoint%3D%22%2Fvar%22%7D+%2F+node_filesystem_size_bytes%7Bjob%3D%22node-exporter%22%2Cmountpoint%3D%22%2Fvar%22%7D&g0.tab=0
+    - type: button
+      name: Pool health in Prometheus
+      icon: mdi:database-alert
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=truenas_pool_healthy&g0.tab=0
+- title: GPU
+  icon: mdi:expansion-card
+  path: gpu
+  type: sections
+  max_columns: 4
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Quadro P1000
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_gpu_temperature
+      name: Temperature
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 75
+        red: 85
+    - type: gauge
+      entity: sensor.homelab_gpu_utilization
+      name: Utilization
+      min: 0
+      max: 100
+      needle: true
+    - type: gauge
+      entity: sensor.homelab_gpu_memory_used
+      name: Memory
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 90
+  - type: grid
+    cards:
+    - type: heading
+      heading: gpu-worker node
+      heading_style: title
+    - type: tile
+      entity: sensor.homelab_gpu_worker_cpu_usage
+      name: CPU
+    - type: tile
+      entity: sensor.homelab_gpu_worker_memory_used
+      name: Memory
+    - type: tile
+      entity: sensor.homelab_gpu_worker_disk_free
+      name: /var free
+  - type: grid
+    cards:
+    - type: heading
+      heading: Last 24 hours
+      heading_style: title
+    - type: history-graph
+      title: GPU
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_gpu_temperature
+      - sensor.homelab_gpu_utilization
+      - sensor.homelab_gpu_memory_used
+  - type: grid
+    cards:
+    - type: heading
+      heading: Links
+      heading_style: title
+    - type: button
+      name: Grafana GPU
+      icon: mdi:chart-box-outline
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://grafana.iacob.uk/d/gpu
+    - type: button
+      name: GPU temperature history
+      icon: mdi:thermometer
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=nvidia_smi_temperature_gpu%7Bjob%3D%22gpu-exporter%22%7D&g0.tab=0
+    - type: button
+      name: GPU utilization history
+      icon: mdi:expansion-card
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+nvidia_smi_utilization_gpu_ratio%7Bjob%3D%22gpu-exporter%22%7D&g0.tab=0
+    - type: button
+      name: GPU memory history
+      icon: mdi:memory
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=100+%2A+nvidia_smi_memory_used_bytes%7Bjob%3D%22gpu-exporter%22%7D+%2F+nvidia_smi_memory_total_bytes%7Bjob%3D%22gpu-exporter%22%7D&g0.tab=0
+- title: Cluster
+  icon: mdi:kubernetes
+  path: cluster
+  type: sections
+  max_columns: 4
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Kubernetes
+      heading_style: title
+    - type: tile
+      entity: sensor.homelab_cluster_nodes_ready
+    - type: tile
+      entity: sensor.homelab_cluster_deployments_unavailable
+    - type: tile
+      entity: sensor.homelab_cluster_targets_down
+  - type: grid
+    cards:
+    - type: heading
+      heading: home-cluster node
+      heading_style: title
+    - type: gauge
+      entity: sensor.homelab_home_cluster_cpu_usage
+      name: CPU
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 90
+    - type: gauge
+      entity: sensor.homelab_home_cluster_memory_used
+      name: Memory
+      min: 0
+      max: 100
+      needle: true
+      severity:
+        green: 0
+        yellow: 80
+        red: 90
+    - type: tile
+      entity: sensor.homelab_home_cluster_disk_free
+      name: /var free
+  - type: grid
+    cards:
+    - type: heading
+      heading: Last 24 hours
+      heading_style: title
+    - type: history-graph
+      title: Workload health
+      hours_to_show: 24
+      grid_options:
+        columns: 12
+      entities:
+      - sensor.homelab_cluster_nodes_ready
+      - sensor.homelab_cluster_deployments_unavailable
+      - sensor.homelab_cluster_targets_down
+  - type: grid
+    cards:
+    - type: heading
+      heading: Links
+      heading_style: title
+    - type: button
+      name: Grafana Kubernetes
+      icon: mdi:chart-box-outline
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://grafana.iacob.uk/d/kubernetes
+    - type: button
+      name: Node readiness history
+      icon: mdi:server-network
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=sum%28kube_node_status_condition%7Bcondition%3D%22Ready%22%2Cstatus%3D%22true%22%7D%29&g0.tab=0
+    - type: button
+      name: Unavailable deployments
+      icon: mdi:kubernetes
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=kube_deployment_status_replicas_unavailable+%3E+0&g0.tab=0
+    - type: button
+      name: Scrape targets down
+      icon: mdi:target
+      show_state: false
+      grid_options:
+        columns: 6
+        rows: 1
+      tap_action:
+        action: url
+        url_path: https://prometheus.iacob.uk/query?g0.expr=up+%3D%3D+0&g0.tab=0

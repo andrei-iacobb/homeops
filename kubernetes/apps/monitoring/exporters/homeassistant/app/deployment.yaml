@@ -1,0 +1,87 @@
+# Publishes Prometheus values to Home Assistant as native MQTT sensors through
+# HA's mqtt.publish service. HA already uses an external broker, so the cluster
+# broker is not involved. The HASS_TOKEN long-lived token lives in
+# homeassistant-metrics-secret, which is created outside this directory.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homeassistant-metrics
+  labels:
+    app: homeassistant-metrics
+spec:
+  replicas: 1
+  # Two bridges overlapping would race on the retained availability topics.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: homeassistant-metrics
+  template:
+    metadata:
+      labels:
+        app: homeassistant-metrics
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: bridge
+        image: docker.io/library/python:3.14.7-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d
+        command: ["python3", "-u", "/app/bridge.py"]
+        env:
+        - name: PYTHONDONTWRITEBYTECODE
+          value: "1"
+        - name: PROM_URL
+          value: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+        - name: HASS_URL
+          value: http://192.168.1.90:8123
+        - name: HASS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: homeassistant-metrics-secret
+              key: HASS_TOKEN
+        ports:
+        - name: metrics
+          containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 96Mi
+        # /healthz is the loop heartbeat, not HA reachability: restarting the
+        # pod cannot fix an unreachable HA, but it does fix a wedged loop.
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          periodSeconds: 30
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: app
+          mountPath: /app
+          readOnly: true
+      volumes:
+      - name: app
+        configMap:
+          name: homeassistant-metrics-bridge

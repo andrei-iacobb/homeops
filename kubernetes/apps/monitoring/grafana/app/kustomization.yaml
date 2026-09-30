@@ -4,10 +4,13 @@ kind: Kustomization
 resources:
   - httproute.yaml
   - networkpolicy.yaml
-  - dashboards/truenas-dashboard.yaml
-  - dashboards/adguard-dashboard.yaml
-  - dashboards/ilo-dashboard.yaml
+  - dashboards/home-overview-dashboard.yaml
+  - dashboards/kubernetes-dashboard.yaml
+  - dashboards/nodes-dashboard.yaml
   - dashboards/proxmox-dashboard.yaml
-  - dashboards/wireguard-oci-dashboard.yaml
-  - dashboards/syncthing-dashboard.yaml
+  - dashboards/ilo-dashboard.yaml
+  - dashboards/truenas-dashboard.yaml
+  - dashboards/network-dashboard.yaml
+  - dashboards/gpu-dashboard.yaml
   - dashboards/ai-agents-dashboard.yaml
+  - dashboards/platform-dashboard.yaml

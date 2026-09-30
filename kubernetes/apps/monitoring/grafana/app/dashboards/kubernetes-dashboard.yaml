@@ -2,17 +2,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ai-agents-dashboard
+  name: kubernetes-dashboard
   namespace: monitoring
   labels:
     grafana_dashboard: '1'
 data:
-  ai-agents.json: |
+  kubernetes.json: |
     {
       "annotations": {
         "list": []
       },
-      "description": "CLI proxy (cliproxy, ns code) usage from its usage queue, exported as Prometheus counters. Counters are collected from exporter deployment onward; there is no history before that. Upstream proxy restarts or usage-queue expiry can leave gaps. Token counts are raw usage, not billed spend. Duration is a mean from usage records; there are no buckets, so no percentiles.",
+      "description": "Cluster health from kube-state-metrics, kubelet and the API server.",
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
@@ -155,7 +155,7 @@ data:
       "panels": [
         {
           "type": "stat",
-          "title": "Exporter",
+          "title": "Nodes Ready",
           "fieldConfig": {
             "defaults": {
               "unit": "short",
@@ -171,22 +171,7 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [
-                {
-                  "type": "value",
-                  "options": {
-                    "0": {
-                      "text": "Down",
-                      "color": "red"
-                    },
-                    "1": {
-                      "text": "Up",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "noValue": "No data - exporter not reporting"
+              "mappings": []
             },
             "overrides": []
           },
@@ -212,7 +197,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max(cliproxy_exporter_up)",
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
               "refId": "A",
               "instant": true,
               "range": false
@@ -232,10 +217,10 @@ data:
         },
         {
           "type": "stat",
-          "title": "Last successful collect",
+          "title": "Pending pods",
           "fieldConfig": {
             "defaults": {
-              "unit": "s",
+              "unit": "short",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -245,19 +230,14 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 300
-                  },
-                  {
-                    "color": "red",
-                    "value": 900
+                    "value": 1
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
-              "noValue": "No data - exporter not reporting"
+              "mappings": []
             },
             "overrides": []
           },
@@ -283,7 +263,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "time() - max(cliproxy_exporter_last_success_timestamp_seconds)",
+              "expr": "sum(kube_pod_status_phase{phase=\"Pending\"})",
               "refId": "A",
               "instant": true,
               "range": false
@@ -303,7 +283,7 @@ data:
         },
         {
           "type": "stat",
-          "title": "Requests (range)",
+          "title": "Deployments unavailable",
           "fieldConfig": {
             "defaults": {
               "unit": "short",
@@ -311,17 +291,19 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
-              "decimals": 0,
-              "noValue": "No data - exporter not reporting"
+              "mappings": []
             },
             "overrides": []
           },
@@ -347,7 +329,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(cliproxy_requests_total[$__range]))",
+              "expr": "sum(kube_deployment_status_replicas_unavailable > bool 0)",
               "refId": "A",
               "instant": true,
               "range": false
@@ -367,10 +349,10 @@ data:
         },
         {
           "type": "stat",
-          "title": "Failed requests (range)",
+          "title": "Container restarts (1h)",
           "fieldConfig": {
             "defaults": {
-              "unit": "percentunit",
+              "unit": "short",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -380,30 +362,19 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 0.02
+                    "value": 1
                   },
                   {
                     "color": "red",
-                    "value": 0.1
+                    "value": 10
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [
-                {
-                  "type": "special",
-                  "options": {
-                    "match": "nan",
-                    "result": {
-                      "text": "No requests in range"
-                    }
-                  }
-                }
-              ],
-              "decimals": 1,
-              "noValue": "No data - exporter not reporting"
+              "mappings": [],
+              "decimals": 0
             },
             "overrides": []
           },
@@ -429,13 +400,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)) / sum(increase(cliproxy_requests_total[$__range]))",
+              "expr": "sum(increase(kube_pod_container_status_restarts_total[1h]))",
               "refId": "A",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Share of requests whose status is not 2xx/ok/success.",
           "id": 4,
           "gridPos": {
             "x": 12,
@@ -450,7 +420,7 @@ data:
         },
         {
           "type": "stat",
-          "title": "Tokens (range)",
+          "title": "Failed Jobs (24h)",
           "fieldConfig": {
             "defaults": {
               "unit": "short",
@@ -458,17 +428,19 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
-              "decimals": 0,
-              "noValue": "No data - exporter not reporting"
+              "mappings": []
             },
             "overrides": []
           },
@@ -494,13 +466,13 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
+              "expr": "sum(kube_job_failed{condition=\"true\"} * on(namespace, job_name) ((time() - kube_job_created) < bool 86400))",
               "refId": "A",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Raw token usage, not billed spend.",
+          "description": "Jobs created in the last 24h that are in the Failed condition.",
           "id": 5,
           "gridPos": {
             "x": 16,
@@ -515,16 +487,24 @@ data:
         },
         {
           "type": "stat",
-          "title": "Models used (range)",
+          "title": "API server 5xx",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "percentunit",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 0.01
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.05
                   }
                 ]
               },
@@ -532,7 +512,7 @@ data:
                 "mode": "thresholds"
               },
               "mappings": [],
-              "noValue": "No data - exporter not reporting"
+              "decimals": 2
             },
             "overrides": []
           },
@@ -558,7 +538,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total[$__range])) > bool 0)",
+              "expr": "sum(rate(apiserver_request_total{code=~\"5..\"}[5m])) / sum(rate(apiserver_request_total[5m]))",
               "refId": "A",
               "instant": true,
               "range": false
@@ -578,7 +558,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Usage",
+          "title": "Nodes and scheduling",
           "collapsed": false,
           "panels": [],
           "id": 7,
@@ -594,56 +574,130 @@ data:
           }
         },
         {
-          "type": "timeseries",
-          "title": "Requests by provider",
-          "maxDataPoints": 500,
+          "type": "table",
+          "title": "Node conditions",
           "fieldConfig": {
             "defaults": {
-              "unit": "reqps",
               "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
               },
               "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
+                "mode": "thresholds"
+              }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Ready"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "red"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "green"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*Pressure|NetworkUnavailable"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "0": {
+                            "text": "No",
+                            "color": "green"
+                          },
+                          "1": {
+                            "text": "Yes",
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
             }
           },
+          "transformations": [
+            {
+              "id": "groupingToMatrix",
+              "options": {
+                "columnField": "condition",
+                "rowField": "node",
+                "valueField": "Value"
+              }
+            }
+          ],
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider) (rate(cliproxy_requests_total[$__rate_interval]))",
+              "expr": "max by (node, condition) (kube_node_status_condition{status=\"true\"})",
               "refId": "A",
-              "legendFormat": "{{provider}}",
-              "range": true
+              "instant": true,
+              "range": false,
+              "format": "table"
             }
           ],
           "id": 8,
@@ -651,7 +705,90 @@ data:
             "x": 0,
             "y": 5,
             "w": 12,
-            "h": 8
+            "h": 6
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "Requests vs allocatable",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"}) / sum by (node) (kube_node_status_allocatable{resource=\"cpu\"}) * 100",
+              "refId": "A",
+              "legendFormat": "{{node}} CPU",
+              "instant": true,
+              "range": false
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"}) / sum by (node) (kube_node_status_allocatable{resource=\"memory\"}) * 100",
+              "refId": "B",
+              "legendFormat": "{{node}} memory",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Scheduler reservations (requests), not actual usage.",
+          "id": 9,
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 12,
+            "h": 6
           },
           "datasource": {
             "type": "prometheus",
@@ -660,11 +797,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Requests by status",
+          "title": "Pods by phase",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "reqps",
+              "unit": "short",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -679,8 +816,7 @@ data:
               },
               "color": {
                 "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
+              }
             },
             "overrides": []
           },
@@ -705,82 +841,16 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (status) (rate(cliproxy_requests_total[$__rate_interval]))",
+              "expr": "sum by (phase) (kube_pod_status_phase)",
               "refId": "A",
-              "legendFormat": "{{status}}",
+              "legendFormat": "{{phase}}",
               "range": true
             }
           ],
-          "id": 9,
-          "gridPos": {
-            "x": 12,
-            "y": 5,
-            "w": 12,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Tokens by type",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "normal",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (type) (rate(cliproxy_tokens_total{type!=\"total\"}[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{type}}",
-              "range": true
-            }
-          ],
-          "description": "Tokens per second. Raw usage, not billed spend.",
           "id": 10,
           "gridPos": {
             "x": 0,
-            "y": 13,
+            "y": 11,
             "w": 12,
             "h": 8
           },
@@ -791,27 +861,26 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Tokens by model",
+          "title": "Container restarts",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
               "unit": "short",
               "custom": {
-                "drawStyle": "line",
+                "drawStyle": "bars",
                 "lineWidth": 1,
                 "fillOpacity": 10,
                 "showPoints": "never",
                 "spanNulls": false,
                 "axisSoftMin": 0,
                 "stacking": {
-                  "mode": "normal",
+                  "mode": "none",
                   "group": "A"
                 }
               },
               "color": {
                 "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
+              }
             },
             "overrides": []
           },
@@ -821,8 +890,7 @@ data:
               "placement": "bottom",
               "showLegend": true,
               "calcs": [
-                "lastNotNull",
-                "max"
+                "sum"
               ]
             },
             "tooltip": {
@@ -836,18 +904,35 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (rate(cliproxy_tokens_total{type=\"total\"}[$__rate_interval]))",
+              "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total[$__rate_interval])) > 0",
               "refId": "A",
-              "legendFormat": "{{provider}} {{model}}",
+              "legendFormat": "{{namespace}}",
               "range": true
             }
           ],
           "id": 11,
           "gridPos": {
             "x": 12,
-            "y": 13,
+            "y": 11,
             "w": 12,
             "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Problems",
+          "collapsed": false,
+          "panels": [],
+          "id": 12,
+          "gridPos": {
+            "x": 0,
+            "y": 19,
+            "w": 24,
+            "h": 1
           },
           "datasource": {
             "type": "prometheus",
@@ -856,7 +941,7 @@ data:
         },
         {
           "type": "table",
-          "title": "Usage by model (range)",
+          "title": "Pending pods",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -878,34 +963,200 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "unit": "short"
+              "noValue": "No pending pods"
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": "Requests|Failed|Tokens"
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "namespace",
+                    "pod"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "Namespace",
+                  "pod": "Pod"
                 },
-                "properties": [
+                "indexByName": {
+                  "namespace": 0,
+                  "pod": 1
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "kube_pod_status_phase{phase=\"Pending\"} > 0",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 13,
+          "gridPos": {
+            "x": 0,
+            "y": 20,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Unavailable workloads",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
                   {
-                    "id": "decimals",
-                    "value": 0
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Mean duration"
+              "color": {
+                "mode": "thresholds"
+              },
+              "noValue": "All workloads available"
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            }
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "namespace",
+                    "kind",
+                    "workload",
+                    "Value"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "Namespace",
+                  "kind": "Kind",
+                  "workload": "Workload",
+                  "Value": "Replicas unavailable"
                 },
-                "properties": [
+                "indexByName": {
+                  "namespace": 0,
+                  "kind": 1,
+                  "workload": 2,
+                  "Value": 3
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "label_replace(label_replace(kube_deployment_status_replicas_unavailable > 0, \"workload\", \"$1\", \"deployment\", \"(.*)\"), \"kind\", \"Deployment\", \"namespace\", \".*\") or label_replace(label_replace((kube_statefulset_replicas - kube_statefulset_status_replicas_ready) > 0, \"workload\", \"$1\", \"statefulset\", \"(.*)\"), \"kind\", \"StatefulSet\", \"namespace\", \".*\") or label_replace(label_replace(kube_daemonset_status_number_unavailable > 0, \"workload\", \"$1\", \"daemonset\", \"(.*)\"), \"kind\", \"DaemonSet\", \"namespace\", \".*\")",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 14,
+          "gridPos": {
+            "x": 8,
+            "y": 20,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Top restarting pods (range)",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
                   {
-                    "id": "unit",
-                    "value": "s"
+                    "color": "green",
+                    "value": null
                   }
                 ]
-              }
-            ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "none",
+              "noValue": "No restarts in range"
+            },
+            "overrides": []
           },
           "options": {
             "showHeader": true,
@@ -920,27 +1171,20 @@ data:
             },
             "sortBy": [
               {
-                "displayName": "Requests",
+                "displayName": "Restarts",
                 "desc": true
               }
             ]
           },
           "transformations": [
             {
-              "id": "merge",
-              "options": {}
-            },
-            {
               "id": "filterFieldsByName",
               "options": {
                 "include": {
                   "names": [
-                    "provider",
-                    "model",
-                    "Value #A",
-                    "Value #B",
-                    "Value #C",
-                    "Value #D"
+                    "namespace",
+                    "pod",
+                    "Value"
                   ]
                 }
               }
@@ -949,20 +1193,14 @@ data:
               "id": "organize",
               "options": {
                 "renameByName": {
-                  "provider": "Provider",
-                  "model": "Model",
-                  "Value #A": "Requests",
-                  "Value #B": "Failed",
-                  "Value #C": "Tokens",
-                  "Value #D": "Mean duration"
+                  "namespace": "Namespace",
+                  "pod": "Pod",
+                  "Value": "Restarts"
                 },
                 "indexByName": {
-                  "provider": 0,
-                  "model": 1,
-                  "Value #A": 2,
-                  "Value #B": 3,
-                  "Value #C": 4,
-                  "Value #D": 5
+                  "namespace": 0,
+                  "pod": 1,
+                  "Value": 2
                 },
                 "excludeByName": {}
               }
@@ -974,52 +1212,213 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total[$__range]))",
+              "expr": "topk(15, sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total[$__range]))) > 0",
               "refId": "A",
-              "instant": true,
-              "range": false,
-              "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)",
-              "refId": "B",
-              "instant": true,
-              "range": false,
-              "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
-              "refId": "C",
-              "instant": true,
-              "range": false,
-              "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_request_duration_seconds_sum[$__range])) / sum by (provider, model) (increase(cliproxy_request_duration_seconds_count[$__range]))",
-              "refId": "D",
               "instant": true,
               "range": false,
               "format": "table"
             }
           ],
-          "id": 12,
+          "id": 15,
+          "gridPos": {
+            "x": 16,
+            "y": 20,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "table",
+          "title": "Failed Jobs (24h)",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "unit": "s",
+              "noValue": "No failed Jobs in 24h"
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false,
+              "reducer": [
+                "sum"
+              ],
+              "countRows": false,
+              "fields": ""
+            },
+            "sortBy": [
+              {
+                "displayName": "Age",
+                "desc": false
+              }
+            ]
+          },
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "namespace",
+                    "owner_name",
+                    "job_name",
+                    "Value"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "renameByName": {
+                  "namespace": "Namespace",
+                  "owner_name": "CronJob",
+                  "job_name": "Job",
+                  "Value": "Age"
+                },
+                "indexByName": {
+                  "namespace": 0,
+                  "owner_name": 1,
+                  "job_name": 2,
+                  "Value": 3
+                },
+                "excludeByName": {}
+              }
+            }
+          ],
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(kube_job_failed{condition=\"true\"} > 0) * on(namespace, job_name) ((time() - kube_job_created) < 86400) * on(namespace, job_name) group_left(owner_name) kube_job_owner",
+              "refId": "A",
+              "instant": true,
+              "range": false,
+              "format": "table"
+            }
+          ],
+          "id": 16,
           "gridPos": {
             "x": 0,
-            "y": 21,
+            "y": 28,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "PVC usage (top 15)",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 80
+                  },
+                  {
+                    "color": "red",
+                    "value": 90
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "valueMode": "color",
+            "namePlacement": "left",
+            "sizing": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "topk(15, max by (namespace, persistentvolumeclaim) (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes)) * 100",
+              "refId": "A",
+              "legendFormat": "{{namespace}}/{{persistentvolumeclaim}}",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Kubelet volume stats. NFS-backed claims report the whole share, so several claims can show the same value.",
+          "id": 17,
+          "gridPos": {
+            "x": 12,
+            "y": 28,
+            "w": 12,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "API server",
+          "collapsed": false,
+          "panels": [],
+          "id": 18,
+          "gridPos": {
+            "x": 0,
+            "y": 36,
             "w": 24,
-            "h": 9
+            "h": 1
           },
           "datasource": {
             "type": "prometheus",
@@ -1028,7 +1427,71 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Mean request duration",
+          "title": "API requests by code",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (code) (rate(apiserver_request_total[$__rate_interval]))",
+              "refId": "A",
+              "legendFormat": "{{code}}",
+              "range": true
+            }
+          ],
+          "id": 19,
+          "gridPos": {
+            "x": 0,
+            "y": 37,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "API p99 latency by verb",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
@@ -1047,8 +1510,7 @@ data:
               },
               "color": {
                 "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
+              }
             },
             "overrides": []
           },
@@ -1073,17 +1535,16 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider) (rate(cliproxy_request_duration_seconds_sum[$__rate_interval])) / sum by (provider) (rate(cliproxy_request_duration_seconds_count[$__rate_interval]))",
+              "expr": "histogram_quantile(0.99, sum by (le, verb) (rate(apiserver_request_duration_seconds_bucket{verb!~\"WATCH|CONNECT\"}[$__rate_interval])))",
               "refId": "A",
-              "legendFormat": "{{provider}}",
+              "legendFormat": "{{verb}}",
               "range": true
             }
           ],
-          "description": "Mean only; the exporter has no histogram buckets.",
-          "id": 13,
+          "id": 20,
           "gridPos": {
-            "x": 0,
-            "y": 30,
+            "x": 8,
+            "y": 37,
             "w": 8,
             "h": 8
           },
@@ -1094,7 +1555,7 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Exporter polls",
+          "title": "Scrape health (control plane)",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
@@ -1114,7 +1575,7 @@ data:
               "color": {
                 "mode": "palette-classic"
               },
-              "noValue": "No data - exporter not reporting"
+              "max": 1
             },
             "overrides": []
           },
@@ -1124,8 +1585,7 @@ data:
               "placement": "bottom",
               "showLegend": true,
               "calcs": [
-                "lastNotNull",
-                "max"
+                "min"
               ]
             },
             "tooltip": {
@@ -1139,82 +1599,16 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (result) (rate(cliproxy_exporter_polls_total[$__rate_interval]))",
+              "expr": "up{job=~\"apiserver|kube-scheduler|kube-controller-manager|kubelet|kube-state-metrics|coredns\"}",
               "refId": "A",
-              "legendFormat": "{{result}}",
+              "legendFormat": "{{job}} {{instance}} {{metrics_path}}",
               "range": true
             }
           ],
-          "description": "Usage-queue polls per second. Failures or gaps mean usage for that window may be missing.",
-          "id": 14,
-          "gridPos": {
-            "x": 8,
-            "y": 30,
-            "w": 8,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Invalid usage records",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "bars",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No invalid records"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "sum"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (reason) (increase(cliproxy_exporter_invalid_records_total[$__rate_interval])) > 0",
-              "refId": "A",
-              "legendFormat": "{{reason}}",
-              "range": true
-            }
-          ],
-          "description": "Queue records the exporter rejected (bad fields, overflow, or labels that looked like secrets).",
-          "id": 15,
+          "id": 21,
           "gridPos": {
             "x": 16,
-            "y": 30,
+            "y": 37,
             "w": 8,
             "h": 8
           },
@@ -1227,9 +1621,7 @@ data:
       "refresh": "1m",
       "schemaVersion": 39,
       "tags": [
-        "homeops",
-        "ai",
-        "cliproxy"
+        "homeops"
       ],
       "templating": {
         "list": []
@@ -1240,8 +1632,8 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "CLI Proxy - Usage & Reliability",
-      "uid": "ai-agents",
+      "title": "Kubernetes",
+      "uid": "kubernetes",
       "version": 1,
       "weekStart": ""
     }

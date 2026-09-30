@@ -1,0 +1,63 @@
+# Observe the GPU without consuming a shared time slice; P1000 does not report power draw.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: gpu-exporter
+  labels:
+    app: gpu-exporter
+spec:
+  selector:
+    matchLabels:
+      app: gpu-exporter
+  template:
+    metadata:
+      labels:
+        app: gpu-exporter
+    spec:
+      runtimeClassName: nvidia
+      automountServiceAccountToken: false
+      nodeSelector:
+        nvidia.com/gpu.present: 'true'
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: exporter
+        image: docker.io/utkuozdemir/nvidia_gpu_exporter:1.15.1
+        args:
+        - --web.listen-address=:9835
+        - --collect.interval=15s
+        - --query-field-names=uuid,name,driver_version,index,pci.bus_id,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.used,memory.free,fan.speed,clocks.current.graphics,clocks.current.memory,utilization.encoder,utilization.decoder
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: utility
+        ports:
+        - name: metrics
+          containerPort: 9835
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: metrics
+          periodSeconds: 30
+          timeoutSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: metrics
+          periodSeconds: 30

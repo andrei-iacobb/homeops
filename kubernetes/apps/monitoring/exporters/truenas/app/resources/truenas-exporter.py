@@ -476,11 +476,21 @@ def generate_pool_metrics(targets):
     lines.append("# HELP truenas_pool_free_percent Free percent in pool")
     lines.append("# TYPE truenas_pool_free_percent gauge")
 
+    for metric, help_text in (
+        ("truenas_pool_scrape_success", "Whether the pool API query succeeded."),
+        ("truenas_pool_healthy", "Pool health from TrueNAS; ONLINE alone does not imply healthy."),
+        ("truenas_pool_status_info", "TrueNAS pool status code."),
+        ("truenas_pool_scrub_errors", "Errors reported by the last scrub."),
+        ("truenas_pool_last_scrub_timestamp_seconds", "Unix timestamp of the last completed scrub."),
+    ):
+        lines.extend([f"# HELP {metric} {help_text}", f"# TYPE {metric} gauge"])
+
     for target in targets:
         host = escape_label_value(target["name"])
         pools, error = fetch_pools(target)
 
-        if error or pools is None:
+        lines.append(f'truenas_pool_scrape_success{{host="{host}"}} {int(error is None and isinstance(pools, list))}')
+        if error or not isinstance(pools, list):
             logger.warning("Failed to fetch pools from %s: %s", host, error)
             continue
 
@@ -491,6 +501,24 @@ def generate_pool_metrics(targets):
             free = pool.get("free")
 
             labels = f'host="{host}",pool="{pool_name}"'
+
+            # TrueNAS can report status=ONLINE together with CORRUPT_DATA.
+            # Use its explicit healthy flag so capacity never stands in for health.
+            healthy = pool.get("healthy")
+            if isinstance(healthy, bool):
+                lines.append(f"truenas_pool_healthy{{{labels}}} {int(healthy)}")
+            status_code = escape_label_value(str(pool.get("status_code") or "UNKNOWN")[:64])
+            lines.append(f'truenas_pool_status_info{{{labels},status_code="{status_code}"}} 1')
+            scan = pool.get("scan") or {}
+            if scan.get("function") == "SCRUB":
+                errors = scan.get("errors")
+                if isinstance(errors, int) and not isinstance(errors, bool) and errors >= 0:
+                    lines.append(f"truenas_pool_scrub_errors{{{labels}}} {errors}")
+                # An active scrub's end_time does not prove a completed backup/check.
+                end = scan.get("end_time") or {}
+                ended = end.get("$date") if isinstance(end, dict) else None
+                if scan.get("state") == "FINISHED" and isinstance(ended, (int, float)) and ended > 0:
+                    lines.append(f"truenas_pool_last_scrub_timestamp_seconds{{{labels}}} {ended / 1000}")
 
             if size is not None:
                 lines.append(f"truenas_pool_size_bytes{{{labels}}} {size}")

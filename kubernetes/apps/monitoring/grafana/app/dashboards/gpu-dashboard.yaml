@@ -2,17 +2,17 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ai-agents-dashboard
+  name: gpu-dashboard
   namespace: monitoring
   labels:
     grafana_dashboard: '1'
 data:
-  ai-agents.json: |
+  gpu.json: |
     {
       "annotations": {
         "list": []
       },
-      "description": "CLI proxy (cliproxy, ns code) usage from its usage queue, exported as Prometheus counters. Counters are collected from exporter deployment onward; there is no history before that. Upstream proxy restarts or usage-queue expiry can leave gaps. Token counts are raw usage, not billed spend. Duration is a mean from usage records; there are no buckets, so no percentiles.",
+      "description": "gpu-worker NVIDIA GPU via utkuozdemir/nvidia_gpu_exporter 1.15.1. The card reports no power draw. The GPU is time-sliced, so utilisation cannot be attributed to pods; the reservation panels show Kubernetes requests only.",
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
@@ -155,7 +155,7 @@ data:
       "panels": [
         {
           "type": "stat",
-          "title": "Exporter",
+          "title": "Collection",
           "fieldConfig": {
             "defaults": {
               "unit": "short",
@@ -176,11 +176,11 @@ data:
                   "type": "value",
                   "options": {
                     "0": {
-                      "text": "Down",
+                      "text": "Failing",
                       "color": "red"
                     },
                     "1": {
-                      "text": "Up",
+                      "text": "OK",
                       "color": "green"
                     }
                   }
@@ -212,7 +212,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max(cliproxy_exporter_up)",
+              "expr": "min(nvidia_smi_last_collect_success)",
               "refId": "A",
               "instant": true,
               "range": false
@@ -222,7 +222,7 @@ data:
           "gridPos": {
             "x": 0,
             "y": 0,
-            "w": 4,
+            "w": 6,
             "h": 4
           },
           "datasource": {
@@ -232,142 +232,7 @@ data:
         },
         {
           "type": "stat",
-          "title": "Last successful collect",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 300
-                  },
-                  {
-                    "color": "red",
-                    "value": 900
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "auto",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "wideLayout": true,
-            "showPercentChange": false
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "time() - max(cliproxy_exporter_last_success_timestamp_seconds)",
-              "refId": "A",
-              "instant": true,
-              "range": false
-            }
-          ],
-          "id": 2,
-          "gridPos": {
-            "x": 4,
-            "y": 0,
-            "w": 4,
-            "h": 4
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Requests (range)",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "decimals": 0,
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "auto",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "wideLayout": true,
-            "showPercentChange": false
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(increase(cliproxy_requests_total[$__range]))",
-              "refId": "A",
-              "instant": true,
-              "range": false
-            }
-          ],
-          "id": 3,
-          "gridPos": {
-            "x": 8,
-            "y": 0,
-            "w": 4,
-            "h": 4
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Failed requests (range)",
+          "title": "GPU load",
           "fieldConfig": {
             "defaults": {
               "unit": "percentunit",
@@ -380,29 +245,18 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 0.02
+                    "value": 0.8
                   },
                   {
                     "color": "red",
-                    "value": 0.1
+                    "value": 0.95
                   }
                 ]
               },
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [
-                {
-                  "type": "special",
-                  "options": {
-                    "match": "nan",
-                    "result": {
-                      "text": "No requests in range"
-                    }
-                  }
-                }
-              ],
-              "decimals": 1,
+              "mappings": [],
               "noValue": "No data - exporter not reporting"
             },
             "overrides": []
@@ -429,18 +283,90 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)) / sum(increase(cliproxy_requests_total[$__range]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_utilization_gpu_ratio)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
+              "legendFormat": "{{name}}",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Share of requests whose status is not 2xx/ok/success.",
+          "id": 3,
+          "gridPos": {
+            "x": 6,
+            "y": 0,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Temperature",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 75
+                  },
+                  {
+                    "color": "red",
+                    "value": 85
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "No data - exporter not reporting"
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(max by(uuid,node)(nvidia_smi_temperature_gpu)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
+              "refId": "A",
+              "legendFormat": "{{name}}",
+              "instant": true,
+              "range": false
+            }
+          ],
           "id": 4,
           "gridPos": {
             "x": 12,
             "y": 0,
-            "w": 4,
+            "w": 6,
             "h": 4
           },
           "datasource": {
@@ -450,16 +376,24 @@ data:
         },
         {
           "type": "stat",
-          "title": "Tokens (range)",
+          "title": "VRAM used",
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "percentunit",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 0.85
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.95
                   }
                 ]
               },
@@ -467,7 +401,6 @@ data:
                 "mode": "thresholds"
               },
               "mappings": [],
-              "decimals": 0,
               "noValue": "No data - exporter not reporting"
             },
             "overrides": []
@@ -494,81 +427,18 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_memory_used_bytes) / max by(uuid,node)(nvidia_smi_memory_total_bytes)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
+              "legendFormat": "{{name}}",
               "instant": true,
               "range": false
             }
           ],
-          "description": "Raw token usage, not billed spend.",
           "id": 5,
           "gridPos": {
-            "x": 16,
+            "x": 18,
             "y": 0,
-            "w": 4,
-            "h": 4
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Models used (range)",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  }
-                ]
-              },
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "colorMode": "value",
-            "graphMode": "none",
-            "textMode": "auto",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "wideLayout": true,
-            "showPercentChange": false
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(sum by (provider, model) (increase(cliproxy_requests_total[$__range])) > bool 0)",
-              "refId": "A",
-              "instant": true,
-              "range": false
-            }
-          ],
-          "id": 6,
-          "gridPos": {
-            "x": 20,
-            "y": 0,
-            "w": 4,
+            "w": 6,
             "h": 4
           },
           "datasource": {
@@ -578,7 +448,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Usage",
+          "title": "Telemetry",
           "collapsed": false,
           "panels": [],
           "id": 7,
@@ -595,11 +465,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Requests by provider",
+          "title": "Utilisation",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "reqps",
+              "unit": "percentunit",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -615,6 +485,7 @@ data:
               "color": {
                 "mode": "palette-classic"
               },
+              "max": 1,
               "noValue": "No data - exporter not reporting"
             },
             "overrides": []
@@ -640,9 +511,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider) (rate(cliproxy_requests_total[$__rate_interval]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_utilization_gpu_ratio)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
-              "legendFormat": "{{provider}}",
+              "legendFormat": "{{name}}",
               "range": true
             }
           ],
@@ -660,11 +531,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Requests by status",
+          "title": "Temperature",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "reqps",
+              "unit": "celsius",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -705,9 +576,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (status) (rate(cliproxy_requests_total[$__rate_interval]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_temperature_gpu)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
-              "legendFormat": "{{status}}",
+              "legendFormat": "{{name}}",
               "range": true
             }
           ],
@@ -725,11 +596,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Tokens by type",
+          "title": "VRAM",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "bytes",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -738,7 +609,7 @@ data:
                 "spanNulls": false,
                 "axisSoftMin": 0,
                 "stacking": {
-                  "mode": "normal",
+                  "mode": "none",
                   "group": "A"
                 }
               },
@@ -770,18 +641,27 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (type) (rate(cliproxy_tokens_total{type!=\"total\"}[$__rate_interval]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_memory_used_bytes)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
-              "legendFormat": "{{type}}",
+              "legendFormat": "{{name}} used",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(max by(uuid,node)(nvidia_smi_memory_total_bytes)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
+              "refId": "B",
+              "legendFormat": "{{name}} total",
               "range": true
             }
           ],
-          "description": "Tokens per second. Raw usage, not billed spend.",
           "id": 10,
           "gridPos": {
             "x": 0,
             "y": 13,
-            "w": 12,
+            "w": 8,
             "h": 8
           },
           "datasource": {
@@ -791,11 +671,11 @@ data:
         },
         {
           "type": "timeseries",
-          "title": "Tokens by model",
+          "title": "Encoder / decoder",
           "maxDataPoints": 500,
           "fieldConfig": {
             "defaults": {
-              "unit": "short",
+              "unit": "percentunit",
               "custom": {
                 "drawStyle": "line",
                 "lineWidth": 1,
@@ -804,13 +684,14 @@ data:
                 "spanNulls": false,
                 "axisSoftMin": 0,
                 "stacking": {
-                  "mode": "normal",
+                  "mode": "none",
                   "group": "A"
                 }
               },
               "color": {
                 "mode": "palette-classic"
               },
+              "max": 1,
               "noValue": "No data - exporter not reporting"
             },
             "overrides": []
@@ -836,17 +717,28 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (rate(cliproxy_tokens_total{type=\"total\"}[$__rate_interval]))",
+              "expr": "(max by(uuid,node)(nvidia_smi_utilization_decoder_ratio)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
               "refId": "A",
-              "legendFormat": "{{provider}} {{model}}",
+              "legendFormat": "{{name}} decoder",
+              "range": true
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(max by(uuid,node)(nvidia_smi_utilization_encoder_ratio)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
+              "refId": "B",
+              "legendFormat": "{{name}} encoder",
               "range": true
             }
           ],
+          "description": "The Quadro P1000 reports no power draw through nvidia-smi, so power is not charted.",
           "id": 11,
           "gridPos": {
-            "x": 12,
+            "x": 8,
             "y": 13,
-            "w": 12,
+            "w": 8,
             "h": 8
           },
           "datasource": {
@@ -855,8 +747,217 @@ data:
           }
         },
         {
+          "type": "timeseries",
+          "title": "Fan speed",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              },
+              "max": 1,
+              "noValue": "No data - exporter not reporting"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "(max by(uuid,node)(nvidia_smi_fan_speed_ratio)) * on(uuid,node) group_left(name) max by(uuid,node,name)(nvidia_smi_gpu_info)",
+              "refId": "A",
+              "legendFormat": "{{name}}",
+              "range": true
+            }
+          ],
+          "id": 12,
+          "gridPos": {
+            "x": 16,
+            "y": 13,
+            "w": 8,
+            "h": 8
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "row",
+          "title": "Kubernetes reservations (not usage)",
+          "collapsed": false,
+          "panels": [],
+          "id": 13,
+          "gridPos": {
+            "x": 0,
+            "y": 21,
+            "w": 24,
+            "h": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "GPU slices allocatable",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(kube_node_status_allocatable{resource=\"nvidia_com_gpu\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Kubernetes nvidia.com/gpu requests. Time-slicing shares one physical GPU, so these are reservations only, not per-pod usage.",
+          "id": 14,
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "stat",
+          "title": "GPU slices reserved",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              },
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "auto",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "wideLayout": true,
+            "showPercentChange": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"})",
+              "refId": "A",
+              "instant": true,
+              "range": false
+            }
+          ],
+          "description": "Kubernetes nvidia.com/gpu requests. Time-slicing shares one physical GPU, so these are reservations only, not per-pod usage.",
+          "id": 15,
+          "gridPos": {
+            "x": 6,
+            "y": 22,
+            "w": 6,
+            "h": 4
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
           "type": "table",
-          "title": "Usage by model (range)",
+          "title": "Pods reserving GPU slices",
           "fieldConfig": {
             "defaults": {
               "custom": {
@@ -878,34 +979,9 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "unit": "short"
+              "noValue": "No pods reserve a GPU slice"
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": "Requests|Failed|Tokens"
-                },
-                "properties": [
-                  {
-                    "id": "decimals",
-                    "value": 0
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Mean duration"
-                },
-                "properties": [
-                  {
-                    "id": "unit",
-                    "value": "s"
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "options": {
             "showHeader": true,
@@ -917,30 +993,19 @@ data:
               ],
               "countRows": false,
               "fields": ""
-            },
-            "sortBy": [
-              {
-                "displayName": "Requests",
-                "desc": true
-              }
-            ]
+            }
           },
           "transformations": [
-            {
-              "id": "merge",
-              "options": {}
-            },
             {
               "id": "filterFieldsByName",
               "options": {
                 "include": {
                   "names": [
-                    "provider",
-                    "model",
-                    "Value #A",
-                    "Value #B",
-                    "Value #C",
-                    "Value #D"
+                    "namespace",
+                    "pod",
+                    "container",
+                    "node",
+                    "Value"
                   ]
                 }
               }
@@ -949,20 +1014,18 @@ data:
               "id": "organize",
               "options": {
                 "renameByName": {
-                  "provider": "Provider",
-                  "model": "Model",
-                  "Value #A": "Requests",
-                  "Value #B": "Failed",
-                  "Value #C": "Tokens",
-                  "Value #D": "Mean duration"
+                  "namespace": "Namespace",
+                  "pod": "Pod",
+                  "container": "Container",
+                  "node": "Node",
+                  "Value": "Slices reserved"
                 },
                 "indexByName": {
-                  "provider": 0,
-                  "model": 1,
-                  "Value #A": 2,
-                  "Value #B": 3,
-                  "Value #C": 4,
-                  "Value #D": 5
+                  "namespace": 0,
+                  "pod": 1,
+                  "container": 2,
+                  "node": 3,
+                  "Value": 4
                 },
                 "excludeByName": {}
               }
@@ -974,249 +1037,95 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total[$__range]))",
+              "expr": "sum by (namespace, pod, container, node) (kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"})",
               "refId": "A",
               "instant": true,
               "range": false,
               "format": "table"
+            }
+          ],
+          "description": "Kubernetes nvidia.com/gpu requests. Time-slicing shares one physical GPU, so these are reservations only, not per-pod usage.",
+          "id": 16,
+          "gridPos": {
+            "x": 12,
+            "y": 22,
+            "w": 12,
+            "h": 6
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Slices reserved over time",
+          "maxDataPoints": 500,
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 10,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisSoftMin": 0,
+                "stacking": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "calcs": [
+                "lastNotNull",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"})",
+              "refId": "A",
+              "legendFormat": "{{namespace}}",
+              "range": true
             },
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (provider, model) (increase(cliproxy_requests_total{status!~\"(?i)2..|ok|success|succeeded\"}[$__range]) or increase(cliproxy_requests_total{status=~\"(?i)2..|ok|success|succeeded\"}[$__range]) * 0)",
+              "expr": "sum(kube_node_status_allocatable{resource=\"nvidia_com_gpu\"})",
               "refId": "B",
-              "instant": true,
-              "range": false,
-              "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_tokens_total{type=\"total\"}[$__range]))",
-              "refId": "C",
-              "instant": true,
-              "range": false,
-              "format": "table"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider, model) (increase(cliproxy_request_duration_seconds_sum[$__range])) / sum by (provider, model) (increase(cliproxy_request_duration_seconds_count[$__range]))",
-              "refId": "D",
-              "instant": true,
-              "range": false,
-              "format": "table"
+              "legendFormat": "allocatable",
+              "range": true
             }
           ],
-          "id": 12,
+          "description": "Kubernetes nvidia.com/gpu requests. Time-slicing shares one physical GPU, so these are reservations only, not per-pod usage.",
+          "id": 17,
           "gridPos": {
             "x": 0,
-            "y": 21,
+            "y": 28,
             "w": 24,
-            "h": 9
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Mean request duration",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (provider) (rate(cliproxy_request_duration_seconds_sum[$__rate_interval])) / sum by (provider) (rate(cliproxy_request_duration_seconds_count[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{provider}}",
-              "range": true
-            }
-          ],
-          "description": "Mean only; the exporter has no histogram buckets.",
-          "id": 13,
-          "gridPos": {
-            "x": 0,
-            "y": 30,
-            "w": 8,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Exporter polls",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "line",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No data - exporter not reporting"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "lastNotNull",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (result) (rate(cliproxy_exporter_polls_total[$__rate_interval]))",
-              "refId": "A",
-              "legendFormat": "{{result}}",
-              "range": true
-            }
-          ],
-          "description": "Usage-queue polls per second. Failures or gaps mean usage for that window may be missing.",
-          "id": 14,
-          "gridPos": {
-            "x": 8,
-            "y": 30,
-            "w": 8,
-            "h": 8
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Invalid usage records",
-          "maxDataPoints": 500,
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "custom": {
-                "drawStyle": "bars",
-                "lineWidth": 1,
-                "fillOpacity": 10,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisSoftMin": 0,
-                "stacking": {
-                  "mode": "none",
-                  "group": "A"
-                }
-              },
-              "color": {
-                "mode": "palette-classic"
-              },
-              "noValue": "No invalid records"
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true,
-              "calcs": [
-                "sum"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum by (reason) (increase(cliproxy_exporter_invalid_records_total[$__rate_interval])) > 0",
-              "refId": "A",
-              "legendFormat": "{{reason}}",
-              "range": true
-            }
-          ],
-          "description": "Queue records the exporter rejected (bad fields, overflow, or labels that looked like secrets).",
-          "id": 15,
-          "gridPos": {
-            "x": 16,
-            "y": 30,
-            "w": 8,
-            "h": 8
+            "h": 7
           },
           "datasource": {
             "type": "prometheus",
@@ -1228,8 +1137,8 @@ data:
       "schemaVersion": 39,
       "tags": [
         "homeops",
-        "ai",
-        "cliproxy"
+        "gpu",
+        "nvidia"
       ],
       "templating": {
         "list": []
@@ -1240,8 +1149,8 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "CLI Proxy - Usage & Reliability",
-      "uid": "ai-agents",
+      "title": "GPU",
+      "uid": "gpu",
       "version": 1,
       "weekStart": ""
     }

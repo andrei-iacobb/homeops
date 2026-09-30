@@ -1,0 +1,16 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: homeassistant-metrics
+  labels:
+    app: homeassistant-metrics
+spec:
+  selector:
+    matchLabels:
+      app: homeassistant-metrics
+  endpoints:
+  - port: metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    path: /metrics

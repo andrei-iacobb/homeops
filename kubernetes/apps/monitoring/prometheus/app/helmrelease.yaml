@@ -140,11 +140,13 @@ spec:
       enabled: true
     grafana:
       enabled: true
+      defaultDashboardsEnabled: false
       admin:
         existingSecret: grafana-admin
         userKey: admin-user
         passwordKey: admin-password
       env:
+        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /tmp/dashboards/home-overview.json
         GF_SECURITY_ALLOW_EMBEDDING: "true"
         GF_SECURITY_COOKIE_SAMESITE: "none"
         GF_SECURITY_COOKIE_SECURE: "true"
@@ -159,8 +161,12 @@ spec:
         GF_AUTH_PROXY_AUTO_SIGN_UP: "true"
         GF_AUTH_PROXY_HEADERS: "Email:X-authentik-email Name:X-authentik-name"
         GF_USERS_AUTO_ASSIGN_ORG_ROLE: Admin
+      deleteDatasources:
+        - name: prometheus
+          orgId: 1
       additionalDataSources:
         - name: Loki
+          uid: loki
           type: loki
           access: proxy
           url: http://loki.monitoring.svc.cluster.local:3100
@@ -187,21 +193,7 @@ spec:
             limits:
               memory: 128Mi
         datasources:
-          enabled: false
-      dashboards:
-        default:
-          node-exporter-full:
-            gnetId: 1860
-            revision: 37
-            datasource: Prometheus
-          kubernetes-views-pods:
-            gnetId: 15760
-            revision: 39
-            datasource: Prometheus
-          kubernetes-views-global:
-            gnetId: 15757
-            revision: 43
-            datasource: Prometheus
+          enabled: true
       resources:
         requests:
           cpu: 100m

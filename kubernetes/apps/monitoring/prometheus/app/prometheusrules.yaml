@@ -96,7 +96,7 @@ spec:
 
         - alert: DeploymentReplicasMismatch
           expr: |
-            kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+            kube_deployment_spec_replicas != kube_deployment_status_replicas_available
           for: 15m
           labels:
             severity: warning
@@ -195,20 +195,141 @@ spec:
       rules:
         - alert: FluxReconciliationFailure
           expr: |
-            gotk_reconcile_condition{type="Ready",status="False"} == 1
+            flux_resource_info{ready="False",suspended="False"} == 1
           for: 15m
           labels:
             severity: warning
           annotations:
             summary: "Flux reconciliation failing for {{ $labels.kind }}/{{ $labels.name }}"
-            description: "{{ $labels.kind }} {{ $labels.name }} in namespace {{ $labels.namespace }} has been failing reconciliation for 15 minutes."
+            description: "{{ $labels.kind }} {{ $labels.name }} in namespace {{ $labels.exported_namespace }} has been failing reconciliation for 15 minutes."
 
         - alert: FluxSuspended
           expr: |
-            gotk_suspend_status == 1
+            flux_resource_info{suspended="True"} == 1
           for: 24h
           labels:
             severity: info
           annotations:
             summary: "Flux resource {{ $labels.kind }}/{{ $labels.name }} is suspended"
             description: "Resource has been suspended for more than 24 hours. Was this intentional?"
+    - name: hardware-monitoring
+      rules:
+      - alert: ServerTemperatureCritical
+        expr: (ilo_chassis_temperature_current >= ilo_chassis_temperature_critical) and (ilo_chassis_temperature_critical > 0)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Server sensor {{ $labels.name }} crossed its critical temperature
+          description: Check cooling and inlet temperature on {{ $labels.job }}.
+      - alert: ServerHardwareUnhealthy
+        expr: (ilo_chassis_fan_healthy == 0) or (ilo_power_supply_healthy == 0) or (ilo_storage_disk_healthy
+          == 0) or (ilo_storage_disk_failure_predicted == 1)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Server hardware unhealthy on {{ $labels.job }}
+          description: Check the iLO hardware dashboard and component {{ $labels.name
+            }}.
+      - alert: GPUOverheating
+        expr: nvidia_smi_temperature_gpu > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: GPU temperature exceeds 85 C on {{ $labels.node }}
+          description: Check GPU fan, airflow and running workloads.
+      - alert: GPUCollectionFailed
+        expr: nvidia_smi_last_collect_success == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: GPU exporter cannot collect driver metrics
+          description: Exporter is reachable but NVIDIA driver telemetry collection failed.
+      - alert: TrueNASPoolAlmostFull
+        expr: truenas_pool_free_percent < 10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: TrueNAS pool {{ $labels.host }}/{{ $labels.pool }} has less than 10%
+            free
+          description: Review capacity and snapshots before the pool fills.
+      - alert: TrueNASPoolUnhealthy
+        expr: truenas_pool_healthy == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: TrueNAS pool {{ $labels.host }}/{{ $labels.pool }} is unhealthy
+          description: TrueNAS can report ONLINE while detecting corrupt data. Check the
+            pool health and status code; do not infer health from free capacity.
+      - alert: TrueNASPoolTelemetryMissing
+        expr: (truenas_pool_scrape_success == 0) or absent(truenas_pool_scrape_success)
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: TrueNAS pool health telemetry is unavailable
+          description: Exporter reachability does not prove the pool API works. Check API
+            access before assuming storage is healthy.
+    - name: monitoring-coverage
+      rules:
+      - alert: GPUExporterMissing
+        expr: absent(up{job="gpu-exporter"}) and on() (count(kube_node_status_allocatable{resource="nvidia_com_gpu"})
+          > 0)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: GPU monitoring target is missing
+          description: A GPU node is registered but Prometheus has no GPU exporter target.
+      - alert: CLIProxyExporterMissing
+        expr: absent(up{job="cliproxy-exporter"})
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: CLI Proxy usage monitoring target is missing
+          description: Check exporter deployment and ServiceMonitor.
+      - alert: CLIProxyUsageCollectionFailed
+        expr: (cliproxy_exporter_up == 0) or (time() - cliproxy_exporter_last_success_timestamp_seconds
+          > 90)
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: CLI Proxy usage collection is failing
+          description: The upstream queue expires quickly; check exporter connectivity
+            and management authorization.
+      - alert: HomeAssistantBridgeFailed
+        expr: (homelab_bridge_up == 0) or (time() - homelab_bridge_last_successful_publish_timestamp_seconds > 90) or (homeassistant_api_up == 0) or (absent(up{job="homeassistant-metrics"}))
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Home Assistant monitoring bridge is unavailable
+          description: Native hardware sensors expire when publication stops. Check the
+            bridge and HA API.
+      - alert: BackupCronJobStale
+        expr: (time() - kube_cronjob_status_last_successful_time{namespace="databases",cronjob="pg-logical-backup"}
+          > 36*3600) or (kube_cronjob_info{namespace="databases",cronjob="pg-logical-backup"}
+          unless on(namespace,cronjob) kube_cronjob_status_last_successful_time)
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: PostgreSQL logical backup has no recent successful run
+          description: Check the database backup job. The dashboard shows the last successful
+            backup age.
+      - alert: VolSyncBackupOutOfSync
+        expr: volsync_volume_out_of_sync{role="source"} > 0
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: VolSync backup {{ $labels.obj_namespace }}/{{ $labels.obj_name }} is
+            behind
+          description: Check the replication source and restic backup destination.
