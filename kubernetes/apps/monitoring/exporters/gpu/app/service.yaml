@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gpu-exporter
+  labels:
+    app: gpu-exporter
+spec:
+  selector:
+    app: gpu-exporter
+  ports:
+  - name: metrics
+    port: 9835
+    targetPort: metrics

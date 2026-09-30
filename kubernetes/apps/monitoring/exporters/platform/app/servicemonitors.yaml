@@ -1,0 +1,69 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: loki
+spec:
+  namespaceSelector:
+    matchNames:
+    - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+      app.kubernetes.io/instance: loki
+  endpoints:
+  - port: http-metrics
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 10s
+    relabelings:
+    - sourceLabels:
+      - __meta_kubernetes_service_name
+      regex: loki
+      action: keep
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: alloy
+spec:
+  namespaceSelector:
+    matchNames:
+    - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+      app.kubernetes.io/instance: alloy
+  endpoints:
+  - port: http-metrics
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 10s
+    relabelings:
+    - sourceLabels:
+      - __meta_kubernetes_service_name
+      regex: alloy
+      action: keep
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: qdrant
+spec:
+  namespaceSelector:
+    matchNames:
+    - databases
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qdrant
+      app.kubernetes.io/instance: qdrant
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 10s
+    relabelings:
+    - sourceLabels:
+      - __meta_kubernetes_service_name
+      regex: qdrant
+      action: keep
