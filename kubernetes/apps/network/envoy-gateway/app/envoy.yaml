@@ -194,6 +194,14 @@ spec:
     xForwardedFor:
       trustedCIDRs:
         - "10.67.0.0/16"
+  headers:
+    # Only Authentik may set identity headers: drop any a client sends before
+    # ext_authz runs (API skip paths would otherwise pass them to apps that
+    # trust them, e.g. grafana auth.proxy and paperless remote user).
+    earlyRequestHeaders:
+      removeOnMatch:
+        - type: Prefix
+          value: x-authentik-
   http2:
     onInvalidMessage: TerminateStream
   http3: {}
