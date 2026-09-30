@@ -1,0 +1,17 @@
+---
+# ClusterIP only: scraped in-cluster by Prometheus, no HTTPRoute.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cliproxy-exporter
+  labels:
+    app: cliproxy-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: cliproxy-exporter
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: metrics
+      protocol: TCP

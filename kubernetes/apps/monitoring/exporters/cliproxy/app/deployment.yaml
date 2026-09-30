@@ -1,0 +1,114 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cliproxy-metrics-data
+  labels:
+    app: cliproxy-exporter
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: openebs-hostpath
+  resources:
+    requests:
+      storage: 256Mi
+---
+# Single consumer of CLIProxy's destructive usage queue: one replica, Recreate,
+# so two pods never pop the same queue. Counters live in SQLite on the PVC.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cliproxy-exporter
+  labels:
+    app: cliproxy-exporter
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cliproxy-exporter
+  template:
+    metadata:
+      labels:
+        app: cliproxy-exporter
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: cliproxy-exporter
+          image: python:3.14.7-slim@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d
+          command: ["python3", "-I", "/app/cliproxy-exporter.py"]
+          ports:
+            - name: metrics
+              containerPort: 9100
+          env:
+            - name: CLIPROXY_URL
+              value: "http://cliproxy.code.svc.cluster.local:8317"
+            - name: CLIPROXY_MANAGEMENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cliproxy-metrics-secret
+                  key: management-key
+            - name: STATE_DB
+              value: "/data/cliproxy-metrics.db"
+            - name: POLL_SECONDS
+              value: "10"
+            - name: BATCH_COUNT
+              value: "200"
+            - name: MAX_SERIES_PAIRS
+              value: "200"
+            - name: LISTEN_PORT
+              value: "9100"
+            - name: TMPDIR
+              value: "/tmp"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: app
+          configMap:
+            name: cliproxy-exporter-code
+        - name: data
+          persistentVolumeClaim:
+            claimName: cliproxy-metrics-data
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

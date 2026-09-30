@@ -1,0 +1,15 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cliproxy-exporter
+  labels:
+    app: cliproxy-exporter
+spec:
+  selector:
+    matchLabels:
+      app: cliproxy-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
