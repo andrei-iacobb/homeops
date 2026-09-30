@@ -30,6 +30,9 @@ spec:
             env:
               TZ: Europe/London
               RADARR__PORT: &port 7878
+              # Login is handled by Authentik forward auth; the API still needs the key.
+              RADARR__AUTH__METHOD: External
+              RADARR__AUTH__REQUIRED: DisabledForLocalAddresses
             envFrom:
               - secretRef:
                   name: radarr-secret

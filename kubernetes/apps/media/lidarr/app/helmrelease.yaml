@@ -30,6 +30,9 @@ spec:
             env:
               TZ: Europe/London
               LIDARR__PORT: &port 8686
+              # Login is handled by Authentik forward auth; the API still needs the key.
+              LIDARR__AUTH__METHOD: External
+              LIDARR__AUTH__REQUIRED: DisabledForLocalAddresses
             envFrom:
               - secretRef:
                   name: lidarr-secret

@@ -30,6 +30,9 @@ spec:
             env:
               TZ: Europe/London
               PROWLARR__PORT: &port 9696
+              # Login is handled by Authentik forward auth; the API still needs the key.
+              PROWLARR__AUTH__METHOD: External
+              PROWLARR__AUTH__REQUIRED: DisabledForLocalAddresses
             envFrom:
               - secretRef:
                   name: prowlarr-secret

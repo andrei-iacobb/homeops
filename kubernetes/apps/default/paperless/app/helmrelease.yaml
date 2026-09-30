@@ -19,6 +19,10 @@ spec:
               tag: 3.2.1
             env:
               PAPERLESS_URL: https://paperless.iacob.uk
+              # UI login via Authentik forward auth; API keeps token auth.
+              PAPERLESS_ENABLE_HTTP_REMOTE_USER: "true"
+              PAPERLESS_HTTP_REMOTE_USER_HEADER_NAME: HTTP_X_AUTHENTIK_USERNAME
+              PAPERLESS_LOGOUT_REDIRECT_URL: https://authentik.iacob.uk/outpost.goauthentik.io/sign_out
               PAPERLESS_PORT: &port 8000
               PAPERLESS_TIME_ZONE: Europe/London
               PAPERLESS_WEBSERVER_WORKERS: "2"

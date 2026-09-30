@@ -30,6 +30,9 @@ spec:
             env:
               TZ: Europe/London
               SONARR__PORT: &port 8989
+              # Login is handled by Authentik forward auth; the API still needs the key.
+              SONARR__AUTH__METHOD: External
+              SONARR__AUTH__REQUIRED: DisabledForLocalAddresses
             envFrom:
               - secretRef:
                   name: sonarr-secret

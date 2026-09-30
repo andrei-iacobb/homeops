@@ -25,11 +25,7 @@ spec:
               PGID: "1000"
               DEFAULT_WORKSPACE: /config/workspace
               PROXY_DOMAIN: code.iacob.uk
-              PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: code-server-secret
-                    key: PASSWORD
+              # No PASSWORD: Authentik forward auth is the only login.
               SUDO_PASSWORD:
                 valueFrom:
                   secretKeyRef:

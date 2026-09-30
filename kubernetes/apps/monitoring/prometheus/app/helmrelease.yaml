@@ -151,6 +151,14 @@ spec:
         GF_AUTH_ANONYMOUS_ENABLED: "true"
         GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
         GF_AUTH_ANONYMOUS_HIDE_VERSION: "true"
+        # Signed in by Authentik forward auth (headers can only come from it,
+        # see the ClientTrafficPolicy in network/envoy-gateway).
+        GF_AUTH_PROXY_ENABLED: "true"
+        GF_AUTH_PROXY_HEADER_NAME: X-authentik-username
+        GF_AUTH_PROXY_HEADER_PROPERTY: username
+        GF_AUTH_PROXY_AUTO_SIGN_UP: "true"
+        GF_AUTH_PROXY_HEADERS: "Email:X-authentik-email Name:X-authentik-name"
+        GF_USERS_AUTO_ASSIGN_ORG_ROLE: Admin
       additionalDataSources:
         - name: Loki
           type: loki
