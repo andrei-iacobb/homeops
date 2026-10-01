@@ -10,3 +10,4 @@ resources:
   - ./zigbee.yaml
   - ./s1.yaml
   - ./sso-bypass.yaml
+  - ./devbox-apps.yaml
