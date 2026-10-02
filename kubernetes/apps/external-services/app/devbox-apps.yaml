@@ -46,6 +46,7 @@ spec:
       sectionName: https
   hostnames:
     - np.iacob.uk
+    - npdev.iacob.uk
   rules:
     - backendRefs:
         - name: devbox-apps
