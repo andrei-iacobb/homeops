@@ -20,5 +20,5 @@ spec:
           requestRedirect:
             path:
               type: ReplaceFullPath
-              replaceFullPath: /s/holiday-photos-2026
+              replaceFullPath: /s/kos
             statusCode: 302
