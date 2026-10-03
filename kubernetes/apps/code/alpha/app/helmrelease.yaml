@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/dizys/t3code-docker
-              tag: 0.6.1-full
+              tag: 0.7.0-full
             # The image ships t3's resource-monitor sidecar without the exec
             # bit, so the server cannot report cpu/memory and the client-side
             # load balancing has nothing to go on. Fix the mode, then run the
