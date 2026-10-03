@@ -21,6 +21,7 @@ data:
       map $arg_slug $upload_status {
         default duplicate;
         holiday-photos-2026 created;
+        greece-2026 created;
       }
 
       map $http_upgrade $connection_upgrade {
