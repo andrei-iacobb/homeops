@@ -2,9 +2,33 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: planum
+  name: planum-migrations
 spec:
   interval: 1h
+  retryInterval: 1m
+  path: ./kubernetes/apps/default/planum/migrations
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: default
+  timeout: 5m
+  healthChecks:
+    - apiVersion: batch/v1
+      kind: Job
+      name: planum-migrate-4125db2f6edf
+      namespace: default
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: planum
+spec:
+  dependsOn:
+    - name: planum-migrations
+  interval: 1h
+  retryInterval: 1m
   path: ./kubernetes/apps/default/planum/app
   prune: true
   sourceRef:
@@ -12,4 +36,27 @@ spec:
     name: flux-system
     namespace: flux-system
   targetNamespace: default
-  wait: false
+  timeout: 5m
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: planum
+      namespace: default
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: planum-public
+spec:
+  dependsOn:
+    - name: planum
+  interval: 1h
+  retryInterval: 1m
+  path: ./kubernetes/apps/default/planum/public
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: default
+  timeout: 5m

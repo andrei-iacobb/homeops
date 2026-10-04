@@ -2,16 +2,16 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: planum
+  name: planum-public
   labels:
     app.kubernetes.io/name: planum
 spec:
   parentRefs:
-    - name: envoy-internal
+    - name: envoy-external
       namespace: network
       sectionName: https
   hostnames:
-    - planum.iacob.uk
+    - planum.iacob.co.uk
   rules:
     - matches:
         - path:
@@ -28,5 +28,5 @@ spec:
                 value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
             remove: [x-envoy-external-address, x-real-ip, forwarded, cf-connecting-ip]
       backendRefs:
-        - name: planum
+        - name: planum-public
           port: 4050

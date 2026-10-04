@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: planum
   namespace: default
+  annotations:
+    reloader.stakater.com/auto: "true"
   labels:
     app.kubernetes.io/name: planum
 spec:
@@ -22,18 +24,34 @@ spec:
         app.kubernetes.io/controller: planum
         app.kubernetes.io/instance: planum
         app.kubernetes.io/name: planum
-      annotations:
-        reloader.stakater.com/auto: "true"
+        planum.iacob.co.uk/public-api: "v1"
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: ghcr-pull-secret
       containers:
         - name: planum
-          image: ghcr.io/andrei-iacobb/planum:latest
+          image: ghcr.io/andrei-iacobb/planum@sha256:4125db2f6edf4770b7f2f6753ac1c67f09b47ea1ffa626f8594204136380522e
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           envFrom:
             - secretRef:
                 name: planum-secret
+          env:
+            # Both routes overwrite XFF with Envoy's verified downstream address.
+            - name: TRUSTED_PROXY_HOPS
+              value: "1"
           ports:
             - name: http
               containerPort: 4050
@@ -46,7 +64,7 @@ spec:
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
