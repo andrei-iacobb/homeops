@@ -1,0 +1,31 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: planum-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: planum
+  ingress:
+    # Only these gateways normalize the client address used for auth throttling.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            app.kubernetes.io/name: envoy
+            app.kubernetes.io/component: proxy
+          matchExpressions:
+            - key: gateway.envoyproxy.io/owning-gateway-name
+              operator: In
+              values: [envoy-internal, envoy-external]
+      toPorts:
+        - ports:
+            - port: "4050"
+              protocol: TCP
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "4050"
+              protocol: TCP
