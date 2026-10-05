@@ -37,7 +37,11 @@ def main():
     for source, relative in repositories():
         destination = EXPORT / relative
         destination.mkdir(parents=True, exist_ok=True)
-        if not os.path.ismount(destination):
+        mounted = subprocess.run(
+            ['findmnt', '--mountpoint', str(destination)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ).returncode == 0
+        if not mounted:
             subprocess.run(['mount', '--bind', str(source), str(destination)], check=True)
             subprocess.run(['mount', '-o', 'remount,bind,ro', str(destination)], check=True)
             count += 1
