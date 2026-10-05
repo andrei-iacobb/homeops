@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expose live devbox Git checkouts through a read-only NFS directory."""
+"""Expose live devbox Git checkouts through a writable NFS directory."""
 
 import os
 from pathlib import Path
@@ -44,8 +44,8 @@ def main():
         if not mounted:
             subprocess.run(['mount', '--bind', str(source), str(destination)], check=True)
             subprocess.run(['mount', '--make-private', str(destination)], check=True)
-            subprocess.run(['mount', '-o', 'remount,bind,ro', str(destination)], check=True)
             count += 1
+        subprocess.run(['mount', '-o', 'remount,bind,rw', str(destination)], check=True)
     if count:
         subprocess.run(['exportfs', '-ra'], check=True)
     print(f'Added {count} live repository mounts.', flush=True)
