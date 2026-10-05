@@ -48,7 +48,6 @@ kind: Kustomization
 metadata:
   name: planum-public
 spec:
-  suspend: true
   dependsOn:
     - name: planum
   interval: 1h
