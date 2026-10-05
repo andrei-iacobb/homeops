@@ -1,0 +1,2 @@
+# Only the Kubernetes node hosting code-server can read the repo directory.
+/srv/code-repos 192.168.1.85(ro,sync,fsid=0,crossmnt,no_subtree_check,root_squash)

@@ -1,0 +1,14 @@
+[Unit]
+Description=Expose devbox Git repositories for code.iacob.uk
+After=local-fs.target nfs-server.service
+Requires=nfs-server.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/code-repos
+TimeoutStartSec=5min
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Discover new devbox repositories for code.iacob.uk
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=5min
+Unit=code-repos.service
+
+[Install]
+WantedBy=timers.target

@@ -68,6 +68,8 @@ spec:
                 drop: ["ALL"]
                 add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
     defaultPodOptions:
+      nodeSelector:
+        kubernetes.io/hostname: home-cluster
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
@@ -93,6 +95,34 @@ spec:
         existingClaim: code-server-workspace
         globalMounts:
           - path: /config/workspace
+      devbox-repos:
+        type: nfs
+        server: 192.168.1.216
+        path: /
+        globalMounts:
+          - path: /config/workspace/devbox
+            readOnly: true
+      fleet-alpha:
+        type: hostPath
+        hostPath: /var/openebs/local/pvc-0ab3d8e4-1a39-4f5c-a71a-d69aa837e729
+        hostPathType: Directory
+        globalMounts:
+          - path: /config/workspace/fleet/alpha
+            readOnly: true
+      fleet-beta:
+        type: hostPath
+        hostPath: /var/openebs/local/pvc-fef52ba2-b493-406e-b40c-74bf53ff1531
+        hostPathType: Directory
+        globalMounts:
+          - path: /config/workspace/fleet/beta
+            readOnly: true
+      fleet-gamma:
+        type: hostPath
+        hostPath: /var/openebs/local/pvc-f872100d-f32b-408a-85cc-f4b5fde4ab0c
+        hostPathType: Directory
+        globalMounts:
+          - path: /config/workspace/fleet/gamma
+            readOnly: true
       init-scripts:
         type: configMap
         name: code-server-init
