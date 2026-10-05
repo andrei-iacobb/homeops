@@ -29,3 +29,17 @@ Verify live signup remains closed, existing login works, legacy JWTs fail, logou
 If import/rollout fails, retain the paused backend and stopped old replicas until the cause is resolved. Do not re-enable a publicly accessible old backend with stale password hashes after Better Auth password changes. Prefer a forward fix.
 
 Do not use a full Git revert of this cutover as an application rollback: it would restore the old public Service selector as well as the old image and could publicly expose custom auth. Preserve the `better-auth-v1` public selector and keep routing closed while resolving a failed release.
+
+## Registration control
+
+From your authenticated homeops checkout, run:
+
+```sh
+mise run planum:registration on
+mise run planum:registration off
+mise run planum:registration status
+```
+
+The command commits `REGISTRATION_ENABLED` in `app/deployment.yaml`, pushes main, reconciles Flux and waits for the backend rollout. It uses a temporary clean clone, preserving your local edits. Opening registration lets people create accounts with their own email and password. Closing it blocks new accounts; existing accounts can still sign in. It requires your existing Git push and Kubernetes access. A concurrent main update rejects the push; rerun rather than force-pushing.
+
+You can also change the `REGISTRATION_ENABLED` YAML value to `"true"` or `"false"` and publish normally. The backend reads it at startup, so a rollout is required. A direct pod environment edit is overwritten by Flux; keep the chosen state in Git. The migration Job's registration setting does not control the serving backend.

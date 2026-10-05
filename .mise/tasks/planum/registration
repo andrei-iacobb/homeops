@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+#MISE description="Enable, disable, or inspect Planum registration (GitOps + rollout)"
+"""mise run planum:registration on|off|status
+
+Uses the caller's existing Git and Kubernetes authentication. Changes a clean
+temporary checkout, preserving local homeops edits. Flux owns the final state.
+"""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import tempfile
+
+REMOTE = "https://git.iacob.co.uk/andrei/homeops.git"
+MANIFEST = "kubernetes/apps/default/planum/app/deployment.yaml"
+FLAG = re.compile(r'(\s+- name: REGISTRATION_ENABLED\n\s+value: ")(true|false)(")')
+
+
+def run(*args, cwd=None, capture=False):
+    return subprocess.run(args, cwd=cwd, check=True, text=True,
+                          stdout=subprocess.PIPE if capture else None,
+                          timeout=240).stdout
+
+
+def deployment():
+    return json.loads(run("kubectl", "-n", "default", "get", "deployment",
+                          "planum", "-o", "json", capture=True))
+
+
+def registration_value(state):
+    container = next(item for item in state["spec"]["template"]["spec"]["containers"]
+                     if item["name"] == "planum")
+    return next(item["value"] for item in container.get("env", [])
+                if item["name"] == "REGISTRATION_ENABLED")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("state", choices=("on", "off", "status"))
+    args = parser.parse_args()
+    current = deployment()
+    if args.state == "status":
+        enabled = registration_value(current) == "true"
+        ready = current.get("status", {}).get("readyReplicas", 0)
+        wanted = current["spec"].get("replicas", 1)
+        print(f"Registration: {'on' if enabled else 'off'}; ready replicas: {ready}/{wanted}")
+        return
+
+    desired = "true" if args.state == "on" else "false"
+    with tempfile.TemporaryDirectory(prefix="planum-registration-") as directory:
+        checkout = Path(directory) / "homeops"
+        run("git", "clone", "--quiet", "--depth=1", "--branch=main", REMOTE, str(checkout))
+        path = checkout / MANIFEST
+        source = path.read_text()
+        matches = list(FLAG.finditer(source))
+        if len(matches) != 1:
+            raise RuntimeError("Expected exactly one Planum registration setting; no changes pushed")
+        if matches[0].group(2) != desired:
+            path.write_text(FLAG.sub(lambda match: match.group(1) + desired + match.group(3), source))
+            run("git", "diff", "--check", cwd=checkout)
+            run("git", "add", MANIFEST, cwd=checkout)
+            run("git", "commit", "--quiet", "-m", f"Turn Planum registration {args.state}", cwd=checkout)
+            # A concurrent main update rejects this push; never overwrite other work.
+            run("git", "push", "origin", "HEAD:refs/heads/main", cwd=checkout)
+        else:
+            print(f"Git already sets registration {args.state}; ensuring live state converges.")
+
+    run("flux", "reconcile", "source", "git", "flux-system", "-n", "flux-system", "--timeout=60s")
+    run("flux", "reconcile", "kustomization", "cluster-apps", "-n", "flux-system", "--timeout=60s")
+    run("flux", "reconcile", "kustomization", "planum", "-n", "default", "--timeout=180s")
+    run("kubectl", "-n", "default", "rollout", "status", "deployment/planum", "--timeout=180s")
+    current = deployment()
+    if registration_value(current) != desired:
+        raise RuntimeError("Live registration setting differs from requested state")
+    print(f"Registration is {args.state}. Existing accounts can still sign in.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, RuntimeError,
+            KeyError, StopIteration) as error:
+        raise SystemExit("Registration toggle failed. Git was never force-pushed; check live status and rerun. "
+                         + (str(error) if isinstance(error, RuntimeError) else type(error).__name__))
