@@ -6,7 +6,11 @@ metadata:
   name: default-ingress
   namespace: default
 spec:
-  endpointSelector: {}
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: NotIn
+        values: [planum]
   ingress:
     # Envoy Gateway ingress (HTTPRoutes - both internal and external)
     - fromEndpoints:
