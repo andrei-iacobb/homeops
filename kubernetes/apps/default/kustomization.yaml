@@ -44,6 +44,7 @@ resources:
   - ./sftpgo/ks.yaml
   - ./glance/ks.yaml
   - ./holden-systems/ks.yaml
+  - ./burthorpe-pooch-parlour/ks.yaml
   - ./actual-budget/ks.yaml
   - ./syncthing/ks.yaml
   - ./firefly-iii/ks.yaml

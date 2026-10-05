@@ -382,6 +382,11 @@ data:
           icon: mdi-web
           href: https://andrei.iacob.co.uk
           description: Personal website
+      - Burthorpe Pooch Parlour:
+          icon: mdi-web
+          href: https://bpp.iacobapp.dev
+          description: Dog grooming website
+          siteMonitor: http://burthorpe-pooch-parlour.default.svc.cluster.local:3000/healthz
       - NeatPlan:
           icon: mdi-clipboard-list
           href: https://neatplan.app

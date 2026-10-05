@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: burthorpe-pooch-parlour
+spec:
+  selector:
+    app.kubernetes.io/name: burthorpe-pooch-parlour
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
