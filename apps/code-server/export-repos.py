@@ -43,6 +43,7 @@ def main():
         ).returncode == 0
         if not mounted:
             subprocess.run(['mount', '--bind', str(source), str(destination)], check=True)
+            subprocess.run(['mount', '--make-private', str(destination)], check=True)
             subprocess.run(['mount', '-o', 'remount,bind,ro', str(destination)], check=True)
             count += 1
     if count:
