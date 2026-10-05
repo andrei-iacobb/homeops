@@ -185,11 +185,6 @@ data:
               href: https://github.com/andrei-iacobb
   services.yaml: |
     - Code:
-      - Mac workspace:
-          icon: mdi-laptop
-          href: https://mac.iacob.uk
-          description: T3 Code on Andrei's Mac - via Tailscale
-          siteMonitor: https://mac.iacob.uk/.well-known/t3/environment
       - Alpha workspace:
           icon: mdi-code-braces
           href: https://alpha.iacob.uk
