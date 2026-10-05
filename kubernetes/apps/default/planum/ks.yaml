@@ -17,7 +17,7 @@ spec:
   healthChecks:
     - apiVersion: batch/v1
       kind: Job
-      name: planum-migrate-4125db2f6edf
+      name: planum-migrate-24edf2dbafa9
       namespace: default
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1

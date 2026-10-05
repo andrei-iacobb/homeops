@@ -24,7 +24,7 @@ spec:
         app.kubernetes.io/controller: planum
         app.kubernetes.io/instance: planum
         app.kubernetes.io/name: planum
-        planum.iacob.co.uk/public-api: "v1"
+        planum.iacob.co.uk/public-api: "better-auth-v1"
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -34,10 +34,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       imagePullSecrets:
-        - name: ghcr-pull-secret
+        - name: git-iacob-pull-secret
       containers:
         - name: planum
-          image: ghcr.io/andrei-iacobb/planum@sha256:4125db2f6edf4770b7f2f6753ac1c67f09b47ea1ffa626f8594204136380522e
+          image: git.iacob.co.uk/andrei/planum@sha256:24edf2dbafa90553858bd65319d51b4f4418d094589ea44fa707754dc6f8c3d2
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -49,6 +49,16 @@ spec:
             - secretRef:
                 name: planum-secret
           env:
+            # Reuse the existing encrypted key without changing SOPS authenticated paths.
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: planum-secret
+                  key: JWT_SECRET
+            - name: BETTER_AUTH_URL
+              value: "https://planum.iacob.co.uk"
+            - name: REGISTRATION_ENABLED
+              value: "false"
             # Both routes overwrite XFF with Envoy's verified downstream address.
             - name: TRUSTED_PROXY_HOPS
               value: "1"

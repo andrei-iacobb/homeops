@@ -6,8 +6,8 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: planum
-    # Older backends never carry this label, including during rollback or a failed rollout.
-    planum.iacob.co.uk/public-api: "v1"
+    # Only the Better Auth backend carries this value; legacy auth cannot receive public traffic.
+    planum.iacob.co.uk/public-api: "better-auth-v1"
   ports:
     - name: http
       port: 4050
