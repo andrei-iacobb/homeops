@@ -27,17 +27,19 @@ spec:
             image:
               repository: ghcr.io/dizys/t3code-docker
               tag: 0.9.0-full
-            # The image ships t3's resource-monitor sidecar without the exec
-            # bit, so the server cannot report cpu/memory and the client-side
-            # load balancing has nothing to go on. Fix the mode, then run the
-            # image's normal entrypoint.
+            # Match the desktop nightly until the image includes this server version.
+            # Install as root outside persistent user state on every pod recreation.
             command:
               - /usr/bin/tini
               - --
               - bash
               - -c
               - |
-                chmod 755 /opt/npm-global/lib/node_modules/t3/dist/resource-monitor/linux-x64/t3-resource-monitor
+                set -euo pipefail
+                npm install --no-audit --no-fund --ignore-scripts --prefix /opt/t3-nightly-install @t3code/t3-linux-x64@0.0.46-nightly.20261005.2667
+                cp -a /opt/t3-nightly-install/node_modules/@t3code/t3-linux-x64/. /opt/t3/
+                chmod -R go-w /opt/t3
+                chmod 755 /opt/t3/t3 /opt/t3/resource-monitor/linux-x64/t3-resource-monitor
                 exec /usr/local/bin/entrypoint.sh t3-serve
             env:
               TZ: Europe/London
