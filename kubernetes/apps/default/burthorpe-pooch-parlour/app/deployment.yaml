@@ -18,6 +18,8 @@ spec:
       labels:
         app.kubernetes.io/name: burthorpe-pooch-parlour
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: home-cluster
       automountServiceAccountToken: false
       imagePullSecrets:
         - name: ghcr-pull-secret
@@ -34,17 +36,26 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
             periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 25m
