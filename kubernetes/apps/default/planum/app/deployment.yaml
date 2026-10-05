@@ -58,7 +58,7 @@ spec:
             - name: BETTER_AUTH_URL
               value: "https://planum.iacob.co.uk"
             - name: REGISTRATION_ENABLED
-              value: "false"
+              value: "true"
             # Both routes overwrite XFF with Envoy's verified downstream address.
             - name: TRUSTED_PROXY_HOPS
               value: "1"
