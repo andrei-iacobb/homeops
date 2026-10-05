@@ -4,7 +4,6 @@ kind: Kustomization
 metadata:
   name: planum-migrations
 spec:
-  suspend: true
   interval: 1h
   retryInterval: 1m
   path: ./kubernetes/apps/default/planum/migrations
