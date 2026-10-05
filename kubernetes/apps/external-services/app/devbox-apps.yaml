@@ -47,6 +47,7 @@ spec:
   hostnames:
     - np.iacob.uk
     - npdev.iacob.uk
+    - mac.iacob.uk
   rules:
     - backendRefs:
         - name: devbox-apps
