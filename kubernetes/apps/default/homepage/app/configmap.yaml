@@ -502,10 +502,6 @@ data:
           icon: calibre.svg
           href: https://calibre-web.iacob.uk
           description: eBook library
-      - Lazylibrarian:
-          icon: lazylibrarian.png
-          href: https://lazylibrarian.iacob.uk
-          description: Book metadata
       - Tdarr:
           icon: tdarr.svg
           href: https://tdarr.iacob.uk

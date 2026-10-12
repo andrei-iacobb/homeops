@@ -22,7 +22,6 @@ resources:
   - ./sabnzbd/ks.yaml
   - ./overseerr/ks.yaml
   - ./calibre-web/ks.yaml
-  - ./lazylibrarian/ks.yaml
   - ./tdarr/ks.yaml
   - ./recyclarr/ks.yaml
   - ./recommendarr/ks.yaml

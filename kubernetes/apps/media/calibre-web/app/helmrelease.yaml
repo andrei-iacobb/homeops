@@ -11,12 +11,13 @@ spec:
   values:
     controllers:
       calibre-web:
-        strategy: RollingUpdate
+        # app.db is SQLite on an RWO volume; never run two pods against it.
+        strategy: Recreate
         containers:
           app:
             image:
-              repository: lscr.io/linuxserver/calibre-web
-              tag: 0.6.27
+              repository: crocodilestick/calibre-web-automated
+              tag: v4.0.8
             env:
               PUID:
                 valueFrom:
@@ -33,6 +34,8 @@ spec:
                   secretKeyRef:
                     name: calibre-web-secret
                     key: TZ
+              # Library and ingest live on NFS: no SQLite WAL, no recursive chown, polling watcher.
+              NETWORK_SHARE_MODE: "true"
             probes:
               liveness: &probes
                 enabled: true
@@ -46,6 +49,16 @@ spec:
                   timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: 8083
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 60
             securityContext:
               allowPrivilegeEscalation: true
               readOnlyRootFilesystem: false
@@ -84,7 +97,12 @@ spec:
         type: persistentVolumeClaim
         existingClaim: calibre-web-books
         globalMounts:
-          - path: /books
+          - path: /calibre-library
+      ingest:
+        type: persistentVolumeClaim
+        existingClaim: calibre-web-ingest
+        globalMounts:
+          - path: /cwa-book-ingest
     route:
       app:
         hostnames: ["calibre-web.iacob.uk"]

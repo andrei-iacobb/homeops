@@ -109,6 +109,17 @@ spec:
         existingClaim: readarr-books
         globalMounts:
           - path: /books
+      cwa-ingest:
+        type: persistentVolumeClaim
+        existingClaim: calibre-web-ingest
+        globalMounts:
+          - path: /cwa-ingest
+      scripts:
+        type: configMap
+        name: readarr-scripts
+        defaultMode: 0755
+        globalMounts:
+          - path: /scripts
     route:
       app:
         hostnames: ["readarr.iacob.uk"]

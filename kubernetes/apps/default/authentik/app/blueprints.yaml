@@ -34,13 +34,13 @@ data:
           # collectors and CLIs, not browsers.
           skip_path_regex: |
             ^(https?:)?//(sonarr|radarr|lidarr|readarr|prowlarr)\.iacob\.uk/(api|ping|feed)([/?].*)?$
-            ^(https?:)?//(sabnzbd|bazarr|tautulli|paperless|mealie|frigate|firefly|scrutiny|tdarr|plans|notes|grafana|fan|lazylibrarian)\.iacob\.uk/api([/?].*)?$
+            ^(https?:)?//(sabnzbd|bazarr|tautulli|paperless|mealie|frigate|firefly|scrutiny|tdarr|plans|notes|grafana|fan)\.iacob\.uk/api([/?].*)?$
             ^(https?:)?//(overseerr|tasks)\.iacob\.uk/api/v1([/?].*)?$
             ^(https?:)?//qbittorrent\.iacob\.uk/api/v2([/?].*)?$
             ^(https?:)?//prometheus\.iacob\.uk/api/v1([/?].*)?$
             ^(https?:)?//proxmox\.iacob\.uk/api2/json([/?].*)?$
             ^(https?:)?//uptime\.iacob\.uk/(api/push|api/badge|api/status-page)([/?].*)?$
-            ^(https?:)?//(calibre-web|lazylibrarian)\.iacob\.uk/opds([/?].*)?$
+            ^(https?:)?//calibre-web\.iacob\.uk/opds([/?].*)?$
             ^(https?:)?//drop\.iacob\.uk/(api|web/client/pubshares)([/?].*)?$
             ^(https?:)?//ersatztv\.iacob\.uk/(iptv|api|ffmpeg|hls|discover\.json|lineup|device\.xml)([/?].*)?$
             ^(https?:)?//dns[12]\.iacob\.uk/dns-query([/?].*)?$

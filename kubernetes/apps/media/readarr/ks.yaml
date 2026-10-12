@@ -4,6 +4,9 @@ kind: Kustomization
 metadata:
   name: readarr
 spec:
+  # Mounts calibre-web-ingest, which the calibre-web Kustomization creates.
+  dependsOn:
+    - name: calibre-web
   interval: 1h
   path: ./kubernetes/apps/media/readarr/app
   postBuild:

@@ -10,3 +10,16 @@ spec:
   resources:
     requests:
       storage: 200Gi
+---
+# CWA consumes and deletes whatever lands here; Readarr's import hook copies new books in.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: calibre-web-ingest
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-media
+  resources:
+    requests:
+      storage: 10Gi

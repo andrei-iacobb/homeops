@@ -4,6 +4,7 @@ kind: Kustomization
 components:
   - ../../../../components/volsync
 resources:
+  - ./configmap.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
   - ./httproute.yaml

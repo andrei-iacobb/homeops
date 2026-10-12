@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: readarr-scripts
+data:
+  # Readarr Connect > Custom Script, On Release Import + On Upgrade.
+  # Copies each imported book into calibre-web-automated's ingest folder.
+  # Written under a .part name first so CWA never picks up a half-copied file.
+  # Readarr exports its variables lowercased (readarr_eventtype, not Readarr_EventType).
+  cwa-ingest.sh: |
+    #!/bin/sh
+    set -euf
+    [ "${readarr_eventtype:-}" = "Download" ] || exit 0
+    IFS='|'
+    for f in ${readarr_addedbookpaths:-}; do
+      name="${readarr_book_id:-0}-$(basename "$f")"
+      cp "$f" "/cwa-ingest/.$name.$$.part"
+      mv "/cwa-ingest/.$name.$$.part" "/cwa-ingest/$name"
+    done
