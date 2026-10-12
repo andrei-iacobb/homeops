@@ -3,6 +3,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: readarr-scripts
+  annotations:
+    # The script's own ${...} must reach the pod untouched by Flux postBuild substitution.
+    kustomize.toolkit.fluxcd.io/substitute: disabled
 data:
   # Readarr Connect > Custom Script, On Release Import + On Upgrade.
   # Copies each imported book into calibre-web-automated's ingest folder.
