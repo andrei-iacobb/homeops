@@ -326,51 +326,50 @@ def get_rates():
 def get_planning_slots():
     """Slots we are allowed to plan against, in chronological order.
 
-    Everything still to come today, plus tomorrow once today has no cheap slot
-    left. Tomorrow is admitted only after today is exhausted, so a cheap slot
-    tonight can never be displaced by a cheaper one tomorrow - there are only
-    MAX_SLOTS slots and tomorrow would otherwise win on price alone.
+    Everything still to come today plus every published slot of tomorrow
+    that lands inside the next 24h. Tomorrow used to be admitted only once
+    today had no cheap slot left, which left two of the three inverter slots
+    empty all evening whenever one cheap half-hour remained tonight
+    (2026-10-12: 23:30 armed, tomorrow's 11:30-15:30 block not). A cheap
+    slot tonight still cannot be displaced by a cheaper one tomorrow:
+    find_cheap_windows() keeps the earliest windows when there are more than
+    MAX_SLOTS, and the next run arms the rest once one has ended.
 
-    Admitting tomorrow as soon as today is spent also arms it early. Inverter
-    slots are bare HH:MM values that recur daily, so writing tomorrow's 00:00
-    window during the 23:05 run starts it exactly on midnight instead of
-    catching it five minutes late on the following run.
+    Arming tomorrow early also starts a 00:00 window exactly on midnight
+    instead of catching it five minutes late on the following run.
     """
     now = datetime.now(timezone.utc)
-    cutoff = now + timedelta(hours=24)
+    # Shortened by the largest drift verify_inverter_clock() tolerates: an
+    # inverter running 20 min slow reads 18:15 at 18:35, so tomorrow's
+    # 18:00-18:30 (ending 23h55m out) would already be live on its clock.
+    cutoff = (now + timedelta(hours=24)
+              - timedelta(seconds=INVERTER_CLOCK_ABORT_DRIFT_SECONDS))
 
     # A slot lives on the inverter as a bare HH:MM that recurs daily, so
     # writing one arms its NEXT occurrence - which is the slot we actually
-    # mean only while it starts inside 24h. The cutoff applies to the whole
-    # pool, not just the pre-armed tail: when the current-day entity is broken
-    # get_rates() falls through to next-day, and its later slots would be
-    # 24-32h out and fire TODAY at a rate nobody priced.
+    # mean only while it ENDS inside 24h. A slot starting just inside the
+    # cutoff but ending past it is live on the inverter clock right now
+    # (tomorrow 18:00-18:30 written at 18:20 today charges immediately at
+    # today's 18:20 rate). The cutoff applies to the whole pool: when the
+    # current-day entity is broken get_rates() falls through to next-day, and
+    # its later slots would be 24-32h out and fire TODAY at a rate nobody
+    # priced.
     today = [r for r in get_rates()
              if datetime.fromisoformat(r["end"]) > now
-             and datetime.fromisoformat(r["start"]) < cutoff]
+             and datetime.fromisoformat(r["end"]) <= cutoff]
     if not today:
         return []
 
-    if any(r["value_inc_vat"] <= MAX_RATE and in_charge_window(r["start"])
-           for r in today):
-        return today
-
-    # Same 24h rule applied to the pre-armed tail: tomorrow 14:00 written at
-    # 08:05 today would fire at 14:00 TODAY. Tomorrow 00:00 is always inside
-    # 24h, which is exactly the case worth arming ahead of the rollover.
-    #
-    # The horizon floor is separate: it stops the post-midnight fallback (when
-    # get_rates() already returned next-day because the Octopus entities have
-    # not rolled over yet) from appending that same set twice.
+    # The horizon floor stops the post-midnight fallback (when get_rates()
+    # already returned next-day because the Octopus entities have not rolled
+    # over yet) from appending that same set twice.
     horizon = max(datetime.fromisoformat(r["end"]) for r in today)
-    ahead = []
-    for r in _fetch_rates(NEXT_DAY_RATES, "Next-day"):
-        start = datetime.fromisoformat(r["start"])
-        if horizon <= start < cutoff:
-            ahead.append(r)
+    ahead = [r for r in _fetch_rates(NEXT_DAY_RATES, "Next-day")
+             if datetime.fromisoformat(r["start"]) >= horizon
+             and datetime.fromisoformat(r["end"]) <= cutoff]
     if ahead:
-        print(f"  Nothing cheap left today - arming {len(ahead)} slot(s) from "
-              f"tomorrow that fall inside the next 24h.")
+        print(f"  Including {len(ahead)} slot(s) from tomorrow that fall "
+              f"inside the next 24h.")
     return today + ahead
 
 
@@ -467,8 +466,11 @@ def in_charge_window(iso_str):
 def find_cheap_windows(rates):
     """Find runs of consecutive cheap slots inside the allowed charge window.
 
-    Up to MAX_SLOTS windows, prefer cheapest avg. The caller is responsible
-    for passing only slots that have not already ended.
+    Up to MAX_SLOTS windows, earliest first. The job re-plans every 15 min,
+    so a later window left out now is armed as soon as an earlier one ends;
+    dropping an early window for a cheaper later one would lose it for good.
+    The caller is responsible for passing only slots that have not already
+    ended.
 
     Sort on the parsed datetime, not the raw ISO string: on the October
     fall-back day the repeated hour yields '01:00+01:00' and '01:00+00:00',
@@ -506,12 +508,8 @@ def find_cheap_windows(rates):
         "slots": len(slot_rates),
     })
 
-    if len(windows) > MAX_SLOTS:
-        windows.sort(key=lambda w: w["avg_rate"])
-        windows = windows[:MAX_SLOTS]
-
-    windows.sort(key=lambda w: w["start"])
-    return windows
+    # Built in chronological order, so the first MAX_SLOTS are the earliest.
+    return windows[:MAX_SLOTS]
 
 
 def safety_check(windows, rates):
@@ -1437,13 +1435,11 @@ def main():
     # Free Electricity always wins - tag and prepend, then merge.
     free_tagged = [{"start": s["start"], "end": s["end"], "tag": "free"} for s in free_sessions]
     all_charge = split_at_inverter_midnight(merge_windows(free_tagged + cheap_windows))
-    # If merging produced > MAX_SLOTS, keep free-electricity ones plus cheapest.
+    # If merging produced > MAX_SLOTS, keep free-electricity ones plus the
+    # earliest (see find_cheap_windows for why earliest, not cheapest).
     if len(all_charge) > MAX_SLOTS:
         free_first = [w for w in all_charge if "free" in (w.get("tag") or "")]
-        rest = sorted(
-            [w for w in all_charge if "free" not in (w.get("tag") or "")],
-            key=lambda w: w.get("avg_rate", MAX_RATE),
-        )
+        rest = [w for w in all_charge if "free" not in (w.get("tag") or "")]
         all_charge = (free_first + rest)[:MAX_SLOTS]
         all_charge.sort(key=lambda w: datetime.fromisoformat(w["start"]))
 
