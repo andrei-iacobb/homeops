@@ -29,7 +29,7 @@ spec:
             image:
               repository: ghcr.io/blakeblackshear/frigate
               # -tensorrt variant: ONNX detector + NVDEC on the Quadro P1000 (gpu-worker node)
-              tag: "0.18.1-tensorrt"
+              tag: "0.18.2-tensorrt"
             env:
               TZ: Europe/London
               NVIDIA_DRIVER_CAPABILITIES: all
