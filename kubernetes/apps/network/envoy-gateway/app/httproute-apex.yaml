@@ -1,4 +1,8 @@
 ---
+# 301 the apex and www to andrei.${SECRET_DOMAIN}, the host the site declares
+# as canonical in its <link rel=canonical>, robots.txt and sitemap. Serving the
+# same app on the apex made Search Console file every page as a duplicate, and
+# www had no route at all (envoy 404). The redirect keeps the request path.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -10,8 +14,11 @@ spec:
       sectionName: https
   hostnames:
     - ${SECRET_DOMAIN}
+    - www.${SECRET_DOMAIN}
   rules:
-    - backendRefs:
-        - name: website
-          namespace: default
-          port: 3000
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: andrei.${SECRET_DOMAIN}
+            statusCode: 301
