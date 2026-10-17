@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/dizys/t3code-docker
-              tag: 0.17.0-full
+              tag: 0.18.0-full
             env:
               TZ: Europe/London
               PUID: "1000"
