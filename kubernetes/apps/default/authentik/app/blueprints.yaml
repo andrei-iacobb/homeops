@@ -185,8 +185,8 @@ data:
     metadata:
       name: homeops-passkey-login
     entries:
-      # Default login = Touch ID on a passkey right away (no username, no
-      # password). Password fallback: /if/flow/default-authentication-flow/
+      # Keep password + MFA available on devices without an enrolled passkey.
+      # The identification stage also offers passkey autofill and a direct link.
       - model: authentik_flows.flow
         id: passkey-flow
         identifiers:
@@ -212,4 +212,11 @@ data:
         identifiers:
           domain: authentik-default
         attrs:
-          flow_authentication: !KeyOf passkey-flow
+          flow_authentication: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      - model: authentik_stages_identification.identificationstage
+        identifiers:
+          name: default-authentication-identification
+        attrs:
+          user_fields: [email, username]
+          webauthn_stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, passkey-login]]
+          passwordless_flow: !KeyOf passkey-flow
