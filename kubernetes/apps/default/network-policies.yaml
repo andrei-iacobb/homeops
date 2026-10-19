@@ -48,7 +48,7 @@ spec:
     matchExpressions:
       - key: app.kubernetes.io/name
         operator: In
-        values: [code-server, paperless]
+        values: [code-server, paperless, slate]
   ingressDeny:
     - fromEndpoints:
         - matchExpressions:

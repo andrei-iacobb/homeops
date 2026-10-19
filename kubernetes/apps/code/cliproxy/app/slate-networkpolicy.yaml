@@ -1,0 +1,19 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cliproxy-slate
+  namespace: code
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: cliproxy
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+            app.kubernetes.io/name: slate
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP

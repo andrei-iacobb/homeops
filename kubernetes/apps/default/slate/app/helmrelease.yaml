@@ -12,6 +12,8 @@ spec:
     controllers:
       slate:
         strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -21,6 +23,14 @@ spec:
               TZ: Europe/London
               NODE_ENV: production
               DATA_DIR: /data
+              PLANNING_ORIGIN: https://slate.iacob.uk
+              PLANNING_API_URL: http://cliproxy.code.svc.cluster.local:8317/v1
+              PLANNING_MODEL: gpt-6.1-sol
+              PLANNING_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: slate-planning-secret
+                    key: api-key
             probes:
               liveness: &probes
                 enabled: true
@@ -86,6 +96,16 @@ spec:
             backendRefs:
               - identifier: app
                 port: 3001
+          - matches:
+              - path:
+                  type: Exact
+                  value: /api/planning
+            timeouts:
+              request: 90s
+              backendRequest: 80s
+            backendRefs:
+              - identifier: app
+                port: *port
           - backendRefs:
               - identifier: app
                 port: *port
