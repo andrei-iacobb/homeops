@@ -195,13 +195,14 @@ spec:
       trustedCIDRs:
         - "10.67.0.0/16"
   headers:
-    # Only Authentik may set identity headers: drop any a client sends before
-    # ext_authz runs (API skip paths would otherwise pass them to apps that
-    # trust them, e.g. grafana auth.proxy and paperless remote user).
+    # Only Authentik may set identity headers: strip x-authentik-* before
+    # ext_authz runs, except the exact x-authentik-csrf header required by its UI.
+    # RE2 has no negative lookahead: match suffixes differing from "csrf", its
+    # shorter prefixes, or extensions. Unknown identity headers stay stripped.
     earlyRequestHeaders:
       removeOnMatch:
-        - type: Prefix
-          value: x-authentik-
+        - type: RegularExpression
+          value: '(?i)^x-authentik-(?:[^c].*|c[^s].*|cs[^r].*|csr[^f].*|csrf.+|c|cs|csr)?$'
   http2:
     onInvalidMessage: TerminateStream
   http3: {}
