@@ -116,6 +116,12 @@
       platformAutomerge: false,
       ignoreTests: true,
     },
+    {
+      description: ["searxng publishes calendar tags like 2026.10.4-d48c4b555: tell Renovate how to order them"],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["searxng/searxng", "docker.io/searxng/searxng"],
+      versioning: "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,3})-(?<build>[a-f0-9]+)$",
+    },
     // =====================
     // Floating tags - pin the digest so Renovate can still roll them
     // =====================
