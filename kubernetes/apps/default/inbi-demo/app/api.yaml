@@ -26,7 +26,7 @@ spec:
         - name: ghcr-pull-secret
       initContainers:
         - name: wait-for-postgres
-          image: postgres:16.15-bookworm@sha256:bb3e1a57e5407e0a5280b4211980a5e537f4abd234a87014ac979849a78dd825
+          image: postgres:16.15-bookworm@sha256:d81f7b51697014367236d07ec58b54153fc28f828b72bf247fe5c7487520bcb0
           command:
             - sh
             - -c
