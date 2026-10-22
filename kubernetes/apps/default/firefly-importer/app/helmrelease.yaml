@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: fireflyiii/data-importer
-              tag: version-2.3.2
+              tag: version-2.3.5
             env:
               TZ: Europe/London
               APP_DEBUG: "false"
