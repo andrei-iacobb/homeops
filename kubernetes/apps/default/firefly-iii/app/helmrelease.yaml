@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: fireflyiii/core
-              tag: version-6.6.3
+              tag: version-6.7.9
             env:
               TZ: Europe/London
               APP_ENV: production
