@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: mintplexlabs/anythingllm
-              tag: latest
+              tag: 1.18.0
             env:
               TZ: Europe/London
               STORAGE_DIR: /app/server/storage

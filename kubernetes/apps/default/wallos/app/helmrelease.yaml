@@ -16,7 +16,7 @@ spec:
           fix-perms:
             image:
               repository: busybox
-              tag: latest
+              tag: "1.38"
             command: ["sh", "-c", "chmod -R 777 /var/www/html/db"]
         containers:
           app:

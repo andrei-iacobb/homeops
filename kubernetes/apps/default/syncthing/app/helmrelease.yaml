@@ -17,7 +17,7 @@ spec:
           app:
             image:
               repository: syncthing/syncthing
-              tag: latest
+              tag: 2.1.5
             env:
               PUID: "1000"
               PGID: "1000"
