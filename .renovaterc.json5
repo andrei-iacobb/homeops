@@ -9,6 +9,7 @@
     ":semanticCommits",
     ":separatePatchReleases",
   ],
+  timezone: "Europe/London",
   dependencyDashboard: true,
   dependencyDashboardTitle: "Renovate Dashboard 🤖",
   // Self-hosted Renovate on Forgejo merges its own PRs natively.
@@ -38,23 +39,23 @@
     // Automerge Rules
     // =====================
     {
-      description: ["Auto-merge container patch, minor, and digest updates"],
+      description: ["Auto-merge all container updates, majors included (holds below carve out the exceptions)"],
       matchDatasources: ["docker"],
-      matchUpdateTypes: ["minor", "patch", "digest"],
+      matchUpdateTypes: ["major", "minor", "patch", "digest"],
       automerge: true,
       ignoreTests: true,
     },
     {
-      description: ["Auto-merge Helm chart patch and minor updates"],
+      description: ["Auto-merge all Helm chart updates, majors included"],
       matchDatasources: ["helm"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchUpdateTypes: ["major", "minor", "patch"],
       automerge: true,
       ignoreTests: true,
     },
     {
-      description: ["Auto-merge GitHub releases patch and minor updates"],
+      description: ["Auto-merge all GitHub release updates, majors included"],
       matchDatasources: ["github-releases", "github-tags"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchUpdateTypes: ["major", "minor", "patch"],
       automerge: true,
       ignoreTests: true,
     },
@@ -73,30 +74,56 @@
       ignoreTests: true,
     },
     // =====================
-    // Critical Infrastructure - NO Automerge
+    // Holds - the only things that still wait for a human
     // =====================
     {
-      description: ["Disable automerge for databases, Talos, Plex, and critical infra"],
+      description: ["Talos and Kubernetes node components are applied with talosctl, not Flux: never automerge"],
+      matchPackageNames: ["/siderolabs/", "/talos/"],
+      automerge: false,
+    },
+    {
+      description: [
+        "Majors only: databases (on-disk format changes), CNI/gateway/cert-manager (lock-out risk) and the app-template chart (every HelmRelease at once). Minors, patches and digests automerge.",
+      ],
+      matchUpdateTypes: ["major"],
       matchPackageNames: [
-        // Talos & Kubernetes
-        "/siderolabs/",
-        "/talos/",
-        // Databases
         "/clickhouse/",
         "/postgres/",
         "/postgresql/",
         "/cloudnative-pg/",
         "/redis/",
         "/mariadb/",
+        "/mongo/",
         "/minio/",
-        // Media server - manual review
-        "/plex/",
-        // Core infrastructure
         "/envoy/",
         "/cilium/",
         "/cert-manager/",
+        "/bjw-s-labs/helm/app-template/",
       ],
       automerge: false,
+    },
+    // =====================
+    // Media stack - out of hours only
+    // =====================
+    {
+      description: [
+        "Media namespace (kubernetes/apps/media): open and merge PRs only between 01:00 and 05:00 Europe/London so Plex and the arr stack roll while nobody is watching. platformAutomerge is off here so Renovate itself merges inside the window.",
+      ],
+      matchFileNames: ["kubernetes/apps/media/**"],
+      schedule: ["after 1am and before 5am"],
+      automergeSchedule: ["after 1am and before 5am"],
+      automerge: true,
+      platformAutomerge: false,
+      ignoreTests: true,
+    },
+    // =====================
+    // Floating tags - pin the digest so Renovate can still roll them
+    // =====================
+    {
+      description: ["Anything left on latest/main/stable gets a digest pin; digest bumps then flow through the automerge rules"],
+      matchDatasources: ["docker"],
+      matchCurrentValue: "/^(latest|main|stable)$/",
+      pinDigests: true,
     },
     {
       description: [
