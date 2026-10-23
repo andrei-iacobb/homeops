@@ -26,7 +26,9 @@ spec:
           app:
             image:
               repository: ghcr.io/dizys/t3code-docker
-              tag: 0.18.0-full
+              # Plain X.Y.Z is the browser variant. Upstream retired -full/-slim after
+              # 0.18.0, and a suffixed tag hides every newer release from Renovate.
+              tag: 0.23.0
             env:
               TZ: Europe/London
               PUID: "1000"
