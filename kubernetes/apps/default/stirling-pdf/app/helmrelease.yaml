@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.io/stirlingtools/stirling-pdf
-              tag: 3.2.1
+              tag: 3.2.2
             env:
               TZ: Europe/London
               DOCKER_ENABLE_SECURITY: "false"
