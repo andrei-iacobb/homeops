@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: prompve/prometheus-pve-exporter:latest
+        image: prompve/prometheus-pve-exporter:3.10.2@sha256:7ed5dbff1b145e62e94003cb78d70226d9a7c4d4d1c928b3c7daed21ae9a84d8
         env:
         - name: PROXMOX_HOST
           valueFrom:
