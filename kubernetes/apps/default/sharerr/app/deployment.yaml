@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: sharerr
-          image: ghcr.io/andrei-iacobb/sharerr:latest
+          image: ghcr.io/andrei-iacobb/sharerr:sha-2d973d8@sha256:26245e4c274f59712a81942534cb9df73395557904b841b18d8c4980c50fb9f8
           imagePullPolicy: Always
           envFrom:
             - secretRef:

@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: replicarr
-          image: ghcr.io/andrei-iacobb/replicarr:latest
+          image: ghcr.io/andrei-iacobb/replicarr:sha-bb4f9df@sha256:1d67b0e5229b749409c1b56e20844c25d7b85f65762a4cf6eddbfe6ba276b6a3
           imagePullPolicy: Always
           envFrom:
             - secretRef:
