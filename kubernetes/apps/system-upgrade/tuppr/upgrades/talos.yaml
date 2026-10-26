@@ -11,7 +11,7 @@ metadata:
 spec:
   talos:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-    version: v1.12.8
+    version: v1.12.12
   maintenance:
     windows:
       # Start gate only: a node already upgrading finishes, so leave 02:00-05:00 as overrun.
