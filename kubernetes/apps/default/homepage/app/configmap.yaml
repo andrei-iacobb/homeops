@@ -510,14 +510,6 @@ data:
           icon: recyclarr.svg
           href: https://recyclarr.iacob.uk
           description: TRaSH guides sync
-      - Huntarr:
-          icon: huntarr.png
-          href: https://huntarr.iacob.uk
-          description: Hunt missing media
-      - Recommendarr:
-          icon: mdi-movie-star
-          href: https://recommendarr.iacob.uk
-          description: Media recommendations
       - Pulsarr:
           icon: pulsarr.svg
           href: https://pulsarr.iacob.uk
@@ -563,10 +555,6 @@ data:
           icon: open-webui.svg
           href: https://openwebui.iacob.co.uk
           description: AI chat interface
-      - Arca:
-          icon: mdi-robot
-          href: https://arca.iacob.co.uk
-          description: Claude sandbox
       - AnythingLLM:
           icon: mdi-brain
           href: https://anythingllm.iacob.uk
