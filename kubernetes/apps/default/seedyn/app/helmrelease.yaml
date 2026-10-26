@@ -21,7 +21,7 @@ spec:
           migrate:
             image: &image
               repository: git.iacob.co.uk/andrei/seedyn
-              tag: master-7e8c091
+              tag: master-6890c24
             command: ["node_modules/.bin/prisma", "migrate", "deploy"]
             env:
               NODE_ENV: production
