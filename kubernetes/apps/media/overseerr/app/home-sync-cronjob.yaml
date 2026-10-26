@@ -33,7 +33,7 @@ spec:
             fsGroup: 1000
           containers:
             - name: home-sync
-              image: docker.io/library/python:3.15.2-alpine
+              image: docker.io/library/python:3.15.1-alpine@sha256:54448f67d7c31c39e5cdd3ea2d6382395ce142806c284425f8e897d78a0465b3
               imagePullPolicy: IfNotPresent
               command: ["python3", "/scripts/sync.py"]
               env:

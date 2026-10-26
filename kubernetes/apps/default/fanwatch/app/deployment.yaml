@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: fanwatch
-          image: python:3.15.2-slim
+          image: python:3.15.1-slim@sha256:533b0b2f9b5d46fd097091cf826f27902f1d6c3bca714b6dc74551356aa97a51
           command: ["python3", "/app/app.py"]
           ports:
             - name: http
