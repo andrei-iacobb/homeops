@@ -26,8 +26,11 @@ spec:
             seccompProfile: { type: RuntimeDefault }
           containers:
             - name: renovate
+              # Renovate ships several releases a day, so a pinned version would be a
+              # PR every run. Track the major and re-pull each run instead; Renovate
+              # itself proposes the next major.
               image: ghcr.io/renovatebot/renovate:44
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               envFrom:
                 - secretRef:
                     name: renovate-secret
@@ -50,6 +53,13 @@ spec:
                   value: info
                 - name: RENOVATE_BASE_DIR
                   value: /tmp/renovate
+                # Registry auth so Renovate can look up the private self-built images
+                # (dashboard: "No docker auth found" / "Could not determine new digest").
+                # $(VAR) expands from renovate-secret via envFrom.
+                - name: RENOVATE_HOST_RULES
+                  value: >-
+                    [{"hostType":"docker","matchHost":"ghcr.io","username":"andrei-iacobb","password":"$(GITHUB_COM_TOKEN)"},
+                    {"hostType":"docker","matchHost":"git.iacob.co.uk","username":"andrei","password":"$(FORGEJO_REGISTRY_TOKEN)"}]
               volumeMounts:
                 - name: work
                   mountPath: /tmp/renovate

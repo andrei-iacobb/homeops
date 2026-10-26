@@ -1,0 +1,21 @@
+// Version holds for releases that broke a workload after Renovate merged them.
+//
+// Written by Hermes (cluster-alert-triage) when it reverts a Renovate commit:
+// one entry per broken release, so Renovate stops re-proposing exactly that
+// version but still takes the next one. Each entry lands in the same
+// "fix(alert): revert ..." commit as the revert it belongs to.
+// Remove an entry once upstream ships a fixed release or the cause is known.
+//
+// Entry shape (enabled:false + matchNewValue rather than allowedVersions: this
+// preset loads before .renovaterc.json5's own rules, whose allowedVersions would
+// override a hold here, and nothing there sets enabled:true):
+//   {
+//     description: ["<date> <workload>: <symptom>. Reverted <commit sha>."],
+//     matchDatasources: ["docker"],
+//     matchPackageNames: ["<package as Renovate names it>"],
+//     matchNewValue: "<exact broken tag/version as written in the reverted diff>",
+//     enabled: false,
+//   },
+{
+  packageRules: [],
+}

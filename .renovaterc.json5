@@ -4,6 +4,9 @@
     "config:recommended",
     "docker:enableMajor",
     "helpers:pinGitHubActionDigests",
+    // Version holds written by Hermes alert triage when a Renovate merge breaks a
+    // workload: revert + hold so the same release is not re-merged next run.
+    "local>andrei/homeops//.renovate/hermes-holds.json5",
     ":dependencyDashboard",
     ":disableRateLimiting",
     ":semanticCommits",
@@ -115,6 +118,38 @@
       automerge: true,
       platformAutomerge: false,
       ignoreTests: true,
+    },
+    {
+      description: [
+        "Core services: same 01:00-05:00 Europe/London window as media. Networking, certs, Flux, storage, databases, monitoring and the apps that hold auth, passwords, git, photos and documents. Everything else updates whenever Renovate runs.",
+      ],
+      matchFileNames: [
+        "kubernetes/apps/network/**",
+        "kubernetes/apps/cert-manager/**",
+        "kubernetes/apps/flux-system/**",
+        "kubernetes/apps/kube-system/**",
+        "kubernetes/apps/storage/**",
+        "kubernetes/apps/databases/**",
+        "kubernetes/apps/monitoring/**",
+        "kubernetes/apps/code/**",
+        "kubernetes/apps/default/authentik/**",
+        "kubernetes/apps/default/vaultwarden/**",
+        "kubernetes/apps/default/forgejo/**",
+        "kubernetes/apps/default/forgejo-runner/**",
+        "kubernetes/apps/default/immich/**",
+        "kubernetes/apps/default/paperless/**",
+        "kubernetes/apps/default/n8n/**",
+        "kubernetes/apps/default/unifi/**",
+        "kubernetes/apps/default/homepage/**",
+        "kubernetes/apps/default/solis-charge/**",
+        "kubernetes/flux/**",
+        "kubernetes/components/**",
+      ],
+      // No automerge key here: whether it merges is still decided by the
+      // datasource rules and the major-version holds above, this only sets when.
+      schedule: ["after 1am and before 5am"],
+      automergeSchedule: ["after 1am and before 5am"],
+      platformAutomerge: false,
     },
     {
       description: ["searxng publishes calendar tags like 2026.10.4-d48c4b555: tell Renovate how to order them"],
