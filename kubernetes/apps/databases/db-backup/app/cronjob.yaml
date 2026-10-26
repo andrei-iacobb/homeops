@@ -24,7 +24,7 @@ spec:
             fsGroup: 0
           containers:
             - name: pg-logical-backup
-              image: postgres:16-alpine
+              image: postgres:16.15-alpine
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
