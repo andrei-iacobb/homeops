@@ -80,8 +80,11 @@
     // Holds - the only things that still wait for a human
     // =====================
     {
-      description: ["Talos and Kubernetes node components are applied with talosctl, not Flux: never automerge"],
+      description: [
+        "Talos and Kubernetes: tuppr (kubernetes/apps/system-upgrade) rolls whatever version lands in talos/talenv.yaml and the tuppr plans, in the 01:00-05:00 window. Patches automerge; minors wait for a human because Talos has to step through minors one at a time and tuppr does not enforce that.",
+      ],
       matchPackageNames: ["/siderolabs/", "/talos/"],
+      matchUpdateTypes: ["major", "minor"],
       automerge: false,
     },
     {
@@ -144,6 +147,8 @@
         "kubernetes/apps/default/solis-charge/**",
         "kubernetes/flux/**",
         "kubernetes/components/**",
+        "kubernetes/apps/system-upgrade/**",
+        "talos/**",
       ],
       // No automerge key here: whether it merges is still decided by the
       // datasource rules and the major-version holds above, this only sets when.

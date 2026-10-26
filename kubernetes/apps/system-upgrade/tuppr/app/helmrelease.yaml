@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tuppr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tuppr
+  interval: 1h
+  values:
+    # Silences held only while an upgrade runs (see spec.silences on the plans),
+    # so reboot noise does not reach Hermes alert triage.
+    silences:
+      enabled: true
+      alertmanager:
+        address: http://prometheus-kube-prometheus-alertmanager.monitoring.svc:9093
+    monitoring:
+      serviceMonitor:
+        enabled: true
+      prometheusRule:
+        enabled: true
+      dashboards:
+        enabled: true
+        labels:
+          grafana_dashboard: "1"

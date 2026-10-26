@@ -1,0 +1,38 @@
+---
+# Talos OS on both nodes, one at a time. Each node's install image keeps its own
+# factory schematic; only the version changes. home-cluster is the only control
+# plane, so its reboot is a few minutes of cluster downtime - hence the window.
+# Talos must step through minors one at a time: Renovate automerges patches and
+# only opens PRs for minors (.renovaterc.json5).
+apiVersion: tuppr.home-operations.com/v1alpha1
+kind: TalosUpgrade
+metadata:
+  name: cluster
+spec:
+  talos:
+    # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+    version: v1.12.8
+  maintenance:
+    windows:
+      # Start gate only: a node already upgrading finishes, so leave 02:00-05:00 as overrun.
+      - start: "0 1 * * *"
+        duration: 1h
+        timezone: Europe/London
+  healthChecks:
+    - apiVersion: v1
+      kind: Node
+      expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+      timeout: 10m
+    - apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      name: flux-system
+      namespace: flux-system
+      expr: status.conditions.exists(c, c.type == "Ready" && c.status == "True")
+  # Only what a node reboot is expected to fire; anything else still reaches
+  # Alertmanager (and Hermes) during the run.
+  silences:
+    - matchers:
+        - name: alertname
+          value: "^(KubeNodeNotReady|KubeNodeUnreachable|TargetDown|KubeAPIDown|KubeAPIErrorBudgetBurn|KubeControllerManagerDown|KubeSchedulerDown|KubeletDown|KubeProxyDown|KubePodNotReady|KubeDeploymentReplicasMismatch|KubeStatefulSetReplicasMismatch|KubeDaemonSetRolloutStuck|KubeDaemonSetNotScheduled|KubeContainerWaiting|etcd.*|PrometheusTargetMissing)$"
+          matchType: "=~"
+      maxDuration: 45m

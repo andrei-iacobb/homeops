@@ -1,0 +1,11 @@
+# tuppr (kubernetes/apps/system-upgrade) drives Talos and Kubernetes upgrades
+# over the Talos API, so its namespace needs os:admin. Talos only allows this
+# on control-plane machines; the jobs reach it through the control-plane endpoint.
+machine:
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:admin
+      allowedKubernetesNamespaces:
+        - system-upgrade
