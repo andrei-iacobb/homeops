@@ -31,6 +31,10 @@ spec:
         runAsGroup: 1001
         fsGroup: 1001
         fsGroupChangePolicy: OnRootMismatch
+      # ghcr.io/andrei-iacobb/neatplan is private; without this the pod only ran
+      # while the image sat in the node cache.
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       initContainers:
         # Prisma migrations must land before the Next 16.3 app boots; the
         # migrator image's default CMD is `prisma migrate deploy`.
