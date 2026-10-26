@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: ghcr.io/davidilie/plexo
-              tag: master-2d5ac1d7-1784637440
+              tag: master-a21d88d5-1792710750
             env:
               TZ: Europe/London
               SHOW_MUSIC: "true"

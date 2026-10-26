@@ -17,7 +17,7 @@ spec:
           init-chown:
             image:
               repository: busybox
-              tag: latest
+              tag: 1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
             command: ["sh", "-c", "chown -R 568:568 /config"]
             securityContext:
               runAsUser: 0
@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/pennydreadful/bookshelf
-              tag: hardcover-v0.4.20.129
+              tag: hardcover-v0.4.21.182
             env:
               TZ: Europe/London
               READARR__PORT: &port 8787
