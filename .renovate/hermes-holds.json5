@@ -18,12 +18,5 @@
 //   },
 {
   packageRules: [
-    {
-      description: ["2026-10-26 fanwatch, solis-charge, petkit, cliproxy/homeassistant exporters: ImagePullBackOff, Docker Hub republished python 3.15.2 slim/alpine as an empty image index (no platforms). Rolled back to 3.15.1. Remove once the 3.15.2 tags list amd64 again."],
-      matchDatasources: ["docker"],
-      matchPackageNames: ["python", "docker.io/library/python"],
-      matchNewValue: "/^3\\.15\\.2-/",
-      enabled: false,
-    },
   ],
 }
