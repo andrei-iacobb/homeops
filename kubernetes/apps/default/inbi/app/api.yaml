@@ -27,7 +27,7 @@ spec:
         # The dedicated migrator target is built from the same commit as the
         # API and owns the exact Prisma 7 migration command in its image CMD.
         - name: migrate
-          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:aeaeff58463449496cf4e5e699baca8a09079153b66a30b227384fd565d9b912
+          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:0f86e976bfbda0b750ce38a4d7651431772d2b46@sha256:82150e4c11ddb772eee6ad51c9677f8dabc15337ce676ab31dd9efcfe7917abe
           imagePullPolicy: IfNotPresent
           env:
             - name: DATABASE_URL
@@ -43,7 +43,7 @@ spec:
               memory: 512Mi
       containers:
         - name: api
-          image: ghcr.io/andrei-iacobb/inbi-fleet-api:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:937ad1e2eb4692f99cca6b608426ebb39f57e73b09e1cad06cdb15625a5564a8
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:0f86e976bfbda0b750ce38a4d7651431772d2b46@sha256:5775cc177630d01d6a46abc55d1f8af385359a13b866ee30480bf17bf6e8c66b
           imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
