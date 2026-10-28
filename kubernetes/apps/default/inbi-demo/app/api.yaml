@@ -36,7 +36,7 @@ spec:
             capabilities:
               drop: ["ALL"]
         - name: migrate
-          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:55035df907367443de14aae5a39257fbc5cd4b89@sha256:93aa7223f0c92664fc534c76f8df420f778331b4584a5c28268e397875f90dbc
+          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:55035df907367443de14aae5a39257fbc5cd4b89@sha256:26585c8e1e1122c705b26a17d67a46203871a6458c846ac4e37fb91641374207
           env:
             - name: DATABASE_URL
               valueFrom:
