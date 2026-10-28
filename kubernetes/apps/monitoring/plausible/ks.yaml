@@ -9,7 +9,7 @@ spec:
   postBuild:
     substitute:
       APP: plausible
-      APP_PVC: plausible-plausible-data
+      APP_PVC: plausible
       VOLSYNC_SCHEDULE: "15 4 * * *"
       MOVER_UID: "0"
       MOVER_GID: "0"
