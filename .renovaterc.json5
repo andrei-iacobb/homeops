@@ -346,6 +346,12 @@
       matchManagers: ["github-actions"],
       addLabels: ["renovate/github-action"],
     },
+    {
+      description: ["Actual 26.10.0 runtime-only rebuild retains native modules compiled for Node 24 ABI 137."],
+      matchFileNames: ["kubernetes/apps/default/actual-budget/Dockerfile"],
+      matchPackageNames: ["node"],
+      allowedVersions: "<25",
+    },
   ],
   customManagers: [
     {
