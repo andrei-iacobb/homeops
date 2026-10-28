@@ -22,7 +22,7 @@ spec:
   postBuild:
     substitute:
       APP: cliproxy
-      APP_PVC: cliproxy-data
+      APP_PVC: cliproxy
       VOLSYNC_SCHEDULE: "25 3 * * *"
       MOVER_UID: "0"
       MOVER_GID: "0"
