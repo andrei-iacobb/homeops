@@ -25,7 +25,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: office
-          image: ghcr.io/andrei-iacobb/inbi-fleet-office:1a6a60948ccfec2617358e93458a55b8060f6722@sha256:6e31ee536924383f5190fdd717b65710822ee8186c3ec4f65e938f7417b93198
+          image: ghcr.io/andrei-iacobb/inbi-fleet-office:security-20261028-811e278@sha256:159b464ff41944a2efae38d9c128cfed7f6abef888b70c06a619c096d77af3d9
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
