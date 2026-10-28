@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: planum-migrate-24edf2dbafa9
+  name: planum-migrate-66e758c97345
   annotations:
     # Recreate the immutable Job when the pinned image changes. Retain completion for Flux.
     kustomize.toolkit.fluxcd.io/force: enabled
@@ -26,7 +26,7 @@ spec:
         - name: git-iacob-pull-secret
       containers:
         - name: migrate
-          image: git.iacob.co.uk/andrei/planum@sha256:24edf2dbafa90553858bd65319d51b4f4418d094589ea44fa707754dc6f8c3d2
+          image: git.iacob.co.uk/andrei/planum:security-20261028-c8c5802@sha256:66e758c97345fb81cc63d1c429680e09e6de186f3d978559a98a0c5364c0dabd
           command: [node, /repo/server/dist/db/migrate.js]
           securityContext:
             allowPrivilegeEscalation: false

@@ -37,7 +37,7 @@ spec:
         - name: git-iacob-pull-secret
       containers:
         - name: planum
-          image: git.iacob.co.uk/andrei/planum@sha256:b9116b31be205447c71031f8dc9a263658ec48a76997843f11cedefc9ca1ef12
+          image: git.iacob.co.uk/andrei/planum:security-20261028-c8c5802@sha256:66e758c97345fb81cc63d1c429680e09e6de186f3d978559a98a0c5364c0dabd
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
