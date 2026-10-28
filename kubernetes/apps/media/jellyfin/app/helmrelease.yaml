@@ -8,6 +8,8 @@ spec:
     kind: OCIRepository
     name: jellyfin
   interval: 1h
+  # Database migrations must finish before Helm considers the upgrade failed.
+  timeout: 130m
   values:
     controllers:
       jellyfin:
@@ -42,6 +44,17 @@ spec:
                   timeoutSeconds: 5
                   failureThreshold: 3
               readiness: *probes
+              # Keep liveness from interrupting a database migration on first boot.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *port
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 720
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
