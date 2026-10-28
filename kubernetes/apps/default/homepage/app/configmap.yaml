@@ -245,6 +245,10 @@ data:
           icon: mdi-fan
           href: https://fan.iacob.uk
           description: iLO fan control
+      - Server alerts:
+          icon: mdi-server-security
+          href: https://hass.iacob.uk/lovelace/server-alerts
+          description: Active faults and recent server alerts
       - iLO DL360:
           icon: mdi-server
           href: https://ilo1.iacob.uk

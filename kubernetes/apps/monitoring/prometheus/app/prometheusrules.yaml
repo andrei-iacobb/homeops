@@ -218,20 +218,46 @@ spec:
         expr: (ilo_chassis_temperature_current >= ilo_chassis_temperature_critical) and (ilo_chassis_temperature_critical > 0)
         for: 5m
         labels:
-          severity: warning
+          severity: critical
         annotations:
           summary: Server sensor {{ $labels.name }} crossed its critical temperature
           description: Check cooling and inlet temperature on {{ $labels.job }}.
       - alert: ServerHardwareUnhealthy
-        expr: (ilo_chassis_fan_healthy == 0) or (ilo_power_supply_healthy == 0) or (ilo_storage_disk_healthy
-          == 0) or (ilo_storage_disk_failure_predicted == 1)
+        expr: (ilo_chassis_fan_healthy == 0) or (ilo_power_supply_healthy == 0)
         for: 5m
         labels:
-          severity: warning
+          severity: critical
         annotations:
           summary: Server hardware unhealthy on {{ $labels.job }}
           description: Check the iLO hardware dashboard and component {{ $labels.name
             }}.
+      # iLO 4 can report PredictiveFail in DiskDriveStatusReasons while omitting
+      # FailurePredicted. The exporter then emits failure_predicted=0, but its
+      # disk health metric still reports the warning correctly.
+      - alert: ServerDiskUnhealthy
+        expr: (ilo_storage_disk_healthy == 0) or (ilo_storage_disk_failure_predicted == 1)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Disk {{ $labels.location }} needs attention on {{ $labels.job }}
+          description: "{{ $labels.model }} at {{ $labels.location }} reports unhealthy or predictive failure. Check SMART wear and current backups before replacing the disk."
+      - alert: ServerMonitoringUnavailable
+        expr: up{job=~"ilo-exporter-dl360|ilo-exporter-dl380"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Hardware monitoring unavailable on {{ $labels.job }}
+          description: iLO telemetry cannot be collected. Hardware health is unknown until the exporter recovers.
+      - alert: ServerMonitoringMissing
+        expr: absent(up{job="ilo-exporter-dl360"}) or absent(up{job="ilo-exporter-dl380"})
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Hardware monitoring target missing for {{ $labels.job }}
+          description: Restore the iLO exporter and its scrape target. Missing telemetry is not healthy hardware.
       - alert: GPUOverheating
         expr: nvidia_smi_temperature_gpu > 85
         for: 5m
@@ -313,6 +339,14 @@ spec:
           summary: Home Assistant monitoring bridge is unavailable
           description: Native hardware sensors expire when publication stops. Check the
             bridge and HA API.
+      - alert: ServerNotificationBridgeFailed
+        expr: (up{job="homeassistant-metrics"} == 0) or absent(up{job="homeassistant-metrics"}) or (homelab_alertmanager_up == 0) or (homelab_alerts_state_error == 1) or (time() - homelab_alerts_last_success_timestamp_seconds > 120) or (increase(homelab_alerts_notify_failures_total[10m]) > 0)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Server phone notifications are failing
+          description: Check the Home Assistant alert bridge, persistent state, Alertmanager access and phone notification service. Other alert receivers remain active.
       - alert: BackupCronJobStale
         expr: (time() - kube_cronjob_status_last_successful_time{namespace="databases",cronjob="pg-logical-backup"}
           > 36*3600) or (kube_cronjob_info{namespace="databases",cronjob="pg-logical-backup"}

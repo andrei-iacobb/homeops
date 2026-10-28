@@ -7,6 +7,9 @@ resources:
   - service.yaml
   - servicemonitor.yaml
   - secret.sops.yaml
+  - pvc.yaml
+components:
+  - ../../../../../components/volsync
 # Name hash left on so an edit to bridge.py rolls the Deployment.
 configMapGenerator:
   - name: homeassistant-metrics-bridge

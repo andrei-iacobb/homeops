@@ -26,6 +26,10 @@ Fail-closed rules:
 """
 
 import http.server
+import hashlib
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
 import json
 import logging
 import math
@@ -362,6 +366,7 @@ class HomeAssistant:
     def __init__(self, base_url, token, opener=None):
         self.url = base_url.rstrip("/") + "/api/services/mqtt/publish"
         self.states_url = base_url.rstrip("/") + "/api/states"
+        self.notify_url = base_url.rstrip("/") + "/api/services/notify/mobile_app_andreis_iphone"
         self._token = token
         self.opener = opener or _opener
 
@@ -416,6 +421,307 @@ class HomeAssistant:
         return False
 
 
+    def notify_alert(self, alert, resolved=False):
+        # A stable tag replaces a delivery retried after an ambiguous timeout.
+        payload = {
+            "title": (("Resolved: " if resolved else "") + alert["title"])[:160],
+            "message": alert["message"],
+            "data": {"tag": "homelab-" + alert["id"], "url": "/lovelace/server-alerts"},
+        }
+        body = json.dumps(payload, ensure_ascii=False).encode()
+        # APNS allows 4 KiB including integration-added fields. Leave headroom,
+        # including for multi-byte text and JSON escaping of control characters.
+        while len(body) > 3500 and payload["message"]:
+            payload["message"] = payload["message"][:len(payload["message"]) // 2]
+            body = json.dumps(payload, ensure_ascii=False).encode()
+        req = urllib.request.Request(self.notify_url, data=body, method="POST", headers={
+            "Authorization": f"Bearer {self._token}", "Content-Type": "application/json",
+        })
+        try:
+            with self.opener.open(req, timeout=PUBLISH_TIMEOUT) as resp:
+                resp.read(MAX_HA_BYTES)
+                return 200 <= resp.status < 300
+        except urllib.error.HTTPError as e:
+            e.close()
+        except (OSError, ValueError):
+            pass
+        return False
+
+
+ALERT_TOPIC = "homelab-alerts"
+MAX_ALERT_BYTES = 2 * 1024 * 1024
+MAX_ALERTS = 2000
+MAX_ALERT_HISTORY = 50
+MAX_PENDING_ALERTS = 4000
+MAX_ALERT_STATE_BYTES = 8 * 1024 * 1024
+
+
+def parse_alerts(body):
+    """Keep suppressed alerts in the snapshot so suppression is not recovery."""
+    rows = json.loads(body)
+    if not isinstance(rows, list) or len(rows) > MAX_ALERTS:
+        raise ValueError("bad alert collection")
+    result = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("bad alert")
+        labels, annotations, status = row.get("labels"), row.get("annotations", {}), row.get("status")
+        if not isinstance(labels, dict) or not isinstance(annotations, dict) or not isinstance(status, dict):
+            raise ValueError("bad alert shape")
+        if not all(isinstance(k, str) and isinstance(v, str) for k, v in labels.items()):
+            raise ValueError("bad labels")
+        if not all(isinstance(k, str) and isinstance(v, str) for k, v in annotations.items()):
+            raise ValueError("bad annotations")
+        name, severity = labels.get("alertname"), labels.get("severity")
+        if not isinstance(name, str) or not name:
+            raise ValueError("missing alert name")
+        if severity not in ("warning", "critical") or name in ("Watchdog", "InfoInhibitor"):
+            continue
+        start = row.get("startsAt")
+        if not isinstance(start, str) or not start or len(start) > 64:
+            raise ValueError("missing start")
+        datetime.fromisoformat(start.replace("Z", "+00:00"))
+        state = status.get("state")
+        silenced, inhibited = status.get("silencedBy"), status.get("inhibitedBy")
+        if state not in ("active", "suppressed", "unprocessed") or not isinstance(silenced, list) or not isinstance(inhibited, list):
+            raise ValueError("bad status")
+        identity = json.dumps([labels, start], sort_keys=True, separators=(",", ":"))
+        key = hashlib.sha256(identity.encode()).hexdigest()[:32]
+        host = labels.get("host") or labels.get("instance") or labels.get("job") or labels.get("namespace") or "cluster"
+        result[key] = {
+            "id": key, "title": name[:160], "message": (annotations.get("summary") or name)[:300]
+                + (". " + annotations["description"][:500] if annotations.get("description") else ""),
+            "severity": severity, "host": host[:160], "started_at": start,
+            "suppressed": state != "active" or bool(silenced or inhibited or status.get("mutedBy", [])),
+        }
+    return result
+
+
+class Alertmanager:
+    def __init__(self, base_url, opener=None, clock=time.time):
+        self.clock = clock
+        # Request suppressed alerts too; disappearing from an active-only query
+        # does not establish that an incident recovered.
+        self.url = base_url.rstrip("/") + "/api/v2/alerts?active=true&silenced=true&inhibited=true&unprocessed=true"
+        self.opener = opener or _opener
+
+    def fetch(self):
+        try:
+            with self.opener.open(self.url, timeout=5) as resp:
+                if resp.status != 200:
+                    return None
+                body = resp.read(MAX_ALERT_BYTES + 1)
+            if len(body) > MAX_ALERT_BYTES:
+                return None
+            rows = json.loads(body)
+            if not isinstance(rows, list):
+                return None
+            heartbeat = False
+            for row in rows:
+                if not isinstance(row, dict) or not isinstance(row.get("labels"), dict) or row["labels"].get("alertname") != "Watchdog":
+                    continue
+                expiry = row.get("endsAt")
+                if not isinstance(expiry, str) or len(expiry) > 64:
+                    continue
+                try:
+                    until = datetime.fromisoformat(expiry.replace("Z", "+00:00"))
+                    heartbeat = until.utcoffset() is not None and until.timestamp() > self.clock()
+                except (ValueError, OverflowError):
+                    continue
+                if heartbeat:
+                    break
+            # Reachable Alertmanager is insufficient: if Prometheus stops,
+            # firing alerts expire there. Its continuously renewed Watchdog
+            # proves the producer is alive before absence can mean recovery.
+            if not heartbeat:
+                return None
+            return parse_alerts(body)
+        except urllib.error.HTTPError as e:
+            e.close()
+        except (OSError, ValueError, TypeError, KeyError):
+            pass
+        return None
+
+
+class AlertQueueFull(ValueError):
+    """Observation could not fit; existing persisted deliveries can still drain."""
+
+
+class AlertBridge:
+    def __init__(self, source, ha, state_file, clock=time.time):
+        self.source, self.ha, self.clock = source, ha, clock
+        self.path = Path(state_file)
+        self.observed = {}
+        self.pending = []
+        self.history = []
+        self.last_discovery = 0
+        self.source_up = 0
+        self.last_success = 0
+        self.notify_failures = 0
+        self.state_error = 0
+        self.last_payload = None
+        self.updated_at = None
+        self.attributes_dirty = True
+        if self.path.exists():
+            # Corrupt state must not silently reset dedup or discard deliveries.
+            if self.path.stat().st_size > MAX_ALERT_STATE_BYTES:
+                raise ValueError("oversized alert state")
+            data = json.loads(self.path.read_text())
+            if not isinstance(data, dict):
+                raise ValueError("bad alert state")
+            if data.get("version") == 1:
+                data = {"version": 2, "observed": data.get("notified"), "pending": [], "history": data.get("history")}
+            if data.get("version") != 2 or not isinstance(data.get("observed"), dict) or not isinstance(data.get("pending"), list) or not isinstance(data.get("history"), list):
+                raise ValueError("bad alert state")
+            if len(data["observed"]) > MAX_ALERTS or len(data["pending"]) > MAX_PENDING_ALERTS or len(data["history"]) > MAX_ALERT_HISTORY:
+                raise ValueError("oversized alert state")
+            for key, alert in data["observed"].items():
+                if not isinstance(alert, dict) or alert.get("id") != key or not all(isinstance(alert.get(f), str) for f in ("title", "message", "severity", "host")):
+                    raise ValueError("bad saved alert")
+            for event in data["history"] + data["pending"]:
+                if not isinstance(event, dict) or event.get("status") not in ("firing", "resolved") or not all(isinstance(event.get(f), str) for f in ("id", "title", "message", "severity", "host", "time")):
+                    raise ValueError("bad saved event")
+            self.observed, self.pending, self.history = data["observed"], data["pending"], data["history"]
+
+    def save(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        body = json.dumps({"version": 2, "observed": self.observed, "pending": self.pending, "history": self.history}, ensure_ascii=False)
+        if len(body.encode()) > MAX_ALERT_STATE_BYTES:
+            raise ValueError("oversized alert state")
+        fd, name = tempfile.mkstemp(prefix=".alerts-", dir=self.path.parent)
+        try:
+            with os.fdopen(fd, "w") as out:
+                out.write(body)
+                out.flush()
+                os.fsync(out.fileno())
+            os.replace(name, self.path)
+            directory = os.open(self.path.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
+
+    def observe(self, alerts):
+        changes = [(a, "firing") for k, a in alerts.items() if k not in self.observed and not a["suppressed"]]
+        changes += [(a, "resolved") for k, a in self.observed.items() if k not in alerts]
+        changes.sort(key=lambda item: (item[0]["severity"] != "critical", item[1] == "resolved", item[0]["id"]))
+        if len(self.pending) + len(changes) > MAX_PENDING_ALERTS:
+            raise AlertQueueFull("alert delivery queue full")
+        events = []
+        next_observed = dict(self.observed)
+        stamp = datetime.fromtimestamp(self.clock(), timezone.utc).isoformat()
+        for alert, status in changes:
+            event = dict(alert, status=status, time=stamp)
+            event.pop("suppressed", None)
+            events.append(event)
+            if status == "resolved":
+                next_observed.pop(alert["id"], None)
+            else:
+                next_observed[alert["id"]] = alert
+        if changes:
+            next_pending = self.pending + events
+            next_history = (events + self.history)[:MAX_ALERT_HISTORY]
+            candidate = {"version": 2, "observed": next_observed, "pending": next_pending, "history": next_history}
+            if len(json.dumps(candidate, ensure_ascii=False).encode()) > MAX_ALERT_STATE_BYTES:
+                raise AlertQueueFull("alert state byte limit reached")
+            self.observed, self.pending, self.history = next_observed, next_pending, next_history
+        # Persist observation before delivery. A short-lived incident must remain
+        # queued and visible even if HA is down for its entire firing lifetime.
+        if changes or self.state_error or not self.path.exists():
+            self.save()
+        self.state_error = 0
+
+    def deliver(self, alerts):
+        # Respect a silence added while delivery was unavailable. Keep its events
+        # queued; suppression is neither successful delivery nor recovery.
+        pending = [e for e in self.pending if e["id"] not in alerts or not alerts[e["id"]]["suppressed"]]
+        pending.sort(key=lambda e: (e["severity"] != "critical", e["time"], e["status"] == "resolved", e["id"]))
+        if not pending:
+            return
+        firing = sum(e["status"] == "firing" for e in pending)
+        recovered = len(pending) - firing
+        digest_id = hashlib.sha256(json.dumps([(e["id"], e["status"]) for e in pending]).encode()).hexdigest()[:32]
+        digest = {"id": digest_id, "title": f"Homelab: {firing} new, {recovered} resolved",
+                  "message": "\n".join(("Resolved: " if e["status"] == "resolved" else "") + f'{e["host"][:64]}: {e["message"][:180]}' for e in pending[:3])}
+        if len(pending) > 3:
+            digest["message"] += f"\n+{len(pending) - 3} more. Open Server alerts for the list."
+        if self.ha.notify_alert(digest):
+            sent = {(e["id"], e["status"]) for e in pending}
+            self.pending = [e for e in self.pending if (e["id"], e["status"]) not in sent]
+            self.save()
+        else:
+            self.notify_failures += 1
+
+    def cycle(self):
+        alerts = self.source.fetch()
+        self.source_up = int(alerts is not None)
+        if alerts is None:
+            self.ha.publish(ALERT_TOPIC + "/availability", "offline", True)
+            return
+        try:
+            self.observe(alerts)
+            self.deliver(alerts)
+        except AlertQueueFull:
+            # The refused observation has not mutated state. Prove all existing
+            # queued events durable, then let HA recovery free queue capacity.
+            # Remain offline until the next complete observation is persisted.
+            self.state_error = 1
+            try:
+                self.save()
+                self.deliver(alerts)
+            except (OSError, ValueError):
+                pass
+            self.ha.publish(ALERT_TOPIC + "/availability", "offline", True)
+            return
+        except (OSError, ValueError):
+            self.state_error = 1
+            self.ha.publish(ALERT_TOPIC + "/availability", "offline", True)
+            return
+        if self.clock() - self.last_discovery >= DISCOVERY_REFRESH:
+            discovery = {
+                "name": "Homelab alerts", "unique_id": "homelab_alerts", "default_entity_id": "sensor.homelab_alerts",
+                "state_topic": ALERT_TOPIC + "/state",
+                "json_attributes_topic": ALERT_TOPIC + "/attributes", "availability_topic": ALERT_TOPIC + "/availability",
+                "payload_available": "online", "payload_not_available": "offline", "expire_after": EXPIRE_AFTER,
+                "icon": "mdi:server-security", "device": {"identifiers": ["homelab_cluster"], "name": "Kubernetes cluster"},
+            }
+            if not self.ha.publish("homeassistant/sensor/homelab_alerts/config", json.dumps(discovery), True):
+                return
+            self.last_discovery = self.clock()
+            self.attributes_dirty = True
+        active = sorted((a for a in alerts.values() if not a["suppressed"]), key=lambda a: (a["severity"] != "critical", a["title"], a["host"]))
+        payload = {"active": active[:200], "history": self.history,
+                   "truncated": len(active) > 200, "pending_notifications": len(self.pending)}
+        signature = json.dumps(payload, sort_keys=True)
+        changed = signature != self.last_payload
+        if changed or self.attributes_dirty:
+            updated_at = datetime.fromtimestamp(self.clock(), timezone.utc).isoformat() if changed else self.updated_at
+            payload["last_updated"] = updated_at
+            if not self.ha.publish(ALERT_TOPIC + "/attributes", json.dumps(payload), False):
+                return
+            self.last_payload, self.updated_at = signature, updated_at
+            self.attributes_dirty = False
+        # Count-only heartbeats refresh expire_after without replaying attributes
+        # and forcing a recorder write every 30 seconds.
+        if self.ha.publish(ALERT_TOPIC + "/state", str(len(active)), False):
+            if self.ha.publish(ALERT_TOPIC + "/availability", "online", True):
+                self.last_success = self.clock()
+
+    def run(self, stop):
+        while not stop.is_set():
+            started = time.monotonic()
+            try:
+                self.cycle()
+            except Exception as e:
+                self.source_up = 0
+                log.warning("alert cycle failed: %s", type(e).__name__)
+            stop.wait(max(0, INTERVAL - (time.monotonic() - started)))
+        self.ha.publish(ALERT_TOPIC + "/availability", "offline", True)
+
+
 class Bridge:
     def __init__(self, prom, ha, sensors=SENSORS, clock=time.time):
         self.prom = prom
@@ -431,6 +737,8 @@ class Bridge:
         self.publish_failures = 0
         self.ha_counts = None
         self.ha_api_up = 0
+        self.alerts = None
+        self.alert_init_error = 0
         self.lock = threading.Lock()
 
     def _publish(self, topic, payload, retain, deadline):
@@ -542,6 +850,11 @@ class Bridge:
         if self.ha_counts is not None:
             lines += ["# HELP homeassistant_entities Entity counts excluding bridge sensors.", "# TYPE homeassistant_entities gauge"]
             lines += [f'homeassistant_entities{{state="{state}"}} {count}' for state, count in self.ha_counts.items()]
+        lines += [f"homelab_alerts_state_error {self.alert_init_error or (self.alerts.state_error if self.alerts else 0)}"]
+        if self.alerts:
+            lines += [f"homelab_alertmanager_up {self.alerts.source_up}",
+                      f"homelab_alerts_last_success_timestamp_seconds {self.alerts.last_success}",
+                      f"homelab_alerts_notify_failures_total {self.alerts.notify_failures}"]
         return ("\n".join(lines) + "\n").encode()
 
     def snapshot(self):
@@ -597,10 +910,23 @@ def main():
         raise SystemExit("HASS_TOKEN is not set")
     port = int(os.environ.get("LISTEN_PORT", "8080"))
 
-    bridge = Bridge(Prometheus(prom_url), HomeAssistant(ha_url, token))
+    ha = HomeAssistant(ha_url, token)
+    bridge = Bridge(Prometheus(prom_url), ha)
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     signal.signal(signal.SIGINT, lambda *_: stop.set())
+
+    alert_thread = None
+    try:
+        alerts = AlertBridge(Alertmanager(_require_http_url(
+            "ALERTMANAGER_URL", "http://alertmanager-operated.monitoring.svc.cluster.local:9093"
+        )), ha, os.environ.get("ALERT_STATE_FILE", "/data/alerts.json"))
+        bridge.alerts = alerts
+        alert_thread = threading.Thread(target=alerts.run, args=(stop,), daemon=True)
+        alert_thread.start()
+    except (OSError, ValueError, TypeError, AttributeError) as e:
+        bridge.alert_init_error = 1
+        log.error("alert state initialization failed: %s", type(e).__name__)
 
     bridge.snapshot()
     server = http.server.ThreadingHTTPServer(("0.0.0.0", port), make_handler(bridge))
@@ -631,6 +957,8 @@ def main():
     # Best effort inside terminationGracePeriodSeconds; expire_after covers a miss.
     bridge.mark_all_offline(time.time() + 15)
     server.shutdown()
+    if alert_thread:
+        alert_thread.join(timeout=5)
     log.info("stopped")
 
 

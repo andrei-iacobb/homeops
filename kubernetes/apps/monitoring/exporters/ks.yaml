@@ -9,6 +9,18 @@ spec:
   path: ./kubernetes/apps/monitoring/exporters
   prune: true
   targetNamespace: monitoring
+  postBuild:
+    substitute:
+      APP: homeassistant-alerts
+      APP_PVC: homeassistant-alerts
+      VOLSYNC_SCHEDULE: "43 4 * * *"
+      MOVER_UID: "1000"
+      MOVER_GID: "1000"
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+      - name: volsync-secret
+        kind: Secret
   sourceRef:
     kind: GitRepository
     name: flux-system
