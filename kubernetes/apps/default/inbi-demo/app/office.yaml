@@ -39,6 +39,10 @@ spec:
                 secretKeyRef:
                   name: inbi-demo-secret
                   key: DEMO_OFFICE_PASSWORD
+            - name: NEXT_PUBLIC_OFFICE_URL
+              value: https://inbi-demo-office.iacobapp.dev
+            - name: NEXT_PUBLIC_API_URL
+              value: https://inbi-demo.iacobapp.dev/api
             - name: API_INTERNAL_URL
               value: http://inbi-demo-api:4000
             - name: SESSION_COOKIE_NAME

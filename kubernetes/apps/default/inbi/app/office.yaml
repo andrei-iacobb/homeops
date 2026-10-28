@@ -37,8 +37,12 @@ spec:
             - name: HOSTNAME
               value: 0.0.0.0
             # Server-side calls skip the internet and go straight to the
-            # service. NEXT_PUBLIC_API_URL is baked in at image build time
-            # (Next inlines it), so it is not set here.
+            # service. Public URLs are also supplied at runtime for server
+            # environment validation and redirects.
+            - name: NEXT_PUBLIC_OFFICE_URL
+              value: https://inbi.iacobapp.dev
+            - name: NEXT_PUBLIC_API_URL
+              value: https://inbi.iacobapp.dev/api
             - name: API_INTERNAL_URL
               value: http://inbi-api.default.svc.cluster.local:4000
             - name: SESSION_COOKIE_NAME
