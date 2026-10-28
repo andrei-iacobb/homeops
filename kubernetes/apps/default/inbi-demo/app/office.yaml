@@ -22,7 +22,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: office
-          image: ghcr.io/andrei-iacobb/inbi-fleet-office-demo:1c8f7704bef4d91179bf825f4a912825ff5b4a53@sha256:d62f9cbe28333082bd637ab92672d2f5e6be6f6d5a2ff79434274daa34e2898f
+          image: ghcr.io/andrei-iacobb/inbi-fleet-office-demo:55035df907367443de14aae5a39257fbc5cd4b89@sha256:7c4c0df8bc3db73ae8eed8811d1532bfd809ceb724ac51a77ccf1009ff8d2da6
           env:
             - name: TZ
               value: Europe/London

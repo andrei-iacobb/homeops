@@ -20,7 +20,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: tablet
-          image: ghcr.io/andrei-iacobb/inbi-fleet-driver-demo:c2c83bb02d11c8da7ffd55829db570c379e5d313@sha256:a296e5ce1fc65643f89df0cc6de7af3ab0ec4173eefdfe0f23bcb43f9fc25616
+          image: ghcr.io/andrei-iacobb/inbi-fleet-driver-demo:55035df907367443de14aae5a39257fbc5cd4b89@sha256:c76de86c202ddcd3071e352c56f78843788d684909365d0b07bc791d2f0a5c60
           env:
             - name: DEMO_LAUNCHER_ORIGIN
               value: https://inbi-demo.iacobapp.dev

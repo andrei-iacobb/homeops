@@ -36,7 +36,7 @@ spec:
             capabilities:
               drop: ["ALL"]
         - name: migrate
-          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:c2c83bb02d11c8da7ffd55829db570c379e5d313@sha256:31ea744e9934a2574b1fc2ab8e3a2139b20b355ffb16dfd7bb3e610ae230ac35
+          image: ghcr.io/andrei-iacobb/inbi-fleet-migrator:55035df907367443de14aae5a39257fbc5cd4b89@sha256:93aa7223f0c92664fc534c76f8df420f778331b4584a5c28268e397875f90dbc
           env:
             - name: DATABASE_URL
               valueFrom:
@@ -80,7 +80,7 @@ spec:
             - name: tmp
               mountPath: /tmp
         - name: seed
-          image: ghcr.io/andrei-iacobb/inbi-fleet-api:c2c83bb02d11c8da7ffd55829db570c379e5d313@sha256:b37b983f8bb0ffeb023f9ea805b0186cc0f7a58f673ce2ef2b02c817c29f6e79
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:cfdc9b09f70bd277c6f331940f0fb916061d7dc331e8b86f750a72eba686ab89
           command: ["node", "dist/demo-seed.js"]
           envFrom:
             - secretRef:
@@ -108,7 +108,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: api
-          image: ghcr.io/andrei-iacobb/inbi-fleet-api:c2c83bb02d11c8da7ffd55829db570c379e5d313@sha256:b37b983f8bb0ffeb023f9ea805b0186cc0f7a58f673ce2ef2b02c817c29f6e79
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:cfdc9b09f70bd277c6f331940f0fb916061d7dc331e8b86f750a72eba686ab89
           envFrom:
             - secretRef:
                 name: inbi-demo-secret
