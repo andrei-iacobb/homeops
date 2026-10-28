@@ -1147,6 +1147,10 @@ def _apply(desired, force):
             window, _ = api.read(cids["time"])
             current, _ = api.read(cids["current"])
             live[key] = (window, current)
+        elif force:
+            # Forced clears must work even while Home Assistant is down.
+            # Every value is rewritten, so the cache cannot change the plan.
+            live[key] = (None, None)
         else:
             live[key] = _hass_cached_slot(kind, slot)
 
@@ -1349,7 +1353,7 @@ def verify_charging(charge_windows, discharge_windows, now, pushed_this_run=Fals
 
 # ---------- Main ----------
 
-def main():
+def run_optimizer():
     now_utc = datetime.now(timezone.utc)
     print(f"Solis Optimizer - run at {now_utc.strftime('%Y-%m-%d %H:%M UTC')}")
     print(f"Max Agile rate threshold: {MAX_RATE*100:.0f}p/kWh")
@@ -1487,6 +1491,29 @@ def main():
     verify_charging(all_charge, discharge_windows, datetime.now(timezone.utc),
                     pushed_this_run=written > 0)
     print("Done")
+
+
+def main():
+    try:
+        run_optimizer()
+    except SystemExit as error:
+        # The explicit storage-mode guards run before rate validation. Their
+        # failure must not leave yesterday's repeating slots enabled.
+        if error.code == 4:
+            print("ERROR: storage mode could not be verified - clearing schedule")
+            clear_schedule()
+        raise
+    except Exception as error:
+        # HA outages and malformed responses can fail before the empty-rate
+        # guard. SolisCloud is a separate connection, so try disabling the
+        # repeating slots even when HA cannot supply prices or cached state.
+        print(f"ERROR: optimizer failed ({type(error).__name__}) - clearing schedule")
+        try:
+            clear_schedule()
+        except Exception as clear_error:
+            print(f"ERROR: schedule clear failed ({type(clear_error).__name__}); "
+                  "inverter state is unverified")
+        raise SystemExit(1) from error
 
 
 if __name__ == "__main__":
