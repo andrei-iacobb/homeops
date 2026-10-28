@@ -15,8 +15,9 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/actualbudget/actual-server
-              tag: 26.10.0
+              repository: ghcr.io/andrei-iacobb/actual-budget
+              # Actual 26.10.0 with identical application files and patched Node.
+              tag: security-20261028-d6827a51@sha256:bdea6b7c6af4a84ba84aec8fba49ed5e8519748a325193f06290515a823a64b4
             env:
               TZ: Europe/London
             probes:
@@ -46,6 +47,8 @@ spec:
               limits:
                 memory: 256Mi
     defaultPodOptions:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
