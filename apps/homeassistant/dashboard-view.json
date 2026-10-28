@@ -1,0 +1,39 @@
+{
+  "title": "Server alerts",
+  "path": "server-alerts",
+  "icon": "mdi:server-security",
+  "type": "sections",
+  "max_columns": 1,
+  "dense_section_placement": false,
+  "sections": [
+    {
+      "type": "grid",
+      "cards": [
+        {
+          "type": "markdown",
+          "title": "Active alerts",
+          "entity_id": [
+            "sensor.homelab_alerts"
+          ],
+          "content": "{% macro text(value) -%}{{ value | default('', true) | string | regex_replace('[\\\\r\\\\n]+', ' ') | e }}{%- endmacro %}\n{% macro when(value) -%}{% set stamp = as_timestamp(value, none) %}{% if stamp is not none %}{{ stamp | timestamp_custom('%d %b, %H:%M', true) }}{% else %}Time not recorded{% endif %}{%- endmacro %}\n{% set availability = states('sensor.homelab_alerts') %}\n{% set items = state_attr('sensor.homelab_alerts', 'active') or [] %}\n{% set items = items if items is sequence and items is not string and items is not mapping else [] %}\n{% set total = availability | int(items | length) %}\n{% set updated = state_attr('sensor.homelab_alerts', 'last_updated') %}\n<div>\n{% if availability == 'unknown' %}\n<ha-alert alert-type=\"info\">Waiting for the first server alert update. A clear status has not been received yet.</ha-alert>\n{% elif availability == 'unavailable' %}\n<ha-alert alert-type=\"warning\">Server alerts are unavailable. This does not mean the servers are healthy. Check the alert bridge connection.</ha-alert>\n{% else %}\n<p><strong>{{ total }} active {{ 'alert' if total == 1 else 'alerts' }}</strong>{% if updated %}<br>Updated {{ when(updated) }}{% endif %}</p>\n{% if total == 0 %}<p>No active server alerts.</p>{% endif %}\n{% endif %}\n{% if items | length > 0 %}\n{% if availability in ['unknown', 'unavailable'] %}<p>Last recorded active alerts. Their current status is unconfirmed.</p>{% endif %}\n{% for item in items[:50] if item is mapping %}\n{% if loop.index == 11 %}<details><summary>Show {{ [items | length, 50] | min - 10 }} more active alerts</summary>{% endif %}\n<p><strong>{{ text(item.get('title') or 'Server alert') }}</strong><br>{{ text(item.get('host') or 'Homelab') }} \u00b7 {{ {'critical': 'Critical', 'warning': 'Warning', 'info': 'Info'}.get(item.get('severity'), 'Info') }}<br>{{ text(item.get('message')) }}<br>Started {{ when(item.get('started_at')) }}</p>\n{% if not loop.last %}<hr>{% endif %}\n{% endfor %}\n{% if items | length > 10 %}</details>{% endif %}\n{% if total > 50 %}<p>Showing the first 50 of {{ total }} active alerts, with critical alerts first.</p>{% elif total > items | length %}<p>Showing {{ items | length }} of {{ total }} active alerts.</p>{% endif %}\n{% elif availability not in ['unknown', 'unavailable'] and total > 0 %}\n<ha-alert alert-type=\"warning\">Alert details have not arrived yet.</ha-alert>\n{% endif %}\n</div>",
+          "grid_options": {
+            "columns": 12,
+            "rows": "auto"
+          }
+        },
+        {
+          "type": "markdown",
+          "title": "Recent history",
+          "entity_id": [
+            "sensor.homelab_alerts"
+          ],
+          "content": "{% macro text(value) -%}{{ value | default('', true) | string | regex_replace('[\\\\r\\\\n]+', ' ') | e }}{%- endmacro %}\n{% macro when(value) -%}{% set stamp = as_timestamp(value, none) %}{% if stamp is not none %}{{ stamp | timestamp_custom('%d %b, %H:%M', true) }}{% else %}Time not recorded{% endif %}{%- endmacro %}\n{% set availability = states('sensor.homelab_alerts') %}\n{% set items = state_attr('sensor.homelab_alerts', 'history') or [] %}\n{% set items = items if items is sequence and items is not string and items is not mapping else [] %}\n<div>\n{% if availability in ['unknown', 'unavailable'] %}<p>The feed is unavailable. Any history below is the last recorded history.</p>{% endif %}\n{% if items | length == 0 %}<p>No alert events recorded yet.</p>{% else %}\n<p>Latest {{ [items | length, 50] | min }} events, newest first.</p>\n{% for item in items[:50] if item is mapping %}\n<p><strong>{{ text(item.get('title') or 'Server alert') }}</strong><br>{{ text(item.get('host') or 'Homelab') }} \u00b7 {{ {'resolved': 'Resolved', 'firing': 'Firing'}.get(item.get('status'), 'Recorded') }} \u00b7 {{ {'critical': 'Critical', 'warning': 'Warning', 'info': 'Info'}.get(item.get('severity'), 'Info') }}<br>{{ text(item.get('message')) }}<br>{{ when(item.get('time')) }}</p>\n{% if not loop.last %}<hr>{% endif %}\n{% endfor %}\n{% endif %}\n</div>",
+          "grid_options": {
+            "columns": 12,
+            "rows": "auto"
+          }
+        }
+      ]
+    }
+  ]
+}

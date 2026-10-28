@@ -1,0 +1,66 @@
+{
+  "id": "homelab_server_alerts_watchdog",
+  "alias": "Homelab server alerts unavailable",
+  "description": "Notify once after the alert feed is unavailable for five minutes. At Home Assistant startup, wait up to five minutes for the feed to recover. The one-minute tail suppresses simultaneous startup and availability triggers.",
+  "triggers": [
+    {
+      "trigger": "template",
+      "id": "unavailable",
+      "value_template": "{{ states('sensor.homelab_alerts') in ['unknown', 'unavailable'] }}",
+      "for": {
+        "minutes": 5
+      }
+    },
+    {
+      "trigger": "homeassistant",
+      "id": "startup",
+      "event": "start"
+    }
+  ],
+  "conditions": [],
+  "actions": [
+    {
+      "choose": [
+        {
+          "conditions": [
+            {
+              "condition": "trigger",
+              "id": "startup"
+            }
+          ],
+          "sequence": [
+            {
+              "wait_template": "{{ states('sensor.homelab_alerts') not in ['unknown', 'unavailable'] }}",
+              "timeout": {
+                "minutes": 5
+              },
+              "continue_on_timeout": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "condition": "template",
+      "value_template": "{{ states('sensor.homelab_alerts') in ['unknown', 'unavailable'] }}"
+    },
+    {
+      "action": "notify.mobile_app_andreis_iphone",
+      "data": {
+        "title": "Server monitoring unavailable",
+        "message": "Home Assistant has not received server alert updates for at least five minutes. Check the cluster, alert bridge and network. Server health is unconfirmed.",
+        "data": {
+          "tag": "homelab-server-monitoring-unavailable",
+          "url": "/lovelace/server-alerts"
+        }
+      }
+    },
+    {
+      "delay": {
+        "minutes": 1
+      }
+    }
+  ],
+  "mode": "single",
+  "max_exceeded": "silent"
+}
