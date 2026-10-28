@@ -23,7 +23,7 @@ spec:
           install:
             image: &image
               repository: docker.io/library/node
-              tag: 24-alpine
+              tag: 26-alpine
             command:
               - npm
               - install
