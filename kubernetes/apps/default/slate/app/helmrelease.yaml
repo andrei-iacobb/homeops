@@ -18,7 +18,7 @@ spec:
           app:
             image:
               repository: git.iacob.co.uk/andrei/slate
-              tag: latest
+              tag: security-20261028-f197c94@sha256:8400fd2c7b93261400a0ee002440c7d8740329d15c6aa2ef4357ac7470190601
             env:
               TZ: Europe/London
               NODE_ENV: production
