@@ -3,6 +3,8 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: jellyfin
+  labels:
+    app.kubernetes.io/name: jellyfin
 spec:
   chartRef:
     kind: OCIRepository
@@ -10,6 +12,16 @@ spec:
   interval: 1h
   # Database migrations must finish before Helm considers the upgrade failed.
   timeout: 130m
+  install:
+    crds: CreateReplace
+    strategy:
+      name: RetryOnFailure
+  upgrade:
+    crds: CreateReplace
+    # A migrated database cannot be rolled back by restoring the old image.
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 10m
   values:
     controllers:
       jellyfin:
