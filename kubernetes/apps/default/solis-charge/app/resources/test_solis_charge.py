@@ -74,6 +74,38 @@ class ChargeSafetyTests(unittest.TestCase):
         self.assertEqual(result.exception.code, 4)
         self.assert_disabled()
 
+    def test_unreadable_clock_still_attempts_direct_clear(self):
+        read = self.inverter.read
+
+        def fail_clock_only(cid):
+            if cid == solis.INVERTER_CLOCK_CID:
+                raise solis.SolisError("clock unavailable")
+            return read(cid)
+
+        with patch.object(self.inverter, "read", side_effect=fail_clock_only):
+            with self.assertRaises(SystemExit) as result:
+                solis.main()
+        self.assertEqual(result.exception.code, 2)
+        self.assert_disabled()
+
+    def test_programming_failure_gets_one_best_effort_clear(self):
+        write = self.inverter.write
+        failed = False
+
+        def fail_first_write(cid, value, **kwargs):
+            nonlocal failed
+            if not failed:
+                failed = True
+                raise solis.SolisError("transient write failure")
+            return write(cid, value, **kwargs)
+
+        with patch.object(solis, "run_optimizer", side_effect=solis.clear_schedule), patch.object(
+                self.inverter, "write", side_effect=fail_first_write):
+            with self.assertRaises(SystemExit) as result:
+                solis.main()
+        self.assertEqual(result.exception.code, 5)
+        self.assert_disabled()
+
     def test_failed_clear_never_reports_success(self):
         with patch.object(solis, "run_optimizer", side_effect=ValueError("bad data")), patch.object(
                 self.inverter, "login", side_effect=solis.SolisError("offline")):

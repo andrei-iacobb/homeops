@@ -675,7 +675,7 @@ def verify_inverter_clock():
         t1 = datetime.now(timezone.utc)
     except SolisError as e:
         print(f"ABORTING: cannot read the inverter clock from SolisCloud ({e}); "
-              f"slot writes would not reach it either. Investigate.")
+              f"attempting to disable the existing schedule. Investigate.")
         sys.exit(2)
     now = t0 + (t1 - t0) / 2
     try:
@@ -684,7 +684,6 @@ def verify_inverter_clock():
         print(f"ABORTING: inverter clock (cid {INVERTER_CLOCK_CID}) returned "
               f"{raw!r}, not a timestamp. Clearing the schedule so no stale "
               f"window keeps firing. Investigate.")
-        clear_schedule()
         sys.exit(2)
 
     delta = (inverter_dt - now.replace(tzinfo=None)).total_seconds()
@@ -703,7 +702,6 @@ def verify_inverter_clock():
               f"{drift:+.0f}s left over - not a usable time zone reading. "
               f"Clearing the schedule so no stale window keeps firing; correct "
               f"the inverter time in the SolisCloud app.")
-        clear_schedule()
         sys.exit(2)
     if abs(drift) > INVERTER_CLOCK_WARN_DRIFT_SECONDS:
         print(f"WARN: inverter clock drift {drift:+.0f}s - slot boundaries will "
@@ -1497,10 +1495,11 @@ def main():
     try:
         run_optimizer()
     except SystemExit as error:
-        # The explicit storage-mode guards run before rate validation. Their
-        # failure must not leave yesterday's repeating slots enabled.
-        if error.code == 4:
-            print("ERROR: storage mode could not be verified - clearing schedule")
+        # Clock/mode guards run before price validation, and programming
+        # errors can leave a partially updated schedule. A clear needs no
+        # clock offset and may succeed even if a particular read/write failed.
+        if error.code in (2, 4, 5):
+            print("ERROR: inverter state could not be verified - clearing schedule")
             clear_schedule()
         raise
     except Exception as error:
