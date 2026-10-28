@@ -80,7 +80,7 @@ spec:
             - name: tmp
               mountPath: /tmp
         - name: seed
-          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:cfdc9b09f70bd277c6f331940f0fb916061d7dc331e8b86f750a72eba686ab89
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:5bf01fcfe3abfc1dec52e9b5fe633c42686ac0b6c42ad9703ecd009811a62966
           command: ["node", "dist/demo-seed.js"]
           envFrom:
             - secretRef:
@@ -108,7 +108,7 @@ spec:
               drop: ["ALL"]
       containers:
         - name: api
-          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:cfdc9b09f70bd277c6f331940f0fb916061d7dc331e8b86f750a72eba686ab89
+          image: ghcr.io/andrei-iacobb/inbi-fleet-api:55035df907367443de14aae5a39257fbc5cd4b89@sha256:5bf01fcfe3abfc1dec52e9b5fe633c42686ac0b6c42ad9703ecd009811a62966
           envFrom:
             - secretRef:
                 name: inbi-demo-secret
