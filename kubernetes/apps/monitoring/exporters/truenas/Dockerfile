@@ -1,13 +1,9 @@
 # TrueNAS API Exporter - pulls metrics from TrueNAS REST API
 # Based on https://github.com/alexlmiller/truenas-grafana
-FROM python:3.15.1-slim@sha256:533b0b2f9b5d46fd097091cf826f27902f1d6c3bca714b6dc74551356aa97a51
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.15.2-slim@sha256:c4158543ecb725b99e57d129dfd43d761d4c43e4577b5e23326aabb223cf7f4e
 
 WORKDIR /app
-RUN curl -sL https://raw.githubusercontent.com/alexlmiller/truenas-grafana/main/exporter/truenas-exporter.py \
-    -o truenas-exporter.py && chmod +x truenas-exporter.py
+COPY app/resources/truenas-exporter.py ./truenas-exporter.py
 EXPOSE 9814
 
 COPY entrypoint.sh /app/entrypoint.sh
