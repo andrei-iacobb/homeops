@@ -29,6 +29,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -40,6 +41,8 @@ spec:
           value: "1"
         - name: PROM_URL
           value: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+        - name: ALERT_STATE_FILE
+          value: /data/alerts.json
         - name: HASS_URL
           value: http://192.168.1.90:8123
         - name: HASS_TOKEN
@@ -59,9 +62,9 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 32Mi
+            memory: 128Mi
           limits:
-            memory: 96Mi
+            memory: 256Mi
         # /healthz is the loop heartbeat, not HA reachability: restarting the
         # pod cannot fix an unreachable HA, but it does fix a wedged loop.
         livenessProbe:
@@ -81,7 +84,12 @@ spec:
         - name: app
           mountPath: /app
           readOnly: true
+        - name: alert-state
+          mountPath: /data
       volumes:
+      - name: alert-state
+        persistentVolumeClaim:
+          claimName: homeassistant-alerts
       - name: app
         configMap:
           name: homeassistant-metrics-bridge

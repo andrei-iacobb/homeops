@@ -3,6 +3,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: proxmox-exporter
+  annotations:
+    # These credential placeholders belong to the container shell, not Flux.
+    kustomize.toolkit.fluxcd.io/substitute: disabled
   labels:
     app: proxmox-exporter
 spec:
