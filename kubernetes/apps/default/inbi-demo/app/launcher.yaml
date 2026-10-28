@@ -22,7 +22,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: launcher
-          image: ghcr.io/andrei-iacobb/inbi-fleet-launcher:55035df907367443de14aae5a39257fbc5cd4b89@sha256:2885677dd54ce4358e65336d6b07ddca9732c308a46c798f2ca61d0675df90c2
+          image: ghcr.io/andrei-iacobb/inbi-fleet-launcher:55035df907367443de14aae5a39257fbc5cd4b89@sha256:277d747644f4e051809fdb31b4d521132230575606ccbdfa954c17b2b48cbf7c
           env:
             - name: DEMO_API_URL
               value: http://inbi-demo-api:4000
