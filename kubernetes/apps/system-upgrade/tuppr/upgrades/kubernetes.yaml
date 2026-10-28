@@ -8,7 +8,7 @@ metadata:
 spec:
   kubernetes:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    version: v1.35.9
+    version: v1.35.10
   maintenance:
     windows:
       # After the Talos slot, so the two never compete for the window.
