@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: ghcr.io/andrei-iacobb/truenas-exporter:latest
+        image: ghcr.io/andrei-iacobb/truenas-exporter:security-20261028-a720c4c9@sha256:774d6a0dd39bddda2568c8ce17fa2ab9d6e37eeb80660cf957c449084e915f5d
         ports:
         - name: metrics
           containerPort: 9814
