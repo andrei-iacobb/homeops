@@ -16,3 +16,18 @@ configMapGenerator:
       - profile.tmpl=files/profile.tmpl
     options:
       disableNameSuffixHash: true
+# Forgejo supports rebuilding omitted search indexes after restore:
+# https://forgejo.org/docs/v17.0/admin/setup/backup/#indexers
+patches:
+  - target:
+      group: volsync.backube
+      kind: ReplicationSource
+    patch: |-
+      apiVersion: volsync.backube/v1alpha1
+      kind: ReplicationSource
+      metadata:
+        name: ignored
+      spec:
+        restic:
+          exclude:
+            caches: true

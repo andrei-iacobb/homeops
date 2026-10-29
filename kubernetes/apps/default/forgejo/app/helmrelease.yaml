@@ -39,6 +39,11 @@ spec:
                 mkdir -p /data/gitea/templates/user
                 cp /custom-src/profile.tmpl /data/gitea/templates/user/profile.tmpl
                 chown -R 1000:1000 /data/gitea/templates
+                # Search indexes are rebuildable; keep private keys and repositories in backups.
+                # Restore: Site Administration > Maintenance > Rebuild issue indexer.
+                mkdir -p /data/gitea/indexers
+                printf 'Signature: 8a477f597d28d172789f06886806bc55\n# Forgejo rebuildable search indexes only.\n' > /data/gitea/indexers/CACHEDIR.TAG
+                chown 1000:1000 /data/gitea/indexers /data/gitea/indexers/CACHEDIR.TAG
             securityContext:
               runAsUser: 0
               runAsGroup: 0

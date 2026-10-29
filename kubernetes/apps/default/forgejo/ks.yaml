@@ -11,7 +11,8 @@ spec:
       APP: forgejo
       APP_PVC: forgejo
       VOLSYNC_SCHEDULE: "30 3 * * *"
-      MOVER_UID: "1000"
+      # Root owns the SSH host keys; group 1000 reads the remaining application data.
+      MOVER_UID: "0"
       MOVER_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
