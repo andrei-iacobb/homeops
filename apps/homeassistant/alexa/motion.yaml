@@ -1,0 +1,122 @@
+# Ring motion events become native motion sensors for Alexa.
+# Each event produces a 30-second pulse; old events do not replay on startup.
+template:
+  - triggers:
+      - trigger: state
+        entity_id: event.front_door_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa front door motion
+        unique_id: alexa_front_door_motion
+        device_class: motion
+        availability: "{{ not is_state('event.front_door_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.meli_s_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa meli s motion
+        unique_id: alexa_meli_s_motion
+        device_class: motion
+        availability: "{{ not is_state('event.meli_s_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.dining_room_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa dining room motion
+        unique_id: alexa_dining_room_motion
+        device_class: motion
+        availability: "{{ not is_state('event.dining_room_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.garden_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa garden motion
+        unique_id: alexa_garden_motion
+        device_class: motion
+        availability: "{{ not is_state('event.garden_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.hallway_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa hallway motion
+        unique_id: alexa_hallway_motion
+        device_class: motion
+        availability: "{{ not is_state('event.hallway_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.driveway_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa driveway motion
+        unique_id: alexa_driveway_motion
+        device_class: motion
+        availability: "{{ not is_state('event.driveway_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30
+  - triggers:
+      - trigger: state
+        entity_id: event.living_motion
+      - trigger: homeassistant
+        event: start
+    binary_sensor:
+      - name: Alexa living motion
+        unique_id: alexa_living_motion
+        device_class: motion
+        availability: "{{ not is_state('event.living_motion', 'unavailable') }}"
+        state: >-
+          {{ trigger.platform == 'state'
+             and trigger.to_state is not none
+             and trigger.to_state.attributes.get('event_type') == 'motion'
+             and 0 <= as_timestamp(now()) - as_timestamp(trigger.to_state.state, 0) < 30 }}
+        auto_off:
+          seconds: 30

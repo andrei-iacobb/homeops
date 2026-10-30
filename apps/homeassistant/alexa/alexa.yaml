@@ -1,0 +1,119 @@
+# Included by configuration.yaml as: alexa: !include alexa.yaml
+smart_home:
+  locale: en-GB
+  # Proactive events additionally require Skill Messaging credentials and relinking.
+  endpoint: https://api.eu.amazonalexa.com/v3/events
+  filter:
+    include_domains:
+      - alarm_control_panel
+      - light
+      - climate
+      - media_player
+      - vacuum
+      - fan
+      - cover
+      - lock
+      - humidifier
+      - valve
+      - water_heater
+    include_entities:
+      # Physical switches and controls. Keep network and inverter configuration private.
+      - switch.apple_tv
+      - switch.dining_room_motion_detection
+      - switch.driveway_motion_detection
+      - switch.front_door_in_home_chime
+      - switch.front_door_motion_detection
+      - switch.garden_motion_detection
+      - switch.hallway_motion_detection
+      - switch.living_motion_detection
+      - switch.meli_s_motion_detection
+      - switch.smart_wi_fi_plug
+      - switch.smart_wi_fi_plug_2
+      - switch.smart_wi_fi_plug_3
+      - switch.eversweet_max_2_cordless_power
+      - switch.downstairs_fountain_power
+      - switch.tommy_food_camera
+      - switch.downstairs_feeder_camera
+      - switch.tommy_food_indicator_light
+      - switch.downstairs_feeder_indicator_light
+      - switch.living_room_s7_max_ultra_dock_dust_emptying
+      - switch.living_room_s7_max_ultra_dock_mop_washing
+      - switch.living_room_s7_max_ultra_dock_mop_drying
+      # Recordings and snapshots do not implement Alexa's live stream interface.
+      - camera.front_door_live_view
+      - camera.meli_s_live_view
+      - camera.dining_room_live_view
+      - camera.garden_live_view
+      - camera.hallway_live_view
+      - camera.driveway_live_view
+      - camera.living_live_view
+      - camera.tommy_food
+      - camera.downstairs_feeder
+      - event.front_door_ding
+      # TRVs already expose their own temperature through the thermostat endpoint.
+      - sensor.drei_room_sensor_temperature
+      - sensor.usw_pro_max_16_temperature
+      - sensor.homelab_dl360_cpu_temperature
+      - sensor.homelab_dl360_inlet_temperature
+      - sensor.homelab_dl380_cpu_temperature
+      - sensor.homelab_dl380_inlet_temperature
+      - sensor.homelab_gpu_temperature
+      - sensor.solis_inverter_1031030229080043_solis_temperature
+      - binary_sensor.alexa_front_door_motion
+      - binary_sensor.alexa_meli_s_motion
+      - binary_sensor.alexa_dining_room_motion
+      - binary_sensor.alexa_garden_motion
+      - binary_sensor.alexa_hallway_motion
+      - binary_sensor.alexa_driveway_motion
+      - binary_sensor.alexa_living_motion
+      - binary_sensor.eversweet_max_2_cordless_pet_drinking
+      - binary_sensor.downstairs_fountain_pet_drinking
+      - binary_sensor.downstairs_feeder_eating
+    exclude_entities:
+      - media_player.pc
+      - media_player.pc_2
+      # Stale duplicate TV entity has no capabilities beyond power.
+      - media_player.tv_samsung_q60_series_75
+  entity_config:
+    media_player.43_qled_qe43q7faauxxu:
+      name: 43 inch QLED TV
+    media_player.tv_samsung_q60_series_75_2:
+      name: 75 inch Samsung TV
+    switch.eversweet_max_2_cordless_power:
+      name: Upstairs pet fountain
+    switch.downstairs_fountain_power:
+      name: Downstairs pet fountain
+    switch.tommy_food_camera:
+      name: Tommy feeder camera power
+    switch.downstairs_feeder_camera:
+      name: Downstairs feeder camera power
+    switch.tommy_food_indicator_light:
+      name: Tommy feeder indicator light
+      display_categories: LIGHT
+    switch.downstairs_feeder_indicator_light:
+      name: Downstairs feeder indicator light
+      display_categories: LIGHT
+    binary_sensor.alexa_front_door_motion:
+      name: Front door motion
+    binary_sensor.alexa_meli_s_motion:
+      name: Melisa room motion
+    binary_sensor.alexa_dining_room_motion:
+      name: Dining room motion
+    binary_sensor.alexa_garden_motion:
+      name: Garden motion
+    binary_sensor.alexa_hallway_motion:
+      name: Hallway motion
+    binary_sensor.alexa_driveway_motion:
+      name: Driveway motion
+    binary_sensor.alexa_living_motion:
+      name: Living room motion
+    # Occupancy has no stock Alexa adapter. Expose activity as native motion.
+    binary_sensor.eversweet_max_2_cordless_pet_drinking:
+      name: Upstairs fountain pet activity
+      display_categories: MOTION_SENSOR
+    binary_sensor.downstairs_fountain_pet_drinking:
+      name: Downstairs fountain pet activity
+      display_categories: MOTION_SENSOR
+    binary_sensor.downstairs_feeder_eating:
+      name: Downstairs feeder pet activity
+      display_categories: MOTION_SENSOR
