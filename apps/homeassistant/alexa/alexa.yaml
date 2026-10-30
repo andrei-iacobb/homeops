@@ -39,14 +39,8 @@ smart_home:
       - switch.living_room_s7_max_ultra_dock_dust_emptying
       - switch.living_room_s7_max_ultra_dock_mop_washing
       - switch.living_room_s7_max_ultra_dock_mop_drying
-      # Recordings and snapshots do not implement Alexa's live stream interface.
-      - camera.front_door_live_view
-      - camera.meli_s_live_view
-      - camera.dining_room_live_view
-      - camera.garden_live_view
-      - camera.hallway_live_view
-      - camera.driveway_live_view
-      - camera.living_live_view
+      # These cameras provide verified HLS. Ring's WebRTC-only entities are excluded.
+      # Ring live view needs its streaming bridge reauthenticated and configured first.
       - camera.tommy_food
       - camera.downstairs_feeder
       - event.front_door_ding

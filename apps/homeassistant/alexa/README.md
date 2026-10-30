@@ -14,9 +14,15 @@ alexa: !include alexa.yaml
 
 Install `motion.yaml` as `/config/packages/alexa_motion.yaml`. The existing `homeassistant.packages` include loads it. Validate the complete configuration before restarting Core.
 
-The filter preserves existing endpoint IDs, excludes the stale Samsung TV duplicate, and exposes live cameras, thermostats, TVs, lights, vacuum controls, selected physical switches, temperature sensors and activity sensors. Newly added entities in included domains are discovered automatically. Additional switches, cameras and sensors require selection in `alexa.yaml` so configuration controls and unsupported sensor types do not become misleading devices.
+The filter preserves existing endpoint IDs, excludes the stale Samsung TV duplicate, and exposes HLS cameras, thermostats, TVs, lights, vacuum controls, selected physical switches, temperature sensors and activity sensors. Newly added entities in included domains are discovered automatically. Additional switches, cameras and sensors require selection in `alexa.yaml` so configuration controls and unsupported sensor types do not become misleading devices.
 
 Ring motion events become seven native motion sensors. Each fresh motion event starts a 30-second pulse. Old timestamps are ignored after reconnect; startup clears restored motion; an unavailable source makes its motion sensor unavailable.
+
+## Ring live view
+
+The existing Ring live-view entities offer WebRTC, but the stock Alexa adapter requests HLS. Advertising `CameraStreamController` is not proof that this path works. Ring live-view entities are excluded from this filter until a real stream passes initialization and public manifest checks.
+
+The existing cluster Ring MQTT bridge currently rejects its saved refresh token. Frigate's source configuration still contains placeholder camera paths. Reauthenticate the existing Ring MQTT bridge, resolve its real stream paths, and establish a private, authenticated source reachable by HA before exposing these cameras. Do not enable Frigate recording as a side effect of the Alexa repair.
 
 ## Proactive updates and routines
 
