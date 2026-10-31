@@ -64,7 +64,7 @@ spec:
           app:
             image:
               repository: shlinkio/shlink-web-client
-              tag: 4.8.1
+              tag: 4.9.0
             env:
               TZ: Europe/London
             probes:
