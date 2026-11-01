@@ -21,7 +21,7 @@ from homeassistant.exceptions import HomeAssistantError
 from webrtc_models import RTCIceCandidateInit
 
 import alexa_rtc_bridge as bridge
-from alexa_rtc_bridge.sdp import embed_candidates
+from alexa_rtc_bridge.sdp import embed_candidates, is_ipv4_candidate
 from alexa_rtc_bridge.session import EndpointUnreachable, NAMESPACE, SessionManager
 
 CAMERA = "camera.front_door_live_view"
@@ -183,6 +183,25 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.manager.sessions)
         self.camera.close_webrtc_session.assert_called_once()
 
+    async def test_disconnect_after_offer_returns_cancels_pending_answer_promptly(self):
+        returned = asyncio.Event()
+        async def no_answer(offer, key, receive):
+            returned.set()
+        self.camera.async_handle_async_webrtc_offer = no_answer
+        request = directive()
+        task = asyncio.create_task(self.manager.initiate(self.hass, None, request, self.context))
+        await returned.wait()
+        await asyncio.sleep(0)
+        session = self.manager.sessions[request.payload["sessionId"]]
+        self.assertTrue(session.task.done())
+        self.assertFalse(session.answer_future.done())
+        await self.manager.disconnected(self.hass, None, request, self.context)
+        with self.assertRaises(EndpointUnreachable):
+            await asyncio.wait_for(task, timeout=0.1)
+        self.assertTrue(session.answer_future.cancelled())
+        self.assertFalse(self.manager.sessions)
+        self.camera.close_webrtc_session.assert_called_once_with(request.payload["sessionId"])
+
     async def test_request_cancellation_closes_session(self):
         started = asyncio.Event()
         async def pending(offer, key, receive):
@@ -246,12 +265,66 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(handlers.HANDLERS, saved_handlers)
         self.assertIs(entities.ENTITY_ADAPTERS[camera.DOMAIN], saved_adapter)
 
+    async def test_registered_state_watcher_releases_removed_and_unavailable_cameras(self):
+        saved_handlers = handlers.HANDLERS.copy()
+        saved_adapter = entities.ENTITY_ADAPTERS[camera.DOMAIN]
+        stop = None
+        try:
+            for key in bridge.RTC_KEYS:
+                handlers.HANDLERS.pop(key, None)
+            with patch.object(bridge, "__version__", "2026.9.3"):
+                self.assertTrue(await bridge.async_setup(self.hass, {bridge.DOMAIN: {"include_entities": [CAMERA]}}))
+            manager = self.hass.data[bridge.DOMAIN]
+            stop = self.hass.bus.async_listen_once.call_args.args[1]
+            event_type, watcher, event_filter = self.hass.bus.async_listen.call_args.args
+            self.assertEqual(event_type, bridge.EVENT_STATE_CHANGED)
+            self.camera.async_handle_async_webrtc_offer = self.answer
+            for new_state in (None, State(CAMERA, "unavailable")):
+                request = directive()
+                await manager.initiate(self.hass, None, request, self.context)
+                unrelated = {"entity_id": SECOND, "new_state": None}
+                self.assertFalse(event_filter(unrelated))
+                watcher(SimpleNamespace(data=unrelated))
+                self.assertIn(request.payload["sessionId"], manager.sessions)
+                available = {"entity_id": CAMERA, "new_state": State(CAMERA, "idle")}
+                self.assertFalse(event_filter(available))
+                watcher(SimpleNamespace(data=available))
+                self.assertIn(request.payload["sessionId"], manager.sessions)
+                data = {"entity_id": CAMERA, "new_state": new_state}
+                self.assertTrue(event_filter(data))
+                watcher(SimpleNamespace(data=data))
+                watcher(SimpleNamespace(data=data))
+                self.assertFalse(manager.sessions)
+            self.assertEqual(self.camera.close_webrtc_session.call_count, 2)
+            stop(None)
+            stop = None
+            self.hass.bus.async_listen.return_value.assert_called_once_with()
+        finally:
+            if stop:
+                stop(None)
+            entities.ENTITY_ADAPTERS[camera.DOMAIN] = saved_adapter
+            handlers.HANDLERS.clear()
+            handlers.HANDLERS.update(saved_handlers)
+
     def test_candidates_route_by_mid_and_ipv6_never_leaks(self):
         answer = OFFER + "a=" + IPV6 + "\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\na=mid:audio\r\n"
         result = embed_candidates(answer, [RTCIceCandidateInit(IPV4, sdp_mid="audio")])
         self.assertNotIn(IPV6, result)
         self.assertGreater(result.index("a=" + IPV4), result.index("a=mid:audio"))
         self.assertNotIn("a=" + IPV4, result.split("m=audio")[0])
+
+    def test_non_candidate_attributes_and_double_prefix_are_rejected(self):
+        invalid = [
+            "a=" + IPV4,
+            "a=candidate:" + IPV4,
+            "other:1 1 UDP 1 192.0.2.10 5000 typ host",
+            IPV4 + "\r\na=sendrecv",
+        ]
+        self.assertTrue(is_ipv4_candidate(IPV4))
+        for value in invalid:
+            self.assertFalse(is_ipv4_candidate(value), value)
+        result = embed_candidates(OFFER, [RTCIceCandidateInit(value, sdp_mid="video") for value in invalid])
+        self.assertNotIn("a=candidate:", result)
 
 
 if __name__ == "__main__":

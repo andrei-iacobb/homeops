@@ -14,7 +14,12 @@ import voluptuous as vol
 
 from homeassistant.components import camera
 from homeassistant.components.alexa import capabilities, entities, handlers
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP, __version__
+from homeassistant.const import (
+    EVENT_HOMEASSISTANT_STOP,
+    EVENT_STATE_CHANGED,
+    STATE_UNAVAILABLE,
+    __version__,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
@@ -106,10 +111,32 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data[DOMAIN] = manager
 
     @callback
+    def camera_unavailable(data: dict[str, Any]) -> bool:
+        state = data.get("new_state")
+        return data.get("entity_id") in entity_ids and (
+            state is None or state.state == STATE_UNAVAILABLE
+        )
+
+    @callback
+    def camera_state_changed(event: Any) -> None:
+        # Core Alexa rejects removed entities before dispatching disconnects.
+        # Release retained sessions from state events instead of waiting for expiry.
+        if camera_unavailable(event.data):
+            entity_id = event.data["entity_id"]
+            for key, session in list(manager.sessions.items()):
+                if session.entity_id == entity_id:
+                    manager.close(key, session)
+
+    unsubscribe_state = hass.bus.async_listen(
+        EVENT_STATE_CHANGED, camera_state_changed, camera_unavailable
+    )
+
+    @callback
     def stop(event: Any) -> None:
         try:
             manager.stop(event)
         finally:
+            unsubscribe_state()
             if entities.ENTITY_ADAPTERS.get(camera.DOMAIN) is ScopedCameraCapabilities:
                 entities.ENTITY_ADAPTERS[camera.DOMAIN] = original_adapter
             for key, handler in installed.items():

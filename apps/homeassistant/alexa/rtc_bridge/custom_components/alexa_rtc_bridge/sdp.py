@@ -12,6 +12,8 @@ from webrtc_models import RTCIceCandidateInit
 
 def is_ipv4_candidate(candidate: str) -> bool:
     """Alexa accepts IPv4 ICE candidates only."""
+    if not candidate.startswith("candidate:") or "\n" in candidate or "\r" in candidate:
+        return False
     try:
         return ipaddress.ip_address(candidate.split()[4]).version == 4
     except (IndexError, ValueError):

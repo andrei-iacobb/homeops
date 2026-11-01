@@ -49,6 +49,7 @@ class Session:
     camera: camera.Camera
     offer_hash: str
     answer: str | None = None
+    answer_future: asyncio.Future[str] | None = None
     task: asyncio.Task[None] | None = None
     expiry: asyncio.TimerHandle | None = None
     closed: bool = False
@@ -111,6 +112,8 @@ class SessionManager:
             session.expiry.cancel()
         if session.task and not session.task.done():
             session.task.cancel()
+        if session.answer_future and not session.answer_future.done():
+            session.answer_future.cancel()
         try:
             session.camera.close_webrtc_session(key)
         except Exception as err:
@@ -166,6 +169,7 @@ class SessionManager:
 
     async def _answer(self, key: str, session: Session, offer: str) -> str:
         answer_future: asyncio.Future[str] = self.hass.loop.create_future()
+        session.answer_future = answer_future
         candidates: list[RTCIceCandidateInit] = []
         gathering_done = asyncio.Event()
         camera_error = False
