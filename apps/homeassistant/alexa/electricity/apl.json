@@ -1,0 +1,333 @@
+{
+  "type": "APL",
+  "version": "1.8",
+  "description": "A tariff strip puts the two real hourly averages above the next half-hour prices so the household can choose when to use electricity.",
+  "theme": "dark",
+  "settings": {
+    "idleTimeout": 120000
+  },
+  "resources": [
+    {
+      "colors": {
+        "bg": "#0F1216",
+        "ink": "#F4F6F8",
+        "inkMuted": "#B8C0CA",
+        "bar": "#8E99A6",
+        "accent": "#FFB300",
+        "axis": "#5A6470"
+      },
+      "dimensions": {
+        "pad": 32,
+        "gap": 16,
+        "titleSize": 26,
+        "bigValue": 72,
+        "bigUnit": 26,
+        "bigLabel": 24,
+        "barPrice": 20,
+        "barTime": 20,
+        "barZone": 16,
+        "footSize": 24,
+        "msgSize": 40,
+        "chartHeight": 300,
+        "axisHeight": 2
+      }
+    },
+    {
+      "when": "${viewport.height < 760}",
+      "dimensions": {
+        "pad": 24,
+        "gap": 12,
+        "titleSize": 22,
+        "bigValue": 56,
+        "bigUnit": 22,
+        "bigLabel": 20,
+        "barPrice": 18,
+        "barTime": 18,
+        "barZone": 14,
+        "footSize": 20,
+        "msgSize": 34,
+        "chartHeight": 200
+      }
+    },
+    {
+      "when": "${viewport.height < 520}",
+      "dimensions": {
+        "pad": 16,
+        "gap": 8,
+        "titleSize": 20,
+        "bigValue": 44,
+        "bigUnit": 18,
+        "bigLabel": 18,
+        "barPrice": 16,
+        "barTime": 16,
+        "barZone": 13,
+        "footSize": 18,
+        "msgSize": 30,
+        "chartHeight": 140
+      }
+    }
+  ],
+  "layouts": {
+    "HourTile": {
+      "parameters": [
+        "tile"
+      ],
+      "items": [
+        {
+          "type": "Container",
+          "grow": 1,
+          "shrink": 1,
+          "width": "${viewport.width >= viewport.height ? '50%' : '100%'}",
+          "items": [
+            {
+              "type": "Text",
+              "text": "${tile.label}",
+              "fontSize": "@bigLabel",
+              "color": "@inkMuted",
+              "maxLines": 1
+            },
+            {
+              "type": "Container",
+              "direction": "row",
+              "alignItems": "end",
+              "items": [
+                {
+                  "type": "Text",
+                  "text": "${tile.value}",
+                  "fontSize": "@bigValue",
+                  "fontWeight": "700",
+                  "color": "${tile.available ? @ink : @inkMuted}",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "text": "${tile.unit}",
+                  "fontSize": "@bigUnit",
+                  "color": "@inkMuted",
+                  "maxLines": 1,
+                  "paddingLeft": 8,
+                  "paddingBottom": "${@bigValue * 0.18}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "RateBar": {
+      "parameters": [
+        "bar",
+        "count",
+        "upShare",
+        "downShare"
+      ],
+      "items": [
+        {
+          "type": "Container",
+          "direction": "column",
+          "width": "${100 / count}%",
+          "alignItems": "center",
+          "items": [
+            {
+              "type": "Text",
+              "text": "${bar.price}",
+              "fontSize": "@barPrice",
+              "color": "${bar.current ? @accent : @ink}",
+              "textAlign": "center",
+              "maxLines": 1
+            },
+            {
+              "type": "Container",
+              "width": "100%",
+              "height": "${@chartHeight * upShare}",
+              "justifyContent": "end",
+              "alignItems": "center",
+              "items": [
+                {
+                  "type": "Frame",
+                  "width": "62%",
+                  "height": "${@chartHeight * upShare * bar.up}",
+                  "backgroundColor": "${bar.current ? @accent : @bar}"
+                }
+              ]
+            },
+            {
+              "type": "Frame",
+              "width": "100%",
+              "height": "@axisHeight",
+              "backgroundColor": "@axis"
+            },
+            {
+              "type": "Container",
+              "width": "100%",
+              "height": "${@chartHeight * downShare}",
+              "justifyContent": "start",
+              "alignItems": "center",
+              "items": [
+                {
+                  "type": "Frame",
+                  "width": "62%",
+                  "height": "${@chartHeight * downShare * bar.down}",
+                  "backgroundColor": "${bar.current ? @accent : @bar}"
+                }
+              ]
+            },
+            {
+              "type": "Text",
+              "text": "${bar.time}",
+              "fontSize": "@barTime",
+              "color": "${bar.current ? @accent : @inkMuted}",
+              "textAlign": "center",
+              "maxLines": 1,
+              "paddingTop": 4
+            },
+            {
+              "type": "Text",
+              "text": "${bar.zone}",
+              "fontSize": "@barZone",
+              "color": "@inkMuted",
+              "textAlign": "center",
+              "maxLines": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "mainTemplate": {
+    "parameters": [
+      "payload"
+    ],
+    "items": [
+      {
+        "type": "Frame",
+        "width": "100%",
+        "height": "100%",
+        "backgroundColor": "@bg",
+        "items": [
+          {
+            "type": "Container",
+            "width": "100%",
+            "height": "100%",
+            "paddingLeft": "@pad",
+            "paddingRight": "@pad",
+            "paddingTop": "@pad",
+            "paddingBottom": "@pad",
+            "items": [
+              {
+                "type": "Container",
+                "direction": "row",
+                "width": "100%",
+                "justifyContent": "spaceBetween",
+                "alignItems": "center",
+                "items": [
+                  {
+                    "type": "Text",
+                    "text": "${payload.tariff.title}",
+                    "fontSize": "@titleSize",
+                    "color": "@inkMuted",
+                    "maxLines": 1,
+                    "shrink": 1
+                  },
+                  {
+                    "type": "Text",
+                    "text": "${payload.tariff.asOf}",
+                    "fontSize": "@titleSize",
+                    "color": "@inkMuted",
+                    "maxLines": 1,
+                    "paddingLeft": "@gap"
+                  }
+                ]
+              },
+              {
+                "when": "${payload.tariff.state == 'ok'}",
+                "type": "Container",
+                "direction": "${viewport.width >= viewport.height ? 'row' : 'column'}",
+                "width": "100%",
+                "spacing": "@gap",
+                "items": [
+                  {
+                    "type": "HourTile",
+                    "tile": "${payload.tariff.currentHour}"
+                  },
+                  {
+                    "type": "HourTile",
+                    "tile": "${payload.tariff.nextHour}"
+                  }
+                ]
+              },
+              {
+                "when": "${payload.tariff.state == 'ok'}",
+                "type": "Container",
+                "direction": "row",
+                "width": "100%",
+                "alignItems": "end",
+                "spacing": "@gap",
+                "data": "${payload.tariff.bars}",
+                "items": [
+                  {
+                    "type": "RateBar",
+                    "bar": "${data}",
+                    "count": "${payload.tariff.barCount}",
+                    "upShare": "${payload.tariff.upShare}",
+                    "downShare": "${payload.tariff.downShare}"
+                  }
+                ]
+              },
+              {
+                "when": "${payload.tariff.state == 'ok'}",
+                "type": "Container",
+                "grow": 1,
+                "shrink": 1
+              },
+              {
+                "when": "${payload.tariff.state == 'ok'}",
+                "type": "Text",
+                "text": "${payload.tariff.summary}",
+                "fontSize": "@footSize",
+                "color": "@ink",
+                "maxLines": 2,
+                "spacing": "@gap"
+              },
+              {
+                "when": "${payload.tariff.state == 'ok'}",
+                "type": "Text",
+                "text": "${payload.tariff.coverage}",
+                "fontSize": "@footSize",
+                "color": "@inkMuted",
+                "maxLines": 2,
+                "paddingTop": 4
+              },
+              {
+                "when": "${payload.tariff.state != 'ok'}",
+                "type": "Container",
+                "grow": 1,
+                "width": "100%",
+                "justifyContent": "center",
+                "alignItems": "start",
+                "items": [
+                  {
+                    "type": "Text",
+                    "text": "${payload.tariff.headline}",
+                    "fontSize": "@msgSize",
+                    "fontWeight": "700",
+                    "color": "@ink",
+                    "maxLines": 3
+                  },
+                  {
+                    "type": "Text",
+                    "text": "${payload.tariff.detail}",
+                    "fontSize": "@footSize",
+                    "color": "@inkMuted",
+                    "maxLines": 4,
+                    "spacing": "@gap"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
