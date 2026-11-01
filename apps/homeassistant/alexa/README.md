@@ -12,7 +12,7 @@ Install `alexa.yaml` as `/config/alexa.yaml` and use this in the existing `confi
 alexa: !include alexa.yaml
 ```
 
-Install `motion.yaml` as `/config/packages/alexa_motion.yaml`. The existing `homeassistant.packages` include loads it. Validate the complete configuration before restarting Core.
+Store the skill's Alexa Skill Messaging credentials as `alexa_client_id` and `alexa_client_secret` in HA's local `secrets.yaml` before installing this configuration. Never commit those values. Install `motion.yaml` as `/config/packages/alexa_motion.yaml`. The existing `homeassistant.packages` include loads it. Validate the complete configuration before restarting Core.
 
 The filter preserves existing endpoint IDs, excludes the stale Samsung TV duplicate, and exposes HLS cameras, thermostats, TVs, lights, vacuum controls, selected physical switches, temperature sensors and activity sensors. Newly added entities in included domains are discovered automatically. Additional switches, cameras and sensors require selection in `alexa.yaml` so configuration controls and unsupported sensor types do not become misleading devices.
 
@@ -30,7 +30,7 @@ Native discovery, direct control and retrievable states use the existing account
 
 1. Enable **Send Alexa Events** in the existing skill's developer console.
 2. Retrieve that skill's **Alexa Skill Messaging** client ID and secret. These are different from account-linking credentials. Store them only in HA's `secrets.yaml`.
-3. Add `client_id: !secret alexa_client_id` and `client_secret: !secret alexa_client_secret` under `smart_home` in `/config/alexa.yaml`. The European event endpoint is already selected.
+3. The checked-in configuration references `alexa_client_id` and `alexa_client_secret` under `smart_home`; confirm the corresponding local secrets exist. The European event endpoint is already selected.
 4. Validate and restart Core, disable/re-enable the existing skill in the Alexa app and link Home Assistant again. Restart Core after relinking, as required by HA's documentation.
 5. Discover devices and verify that a real motion event triggers an Alexa routine and an HA-side state change reaches Alexa.
 
