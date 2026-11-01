@@ -1,0 +1,9 @@
+{
+  "domain": "alexa_rtc_bridge",
+  "name": "Alexa Ring WebRTC backport",
+  "version": "1.0.0",
+  "documentation": "https://git.iacob.co.uk/andrei/homeops/issues/1070",
+  "dependencies": ["alexa", "camera"],
+  "codeowners": [],
+  "iot_class": "cloud_push"
+}
