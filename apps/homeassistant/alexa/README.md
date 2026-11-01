@@ -16,7 +16,7 @@ Install `motion.yaml` as `/config/packages/alexa_motion.yaml`. The existing `hom
 
 The filter preserves existing endpoint IDs, excludes the stale Samsung TV duplicate, and exposes HLS cameras, thermostats, TVs, lights, vacuum controls, selected physical switches, temperature sensors and activity sensors. Newly added entities in included domains are discovered automatically. Additional switches, cameras and sensors require selection in `alexa.yaml` so configuration controls and unsupported sensor types do not become misleading devices.
 
-Ring motion events become seven native motion sensors. Each fresh motion event starts a 30-second pulse. Old timestamps are ignored after reconnect; startup clears restored motion; an unavailable source makes its motion sensor unavailable.
+Ring motion events become seven native motion sensors. Each fresh motion event starts a 30-second pulse. Old timestamps are ignored after reconnect; startup clears restored motion; a missing or unavailable source makes its motion sensor unavailable.
 
 ## Ring live view
 
@@ -42,7 +42,7 @@ Do not infer successful proactive authorization from `AcceptGrant.Response`: HA 
 python3 -m unittest discover -s apps/homeassistant/alexa -p test_lambda_function.py -v
 ```
 
-Run `test_motion.py` alongside `motion.yaml` in the installed HA Python environment. It starts an isolated temporary HA instance, accelerates the pulse timer to one second, and checks stale events, startup, repeated detections, timer isolation and source unavailability.
+Run `test_motion.py` alongside `motion.yaml` in the installed HA Python environment. It starts an isolated temporary HA instance, accelerates the pulse timer to one second, and checks stale events, startup, repeated detections, timer isolation and missing/unavailable sources. HTTP is bound only to an unused loopback port, and Supervisor/HASSIO environment settings are removed from the test instance.
 
 Package only `lambda_function.py` at the root of the Lambda ZIP. Keep handler `lambda_function.lambda_handler`, Python 3.13 and the existing 15-second Lambda timeout. Preserve the current AWS function configuration and invocation policy. Retain the previous code package before replacing code, and check discovery through Lambda after deployment.
 

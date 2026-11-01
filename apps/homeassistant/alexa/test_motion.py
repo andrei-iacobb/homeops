@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import socket
 from datetime import timedelta
 from pathlib import Path
 import tempfile
@@ -10,7 +11,9 @@ from unittest.mock import patch
 
 import yaml
 from homeassistant import bootstrap, loader
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, State
+from homeassistant.helpers.restore_state import StoredState
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 
@@ -34,6 +37,15 @@ class MotionTests(unittest.IsolatedAsyncioTestCase):
             self.hass.states.async_set(source, (dt_util.utcnow() - timedelta(minutes=10)).isoformat(), {"event_type": "motion"})
         for block in config["template"]:
             block["binary_sensor"][0]["auto_off"] = {"seconds": 1}
+        restored = [
+            StoredState(State(target, "on", {"device_class": "motion"}), None, dt_util.utcnow()).as_dict()
+            for target in self.targets
+        ]
+        await Store(self.hass, 1, "core.restore_state").async_save(restored)
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+        config["http"] = {"server_host": "127.0.0.1", "server_port": port}
         assert await bootstrap.async_from_config_dict(config, self.hass) is not None
         await self.hass.async_start()
         await self.hass.async_block_till_done()
@@ -58,6 +70,18 @@ class MotionTests(unittest.IsolatedAsyncioTestCase):
         self.hass.states.async_set(self.sources[0], (dt_util.utcnow() - timedelta(minutes=10)).isoformat(), {"event_type": "motion"})
         await self.hass.async_block_till_done()
         self.assertEqual(self.hass.states.get(self.targets[0]).state, "off")
+
+    async def test_source_exists_before_first_event_and_after_rename(self):
+        source, target = self.sources[0], self.targets[0]
+        self.hass.states.async_set(source, "unknown", {"device_class": "motion"})
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.hass.states.get(target).state, "off")
+        self.hass.states.async_remove(source)
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.hass.states.get(target).state, "unavailable")
+        self.hass.states.async_set(source, "unknown", {"device_class": "motion"})
+        await self.hass.async_block_till_done()
+        self.assertEqual(self.hass.states.get(target).state, "off")
 
     async def test_repeated_motion_extends_only_its_own_pulse(self):
         first, second = self.sources[:2]
