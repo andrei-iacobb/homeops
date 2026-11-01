@@ -44,10 +44,32 @@ python3 -m unittest discover -s apps/homeassistant/alexa -p test_lambda_function
 
 Run `test_motion.py` alongside `motion.yaml` in the installed HA Python environment. It starts an isolated temporary HA instance, accelerates the pulse timer to one second, and checks stale events, startup, repeated detections, timer isolation and missing/unavailable sources. HTTP is bound only to an unused loopback port, and Supervisor/HASSIO environment settings are removed from the test instance.
 
-Package only `lambda_function.py` at the root of the Lambda ZIP. Keep handler `lambda_function.lambda_handler`, Python 3.13 and the existing 15-second Lambda timeout. Preserve the current AWS function configuration and invocation policy. Retain the previous code package before replacing code, and check discovery through Lambda after deployment.
+Package `lambda_function.py` and `native_readings.py` at the root of the Smart Home Lambda ZIP. Keep handler `lambda_function.lambda_handler`, Python 3.13 and the existing 15-second Lambda timeout. Preserve the current AWS function configuration and invocation policy. Retain the previous code package before replacing code, and check discovery through Lambda after deployment.
 
 Acceptance requires a useful controller or sensor interface on every endpoint, fewer than 300 endpoints, valid UK capability locales, and real Alexa app/voice checks. Camera discovery does not prove that the camera's actual live stream plays.
 
-HA does not expose every entity type through Alexa. Humidity, power, arbitrary status and food-level sensors have no stock native adapter. TRV temperatures already appear on their thermostat endpoints. Feeder dispensing has no stock native feeder controller. These limitations must not be hidden behind invented light, switch or scene devices.
+The Lambda adds native `Alexa.HumiditySensor` reporting to the existing Drei room temperature endpoint, using the confirmed humidity entity from the same physical sensor. It is retrievable, with the real sample timestamp, and does not claim proactive humidity updates. Invalid or missing humidity returns an unavailable endpoint rather than zero. Alexa's humidity interface has no voice utterances.
+
+HA does not expose every entity type through Alexa. Power, arbitrary status and food-level sensors have no stock native adapter. TRV temperatures already appear on their thermostat endpoints. Published UK Alexa APIs provide no native feeder dispensing controller. These limitations must not be hidden behind invented light, switch or scene devices.
+
+## Electricity briefing
+
+The existing skill also uses an en-GB Custom model named **home energy**. Its separate `ha-alexa-electricity` Lambda reads only the two fixed Octopus import-rate feeds using the linked HA account token. No permanent HA token is deployed. Keep the Smart Home endpoint on `ha-alexa-bridge`.
+
+Say **Alexa, ask home energy for the electricity price** or **Alexa, open home energy**. The response gives complete current and next clock-hour averages, the current half-hour price, and the lowest and highest upcoming half-hours. Prices are import p/kWh including VAT, excluding standing charges. Actual Agile billing remains half-hourly. Missing coverage is never filled with zero.
+
+On an APL-capable requesting device, the response includes a six-hour chart of actual half-hour prices. It supports negative prices and shortens the chart when later rates are unavailable. Other Echos receive speech. The graph appears on the requesting display, not automatically on another Echo Show.
+
+For **Alexa, what is the electricity like**, create an Alexa voice Routine using that phrase, with an action to launch the existing skill. The default launch returns the briefing. Test the Routine on the intended Echo Show because routine-launched visuals depend on device support.
+
+The `electricity` directory contains the deployable handler, APL document, en-GB interaction model and additive custom-model manifest fragment. Configure its Lambda as Python 3.13, handler `lambda_function.lambda_handler`, timeout 8 seconds, and set `ALEXA_SKILL_ID` to the existing skill ID. Restrict the Alexa Skills Kit trigger to that same skill. Package only the four runtime files named in `electricity/deployment-contract.json`; replace manifest ARN placeholders before importing. Preserve account linking and the Smart Home API configuration. Enable APL in the custom model's Interfaces settings and build the en-GB model.
+
+Run these offline suites as separate Python processes so the two Lambda modules do not collide:
+
+```sh
+python3 -m unittest discover -s apps/homeassistant/alexa -p 'test_lambda_function.py' -v
+python3 -m unittest discover -s apps/homeassistant/alexa -p 'test_native_readings.py' -v
+python3 -m unittest discover -s apps/homeassistant/alexa/electricity -p 'test_*.py' -v
+```
 
 References: [HA Alexa Smart Home](https://www.home-assistant.io/integrations/alexa.smart_home/), [HA template sensors](https://www.home-assistant.io/integrations/template/), [Alexa discovery](https://developer.amazon.com/docs/alexaplus/device-apis/alexa-discovery).
