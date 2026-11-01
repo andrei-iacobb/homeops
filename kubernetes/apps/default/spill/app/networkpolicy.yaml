@@ -1,0 +1,28 @@
+---
+# SPILL needs only the gateway in and cliproxy (plus DNS) out.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: spill-egress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: spill
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: code
+            app.kubernetes.io/name: cliproxy
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP

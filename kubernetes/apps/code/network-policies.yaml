@@ -53,3 +53,22 @@ spec:
         - ports:
             - port: "8317"
               protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cliproxy-spill
+  namespace: code
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: cliproxy
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: default
+            app.kubernetes.io/name: spill
+      toPorts:
+        - ports:
+            - port: "8317"
+              protocol: TCP

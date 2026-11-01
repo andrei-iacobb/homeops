@@ -1,0 +1,75 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spill
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spill
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spill
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: home-cluster
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: git-iacob-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: git.iacob.co.uk/andrei/spill:0c49a1c@sha256:294104705cca67a4462b13a7afaba4a31ac777060833c890c8feb1b02cf7c97e
+          env:
+            - name: PORT
+              value: "4747"
+            - name: CLIPROXY_URL
+              value: http://cliproxy.code.svc.cluster.local:8317
+            - name: SPILL_HISTORY
+              value: /tmp/history.json
+            - name: CLIPROXY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: spill-secret
+                  key: cliproxy-token
+          ports:
+            - name: http
+              containerPort: 4747
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
+            limits:
+              memory: 192Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi

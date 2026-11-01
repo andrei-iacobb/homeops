@@ -614,6 +614,10 @@ data:
           icon: mdi-tools
           href: https://it-tools.iacob.uk
           description: Developer utilities
+      - SPILL:
+          icon: mdi-ferris-wheel
+          href: https://spill.iacob.uk
+          description: Truth-or-lie party wheel for the TV
       - Android Emulator:
           icon: mdi-android
           href: https://android.iacob.uk

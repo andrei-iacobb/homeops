@@ -55,6 +55,7 @@ resources:
   - ./fanwatch/ks.yaml
   - ./petkit-snapshotter/ks.yaml
   - ./slate/ks.yaml
+  - ./spill/ks.yaml
   - ./forgejo-runner/ks.yaml
   - ./minecraft-bedrock/ks.yaml
   - ./mc-router/ks.yaml
