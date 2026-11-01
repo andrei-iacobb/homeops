@@ -20,9 +20,15 @@ Ring motion events become seven native motion sensors. Each fresh motion event s
 
 ## Ring live view
 
-The existing Ring live-view entities offer WebRTC, but the stock Alexa adapter requests HLS. Advertising `CameraStreamController` is not proof that this path works. Ring live-view entities are excluded from this filter until a real stream passes initialization and public manifest checks.
+Ring is already authenticated in HA and its seven live-view entities provide WebRTC. The installed HA 2026.9.3 Alexa adapter supports HLS only. The scoped `rtc_bridge` component backports upstream HA's native `Alexa.RTCSessionController` signaling, using the existing Ring session directly. It does not use Ring-MQTT, Frigate recording or a public RTSP port.
 
-The existing cluster Ring MQTT bridge currently rejects its saved refresh token. Frigate's source configuration still contains placeholder camera paths. Reauthenticate the existing Ring MQTT bridge, resolve its real stream paths, and establish a private, authenticated source reachable by HA before exposing these cameras. Do not enable Frigate recording as a side effect of the Alexa repair.
+Copy `rtc_bridge/custom_components/alexa_rtc_bridge` to `/config/custom_components/alexa_rtc_bridge`, install `rtc_bridge.yaml` as `/config/alexa_rtc_bridge.yaml`, and add `alexa_rtc_bridge: !include alexa_rtc_bridge.yaml` to `configuration.yaml`. Install the component and validate HA before adding its seven camera entries from `alexa.yaml`. Only allowlisted cameras whose actual capabilities include WebRTC receive the native RTC interface; other cameras retain their stock adapter.
+
+This backport is pinned to HA 2026.9.3 and uses internal Alexa registries. Before upgrading HA, confirm the target version has the upstream RTC implementation or remove the backport and the seven Ring filter entries together. Native upstream RTC support makes the backport a no-op. A failed component setup must not be treated as working camera discovery.
+
+Signaling uses the linked user's HA read permission, endpoint/user ownership, a five-second negotiation deadline and bounded session resources. Disconnect, failure, cancellation, shutdown and ten-minute expiry close the Ring session. The answer contains IPv4 candidates because Alexa does not support trickle ICE. Keep Alexa Smart Home logging at INFO so SDP and ICE credentials do not enter debug logs. Test real Echo Show playback, stop and repeat viewing after relinking; discovery alone is insufficient.
+
+Upstream: [HA RTC implementation](https://github.com/home-assistant/core/pull/182881), [follow-up](https://github.com/home-assistant/core/commit/5588f94efe6bde02a4b7cecffcab23fb085c8d55), [Amazon RTC contract](https://developer.amazon.com/docs/alexaplus/device-apis/alexa-rtcsessioncontroller).
 
 ## Proactive updates and routines
 

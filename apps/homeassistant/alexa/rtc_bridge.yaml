@@ -1,0 +1,9 @@
+# Included as: alexa_rtc_bridge: !include alexa_rtc_bridge.yaml
+include_entities:
+  - camera.front_door_live_view
+  - camera.meli_s_live_view
+  - camera.dining_room_live_view
+  - camera.garden_live_view
+  - camera.hallway_live_view
+  - camera.driveway_live_view
+  - camera.living_live_view
