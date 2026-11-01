@@ -77,6 +77,44 @@ class BridgeTests(unittest.TestCase):
                 self.assert_error(result, "INVALID_AUTHORIZATION_CREDENTIAL")
                 opened.assert_not_called()
 
+    def test_native_humidity_uses_the_linked_token_and_preserves_temperature(self):
+        directive = self.event["directive"]
+        directive["header"].update(namespace="Alexa", name="ReportState")
+        directive["endpoint"]["endpointId"] = "sensor#drei_room_sensor_temperature"
+        stock = {"event": {"header": {"namespace": "Alexa", "name": "StateReport"}},
+                 "context": {"properties": [{"namespace": "Alexa.TemperatureSensor", "name": "temperature", "value": {"value": 19.1, "scale": "CELSIUS"}}]}}
+        humidity = {"entity_id": "sensor.drei_room_sensor_humidity", "state": "61.5",
+                    "attributes": {"device_class": "humidity", "unit_of_measurement": "%"},
+                    "last_updated": "2026-11-01T10:53:21+00:00"}
+        with patch.object(bridge._opener, "open", side_effect=[io.BytesIO(json.dumps(stock).encode()), io.BytesIO(json.dumps(humidity).encode())]) as opened:
+            result = bridge.lambda_handler(self.event, None)
+        self.assertEqual(result["context"]["properties"][0], stock["context"]["properties"][0])
+        self.assertEqual(result["context"]["properties"][1]["value"], 61.5)
+        self.assertEqual(opened.call_args_list[0].kwargs["timeout"], 5)
+        reading = opened.call_args_list[1]
+        self.assertEqual(reading.args[0].full_url, "https://hass.iacob.co.uk/api/states/sensor.drei_room_sensor_humidity")
+        self.assertEqual(reading.args[0].get_method(), "GET")
+        self.assertEqual(reading.args[0].get_header("Authorization"), "Bearer account-token")
+        self.assertEqual(reading.kwargs["timeout"], 1.5)
+        self.assertNotIn("account-token", json.dumps(result))
+
+    def test_humidity_fetch_failures_have_sanitized_correlated_errors(self):
+        directive = self.event["directive"]
+        directive["header"].update(namespace="Alexa", name="ReportState")
+        directive["endpoint"]["endpointId"] = "sensor#drei_room_sensor_temperature"
+        stock = {"event": {"header": {"namespace": "Alexa", "name": "StateReport"}}, "context": {"properties": []}}
+        for failure, expected in [
+            (urllib.error.HTTPError(bridge.HA_URL, 404, "private", {}, io.BytesIO(b"private")), "ENDPOINT_UNREACHABLE"),
+            (TimeoutError("private account-token"), "BRIDGE_UNREACHABLE"),
+            (urllib.error.HTTPError(bridge.HA_URL, 503, "private", {}, io.BytesIO(b"private")), "BRIDGE_UNREACHABLE"),
+        ]:
+            with self.subTest(expected=expected), patch.object(bridge._opener, "open", side_effect=[io.BytesIO(json.dumps(stock).encode()), failure]):
+                result = bridge.lambda_handler(self.event, None)
+            self.assertEqual(result["event"]["payload"]["type"], expected)
+            self.assertEqual(result["event"]["header"]["correlationToken"], "correlate-this-command")
+            self.assertNotIn("private", json.dumps(result))
+            self.assertNotIn("account-token", json.dumps(result))
+
     def test_http_authentication_failures_are_not_internal_errors_or_body_leaks(self):
         for status in [401, 403]:
             with self.subTest(status=status):

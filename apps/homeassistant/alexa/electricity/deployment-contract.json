@@ -1,0 +1,52 @@
+{
+  "package": "apps/homeassistant/alexa/electricity",
+  "purpose": "Custom-model electricity briefing endpoint for the existing multi-capability Alexa skill. The Smart Home Lambda stays separate and unchanged.",
+  "lambda": {
+    "runtime": "python3.13",
+    "handler": "lambda_function.lambda_handler",
+    "architecture": "arm64 or x86_64 (pure Python, no native deps)",
+    "zipRootFiles": [
+      "lambda_function.py",
+      "tariffs.py",
+      "presentation.py",
+      "apl.json"
+    ],
+    "timeoutSeconds": 8,
+    "memoryMb": 256,
+    "environment": {
+      "ALEXA_SKILL_ID": "amzn1.ask.skill.REPLACE_WITH_EXISTING_SKILL_ID"
+    },
+    "trigger": {
+      "type": "Alexa Skills Kit",
+      "skillIdVerification": "enabled with the same skill id as ALEXA_SKILL_ID"
+    },
+    "iam": "Basic execution role only (CloudWatch Logs). No other AWS permissions are used.",
+    "network": "Outbound HTTPS to hass.iacob.co.uk only, two read-only GETs per invocation, no retries, TLS verified, redirects refused, 512 KiB body cap, 3 s socket timeout each, 6 s shared budget."
+  },
+  "skillManifest": {
+    "mergeStrategy": "Deep-merge manifest-custom-patch.json into the live manifest fetched via SMAPI. Only manifest.apis.custom is added or replaced; manifest.apis.smartHome, manifest.permissions, manifest.privacyAndCompliance and the accountLinking configuration must be left exactly as they are.",
+    "placeholders": [
+      "REPLACE_WITH_ELECTRICITY_LAMBDA_ARN in manifest.apis.custom.endpoint.uri and manifest.apis.custom.regions.EU.endpoint.uri"
+    ],
+    "accountLinking": "Unchanged. The custom API reuses the Home Assistant OAuth link already configured for the skill; the handler reads the token from context.System.user.accessToken (fallback session.user.accessToken)."
+  },
+  "interactionModel": {
+    "locale": "en-GB",
+    "file": "interaction-model-en-GB.json",
+    "invocationName": "home energy",
+    "routineNote": "A casual phrase can be mapped with an Alexa Routine that opens this custom model; there is no name-free UK invocation."
+  },
+  "homeAssistant": {
+    "baseUrl": "https://hass.iacob.co.uk",
+    "entities": [
+      "event.octopus_energy_electricity_23j0212061_1012934633517_current_day_rates",
+      "event.octopus_energy_electricity_23j0212061_1012934633517_next_day_rates"
+    ],
+    "contract": "attributes.rates is a list of {start, end, value_inc_vat (GBP/kWh), is_capped}; 30 minute slots with timezone-aware ISO timestamps."
+  },
+  "tests": {
+    "runner": "python3.13 -m unittest discover -s apps/homeassistant/alexa/electricity -p 'test_*.py' -v",
+    "network": "none; all HTTP is mocked at lambda_function._perform_get",
+    "status": "Verified on devbox; see pull request for test counts and live Lambda acceptance."
+  }
+}

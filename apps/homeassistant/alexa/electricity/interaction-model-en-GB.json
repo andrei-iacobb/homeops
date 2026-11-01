@@ -1,0 +1,67 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "home energy",
+      "modelConfiguration": {
+        "fallbackIntentSensitivity": {
+          "level": "LOW"
+        }
+      },
+      "intents": [
+        {
+          "name": "GetTariffIntent",
+          "slots": [],
+          "samples": [
+            "electricity price",
+            "the electricity price",
+            "what's the electricity price",
+            "what is the electricity price",
+            "what is the price of electricity",
+            "how much is electricity",
+            "how much is electricity right now",
+            "how much does electricity cost this hour",
+            "current electricity rates",
+            "current rates",
+            "the current rate",
+            "what are the current rates",
+            "what's the current electricity rate",
+            "electricity rates",
+            "the tariff",
+            "what's the tariff",
+            "the electricity tariff",
+            "next hour",
+            "the price for the next hour",
+            "what's the price next hour",
+            "what's the rate next hour",
+            "next hour's electricity price",
+            "electricity rates for the next hour",
+            "how much will electricity cost next hour",
+            "when is electricity cheapest",
+            "the cheapest half hour"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    }
+  }
+}

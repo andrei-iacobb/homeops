@@ -1,0 +1,73 @@
+{
+  "manifest": {
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "arn:aws:lambda:eu-west-1:000000000000:function:REPLACE_WITH_ELECTRICITY_LAMBDA_ARN"
+        },
+        "regions": {
+          "EU": {
+            "endpoint": {
+              "uri": "arn:aws:lambda:eu-west-1:000000000000:function:REPLACE_WITH_ELECTRICITY_LAMBDA_ARN"
+            }
+          }
+        },
+        "interfaces": [
+          {
+            "type": "ALEXA_PRESENTATION_APL",
+            "supportedViewports": [
+              {
+                "mode": "HUB",
+                "shape": "RECTANGLE",
+                "minWidth": 960,
+                "maxWidth": 960,
+                "minHeight": 480,
+                "maxHeight": 480
+              },
+              {
+                "mode": "HUB",
+                "shape": "RECTANGLE",
+                "minWidth": 1024,
+                "maxWidth": 1024,
+                "minHeight": 600,
+                "maxHeight": 600
+              },
+              {
+                "mode": "HUB",
+                "shape": "RECTANGLE",
+                "minWidth": 1280,
+                "maxWidth": 1280,
+                "minHeight": 800,
+                "maxHeight": 800
+              },
+              {
+                "mode": "HUB",
+                "shape": "RECTANGLE",
+                "minWidth": 1920,
+                "maxWidth": 1920,
+                "minHeight": 1080,
+                "maxHeight": 1080
+              },
+              {
+                "mode": "HUB",
+                "shape": "RECTANGLE",
+                "minWidth": 1080,
+                "maxWidth": 1080,
+                "minHeight": 1920,
+                "maxHeight": 1920
+              },
+              {
+                "mode": "TV",
+                "shape": "RECTANGLE",
+                "minWidth": 960,
+                "maxWidth": 960,
+                "minHeight": 540,
+                "maxHeight": 540
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
