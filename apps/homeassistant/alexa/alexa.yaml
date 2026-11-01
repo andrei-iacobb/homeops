@@ -39,8 +39,15 @@ smart_home:
       - switch.living_room_s7_max_ultra_dock_dust_emptying
       - switch.living_room_s7_max_ultra_dock_mop_washing
       - switch.living_room_s7_max_ultra_dock_mop_drying
-      # These cameras provide verified HLS. Ring's WebRTC-only entities are excluded.
-      # Ring live view needs its streaming bridge reauthenticated and configured first.
+      # Install the scoped RTC backport before exposing these Ring cameras.
+      - camera.front_door_live_view
+      - camera.meli_s_live_view
+      - camera.dining_room_live_view
+      - camera.garden_live_view
+      - camera.hallway_live_view
+      - camera.driveway_live_view
+      - camera.living_live_view
+      # These PETKIT cameras provide verified HLS through the stock adapter.
       - camera.tommy_food
       - camera.downstairs_feeder
       - event.front_door_ding
@@ -69,6 +76,20 @@ smart_home:
       # Stale duplicate TV entity has no capabilities beyond power.
       - media_player.tv_samsung_q60_series_75
   entity_config:
+    camera.front_door_live_view:
+      name: Front door camera
+    camera.meli_s_live_view:
+      name: Melisa room camera
+    camera.dining_room_live_view:
+      name: Dining room camera
+    camera.garden_live_view:
+      name: Garden camera
+    camera.hallway_live_view:
+      name: Hallway camera
+    camera.driveway_live_view:
+      name: Driveway camera
+    camera.living_live_view:
+      name: Living room camera
     media_player.43_qled_qe43q7faauxxu:
       name: 43 inch QLED TV
     media_player.tv_samsung_q60_series_75_2:
