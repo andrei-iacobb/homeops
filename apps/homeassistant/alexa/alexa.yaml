@@ -1,7 +1,9 @@
 # Included by configuration.yaml as: alexa: !include alexa.yaml
 smart_home:
+  client_id: !secret alexa_client_id
+  client_secret: !secret alexa_client_secret
   locale: en-GB
-  # Proactive events additionally require Skill Messaging credentials and relinking.
+  # Skill Messaging credentials are stored locally in HA secrets.yaml.
   endpoint: https://api.eu.amazonalexa.com/v3/events
   filter:
     include_domains:
