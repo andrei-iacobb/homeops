@@ -1,0 +1,81 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lastorders
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: lastorders
+  interval: 1h
+  values:
+    controllers:
+      lastorders:
+        annotations:
+          # Restart when the HTML ConfigMap changes.
+          reloader.stakater.com/auto: "true"
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: nginxinc/nginx-unprivileged
+              tag: 1.31.7-alpine
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &port 8080
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 5m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    # Internal gateway only: home network, behind the gateway-wide Authentik SSO.
+    route:
+      app:
+        hostnames: ["lastorders.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
+    persistence:
+      html:
+        type: configMap
+        name: lastorders-html
+        globalMounts:
+          - path: /usr/share/nginx/html
+            readOnly: true
+      # nginx-unprivileged keeps its pid and temp files under /tmp.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

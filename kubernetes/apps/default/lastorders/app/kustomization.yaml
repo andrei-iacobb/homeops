@@ -1,0 +1,14 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./helmrelease.yaml
+  - ./ocirepository.yaml
+# The game is one static HTML file; its source of truth is the private
+# git.iacob.co.uk/andrei/last-orders repo. Copy lastorders.html here to update.
+configMapGenerator:
+  - name: lastorders-html
+    files:
+      - index.html=./resources/index.html
+    options:
+      disableNameSuffixHash: true

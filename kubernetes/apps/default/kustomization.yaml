@@ -61,3 +61,4 @@ resources:
   - ./atm10/ks.yaml
   - ./minecraft-crossplay/ks.yaml
   - ./android-emulator/ks.yaml
+  - ./lastorders/ks.yaml
