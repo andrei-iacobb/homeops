@@ -6,6 +6,8 @@ import urllib.error
 import urllib.request
 import uuid
 
+from native_readings import NativeReadingUnavailable, enrich_response, needs_native_read
+
 HA_URL = "https://hass.iacob.co.uk/api/alexa/smart_home"
 MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 
@@ -83,7 +85,8 @@ def lambda_handler(event, context):
         },
     )
     try:
-        with _opener.open(request, timeout=7) as response:
+        reading_request = needs_native_read(directive)
+        with _opener.open(request, timeout=5 if reading_request else 7) as response:
             body = response.read(MAX_RESPONSE_BYTES + 1)
         if len(body) > MAX_RESPONSE_BYTES:
             raise ValueError("Response too large")
@@ -93,7 +96,26 @@ def lambda_handler(event, context):
             result_header.get("namespace"), str
         ):
             raise ValueError("Expected an Alexa event")
-        return result
+        def fetch_native_state(entity_id):
+            state_request = urllib.request.Request(
+                "https://hass.iacob.co.uk/api/states/" + entity_id,
+                headers=request.headers,
+            )
+            try:
+                with _opener.open(state_request, timeout=1.5) as state_response:
+                    state_body = state_response.read(65537)
+            except urllib.error.HTTPError as exc:
+                if exc.code == 404:
+                    exc.close()
+                    return None
+                raise
+            if len(state_body) > 65536:
+                raise ValueError("Native state response too large")
+            return json.loads(state_body)
+
+        return enrich_response(directive, result, fetch_native_state)
+    except NativeReadingUnavailable:
+        return _error(directive, "ENDPOINT_UNREACHABLE", "The humidity reading is unavailable.")
     except urllib.error.HTTPError as exc:
         status = exc.code
         headers = exc.headers or {}
