@@ -74,8 +74,6 @@ data:
         "DisplayBookmarksToolbar": "never",
         "OverrideFirstRunPage": "",
         "OverridePostUpdatePage": "",
-        "NewTabPage": false,
-        "Homepage": {"StartPage": "none"},
         "FirefoxHome": {"Search": false, "TopSites": false, "SponsoredTopSites": false,
                         "Highlights": false, "Pocket": false, "SponsoredPocket": false,
                         "Stories": false, "SponsoredStories": false, "Snippets": false,
@@ -89,7 +87,7 @@ data:
         },
         "Preferences": {
           "browser.sessionstore.resume_from_crash": {"Value": false, "Status": "default"},
-          "browser.newtabpage.activity-stream.showWeather": {"Value": false, "Status": "default"}
+          "browser.newtabpage.activity-stream.showWeather": {"Value": false, "Status": "locked"}
         }
       }
     }
