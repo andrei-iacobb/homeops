@@ -48,6 +48,8 @@ data:
     printf '%s\n' \
       '# adx: expose page content on AT-SPI for agent-desktop' \
       'export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --force-renderer-accessibility"' \
+      '# Pods restart without closing the browser: no restore bubble or first run.' \
+      'export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --hide-crash-restore-bubble --no-first-run"' \
       > /etc/chromium.d/zz-accessibility
     install -d -m 0700 -o abc -g abc /config/.agent-desktop
     echo "adx: agent-desktop $VER ready"
@@ -55,6 +57,32 @@ data:
     # segfaults in its AT-SPI bridge when Enter is pressed in the omnibox while
     # agent-desktop is attached. Lives in the container layer (~300M), so it is
     # reinstalled on each start; a failure here leaves the desktop usable.
+    # Firefox policy: pod restarts kill the browser uncleanly, so skip the
+    # crash-restore page, welcome tabs and nags that get in agents' way.
+    mkdir -p /etc/firefox-esr/policies
+    cat > /etc/firefox-esr/policies/policies.json <<'EOF'
+    {
+      "policies": {
+        "DisableAppUpdate": true,
+        "DisableTelemetry": true,
+        "DisableFirefoxStudies": true,
+        "DontCheckDefaultBrowser": true,
+        "NoDefaultBookmarks": true,
+        "OverrideFirstRunPage": "",
+        "OverridePostUpdatePage": "",
+        "UserMessaging": {
+          "WhatsNew": false,
+          "ExtensionRecommendations": false,
+          "FeatureRecommendations": false,
+          "MoreFromMozilla": false,
+          "SkipOnboarding": true
+        },
+        "Preferences": {
+          "browser.sessionstore.resume_from_crash": {"Value": false, "Status": "default"}
+        }
+      }
+    }
+    EOF
     if ! command -v firefox-esr >/dev/null; then
       ( apt-get update -qq && DEBIAN_FRONTEND=noninteractive \
           apt-get install -y -qq --no-install-recommends firefox-esr ) >/dev/null 2>&1 \
