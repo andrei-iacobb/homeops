@@ -65,7 +65,9 @@ data:
       exec s6-setuidgid abc env ADX_CALLER="$CALLER" "$0" "$@"
     fi
     mkdir -p "$STATE"
-    name=$(printf '%s' "${1:-}" | head -c 40 | tr -c 'A-Za-z0-9._-' '?')
+    # Log the command name: the first argument that is not a global flag.
+    cmd=""; for a in "$@"; do case $a in -*) ;; *) cmd=$a; break;; esac; done
+    name=$(printf '%s' "${cmd:-${1:-}}" | head -c 40 | tr -c 'A-Za-z0-9._-' '?')
     caller=$(printf '%s' "$CALLER" | head -c 40 | tr -c 'A-Za-z0-9._-' '?')
     if [ -e "$STATE/remote-disabled" ]; then
       echo "$(date +%FT%T) $caller DENIED $name" >> "$STATE/remote.log"
