@@ -10,6 +10,7 @@ resources:
   - ./namespace.yaml
   - ./sso-bypass.yaml
   - ./network-policies.yaml
+  - ./desktop-adx.yaml
   - ./alpha/ks.yaml
   - ./beta/ks.yaml
   - ./gamma/ks.yaml

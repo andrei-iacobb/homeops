@@ -200,6 +200,21 @@ data:
           href: https://gamma.iacob.uk
           description: T3 Code fleet - gamma
           siteMonitor: http://gamma.code.svc.cluster.local:3773/.well-known/t3/environment
+      - Alpha desktop:
+          icon: mdi-monitor
+          href: https://alpha-desktop.iacob.uk
+          description: T3 Code fleet - alpha desktop (agent-desktop)
+          siteMonitor: http://alpha.code.svc.cluster.local:3000/
+      - Beta desktop:
+          icon: mdi-monitor
+          href: https://beta-desktop.iacob.uk
+          description: T3 Code fleet - beta desktop (agent-desktop)
+          siteMonitor: http://beta.code.svc.cluster.local:3000/
+      - Gamma desktop:
+          icon: mdi-monitor
+          href: https://gamma-desktop.iacob.uk
+          description: T3 Code fleet - gamma desktop (agent-desktop)
+          siteMonitor: http://gamma.code.svc.cluster.local:3000/
     - Infrastructure:
       - Home Assistant:
           icon: home-assistant.svg

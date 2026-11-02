@@ -89,6 +89,27 @@ spec:
               limits:
                 cpu: "8"
                 memory: 24Gi
+          # Desktop for the agents and for Andrei to watch: XFCE + Chromium,
+          # streamed by Selkies on :3000, shown at https://beta-desktop.iacob.uk
+          # (Authentik). Agents drive it with agent-desktop via `adx`; setup and
+          # the gate live in ../../desktop-adx.yaml. Shares /home/t3, /workspace
+          # and /dev/shm with the app container (same uid 1000).
+          desktop:
+            image:
+              repository: lscr.io/linuxserver/webtop
+              tag: debian-xfce-536c698c-ls219
+            env:
+              TZ: Europe/London
+              PUID: "1000"
+              PGID: "1000"
+              TITLE: beta desktop
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                cpu: "2"
+                memory: 3Gi
     defaultPodOptions:
       terminationGracePeriodSeconds: 30
     service:
@@ -99,6 +120,8 @@ spec:
             port: *port
           setup:
             port: *setup
+          desktop:
+            port: 3000
     persistence:
       home:
         type: persistentVolumeClaim
@@ -114,6 +137,33 @@ spec:
         size: 60Gi
         globalMounts:
           - path: /workspace
+      desktop-config:
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        storageClass: openebs-hostpath
+        size: 5Gi
+        advancedMounts:
+          beta:
+            desktop:
+              - path: /config
+      desktop-adx:
+        type: configMap
+        name: desktop-adx
+        defaultMode: 493 # 0755
+        advancedMounts:
+          beta:
+            desktop:
+              - path: /custom-cont-init.d/50-adx-setup
+                subPath: 50-adx-setup
+              - path: /custom-services.d/adx-relay
+                subPath: adx-relay
+              - path: /opt/adx/adx-local
+                subPath: adx-local
+              - path: /opt/adx/adx-relay.py
+                subPath: adx-relay.py
+            app:
+              - path: /usr/local/bin/adx-local
+                subPath: adx-local-client
       shm:
         type: emptyDir
         medium: Memory
@@ -122,6 +172,9 @@ spec:
           - path: /dev/shm
     route:
       internal:
+        # Keep the name `beta`: sso-bypass.yaml targets it, and a second
+        # route would otherwise rename this one to `beta-internal`.
+        forceRename: "{{ .Release.Name }}"
         hostnames: ["beta.iacob.uk"]
         parentRefs:
           - name: envoy-internal
@@ -138,3 +191,13 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
+      desktop:
+        hostnames: ["beta-desktop.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 3000

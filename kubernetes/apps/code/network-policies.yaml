@@ -25,7 +25,8 @@ spec:
     # Kubelet health probes
     - fromEntities:
         - host
-    # Homepage status dots (siteMonitor on /.well-known/t3/environment)
+    # Homepage status dots (siteMonitor on /.well-known/t3/environment and
+    # the desktop sidecars on :3000)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: default
@@ -33,6 +34,8 @@ spec:
       toPorts:
         - ports:
             - port: "3773"
+              protocol: TCP
+            - port: "3000"
               protocol: TCP
 ---
 apiVersion: cilium.io/v2

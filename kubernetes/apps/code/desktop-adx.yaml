@@ -1,0 +1,161 @@
+---
+# Shared by the alpha/beta/gamma desktop sidecars (linuxserver webtop, XFCE,
+# streamed with Selkies at https://<worker>-desktop.iacob.uk behind Authentik).
+# Agents drive the desktop with vercel-labs/agent-desktop through `adx`:
+#   - inside the pod: `adx local ...` -> adx-local client -> relay on
+#     127.0.0.1:7801 (pod loopback only) -> adx-local gate in the desktop
+#   - from the Mac:   `adx alpha ...` -> kubectl exec -c desktop adx-local
+# Kill switch: touch /config/.agent-desktop/remote-disabled in the desktop
+# container. Audit log (caller + command name only): same dir, remote.log.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desktop-adx
+data:
+  # /custom-cont-init.d: runs as root before the desktop services start.
+  50-adx-setup: |
+    #!/bin/bash
+    set -euo pipefail
+    VER=1.0.2
+    SHA=ad661b7a3fd8f990a769243f4889a240ca0e2c8dab3ef5bddd6019086c71e0b4
+    DIR=/config/.adx/agent-desktop-$VER
+    if [ ! -x "$DIR/agent-desktop" ]; then
+      tmp=$(mktemp -d)
+      curl -fsSL --retry 3 -o "$tmp/ad.tgz" \
+        "https://github.com/vercel-labs/agent-desktop/releases/download/v$VER/agent-desktop-v$VER-x86_64-unknown-linux-gnu.tar.gz"
+      echo "$SHA  $tmp/ad.tgz" | sha256sum -c -
+      mkdir -p "$DIR"
+      tar -xzf "$tmp/ad.tgz" -C "$DIR"
+      rm -rf "$tmp"
+      chown -R abc:abc /config/.adx
+    fi
+    ln -sf "$DIR/agent-desktop" /usr/local/bin/agent-desktop
+    install -m 0755 /opt/adx/adx-local /usr/local/bin/adx-local
+    install -m 0644 /opt/adx/adx-relay.py /usr/local/lib/adx-relay.py
+    # Chromium only exposes its UI on AT-SPI when asked to.
+    printf '%s\n' \
+      '# adx: expose the browser UI and pages on AT-SPI for agent-desktop' \
+      'export ACCESSIBILITY_ENABLED=1' \
+      'export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --force-renderer-accessibility"' \
+      > /etc/chromium.d/zz-accessibility
+    install -d -m 0700 -o abc -g abc /config/.agent-desktop
+    echo "adx: agent-desktop $VER ready"
+
+  # /custom-services.d: s6 longrun, the pod-local relay.
+  adx-relay: |
+    #!/usr/bin/with-contenv bash
+    exec s6-setuidgid abc "$(command -v python3)" /usr/local/lib/adx-relay.py
+
+  # Desktop-side gate. Every path into this desktop goes through here.
+  adx-local: |
+    #!/bin/bash
+    set -euo pipefail
+    STATE=/config/.agent-desktop
+    CALLER=${ADX_CALLER:-kubectl-exec}
+    if [ "$(id -u)" = 0 ]; then
+      exec s6-setuidgid abc env ADX_CALLER="$CALLER" "$0" "$@"
+    fi
+    mkdir -p "$STATE"
+    name=$(printf '%s' "${1:-}" | head -c 40 | tr -c 'A-Za-z0-9._-' '?')
+    caller=$(printf '%s' "$CALLER" | head -c 40 | tr -c 'A-Za-z0-9._-' '?')
+    if [ -e "$STATE/remote-disabled" ]; then
+      echo "$(date +%FT%T) $caller DENIED $name" >> "$STATE/remote.log"
+      echo '{"ok":false,"error":{"code":"REMOTE_DISABLED","message":"desktop control disabled (/config/.agent-desktop/remote-disabled)"}}'
+      exit 2
+    fi
+    echo "$(date +%FT%T) $caller $name" >> "$STATE/remote.log"
+    pid=$(pgrep -u abc -x xfce4-session | head -1 || true)
+    if [ -z "$pid" ]; then
+      echo '{"ok":false,"error":{"code":"DESKTOP_DOWN","message":"no desktop session is running yet"}}'
+      exit 2
+    fi
+    bus=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^DBUS_SESSION_BUS_ADDRESS=//p')
+    export HOME=/config DISPLAY=:1 DBUS_SESSION_BUS_ADDRESS="$bus"
+    exec /usr/local/bin/agent-desktop "$@"
+
+  adx-relay.py: |
+    """Pod-local relay: lets agents in the app container drive this desktop.
+
+    Binds 127.0.0.1 only, so just the containers of this pod can reach it.
+    Every call is passed to adx-local (kill switch + audit) as an argv list.
+    """
+    import json
+    import os
+    import subprocess
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    MAX_BODY = 1 << 20
+    MAX_OUTPUT = 8 << 20
+    SLOTS = threading.BoundedSemaphore(2)
+    ENV = dict(os.environ, ADX_CALLER="pod-local")
+
+
+    class Handler(BaseHTTPRequestHandler):
+        timeout = 30
+
+        def log_message(self, *args):
+            pass
+
+        def reply(self, status, payload):
+            body = json.dumps(payload).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_POST(self):
+            if self.path != "/run":
+                return self.reply(404, {"code": 2, "stderr": "not found"})
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > MAX_BODY:
+                return self.reply(400, {"code": 2, "stderr": "bad body"})
+            try:
+                args = json.loads(self.rfile.read(length))["args"]
+                if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+                    raise ValueError
+            except (ValueError, KeyError, TypeError):
+                return self.reply(400, {"code": 2, "stderr": "args must be a list of strings"})
+            if not SLOTS.acquire(timeout=60):
+                return self.reply(429, {"code": 75, "stdout": "", "stderr": "relay busy, retry"})
+            try:
+                proc = subprocess.run(["/usr/local/bin/adx-local"] + args, capture_output=True,
+                                      text=True, errors="replace", timeout=280, env=ENV)
+                return self.reply(200, {"code": proc.returncode,
+                                        "stdout": proc.stdout[:MAX_OUTPUT],
+                                        "stderr": proc.stderr[:MAX_OUTPUT]})
+            except subprocess.TimeoutExpired:
+                return self.reply(200, {"code": 124, "stdout": "", "stderr": "agent-desktop timed out"})
+            finally:
+                SLOTS.release()
+
+
+    ThreadingHTTPServer(("127.0.0.1", 7801), Handler).serve_forever()
+
+  # Mounted into the app container as /usr/local/bin/adx-local, so the agents'
+  # `adx local ...` reaches this pod's desktop.
+  adx-local-client: |
+    #!/usr/bin/env python3
+    import json
+    import sys
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        "http://127.0.0.1:7801/run",
+        data=json.dumps({"args": sys.argv[1:]}).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            result = json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        result = json.loads(exc.read() or b"{}")
+    except OSError as exc:
+        print(json.dumps({"ok": False, "error": {"code": "DESKTOP_DOWN",
+                                                 "message": f"desktop relay unreachable: {exc}"}}))
+        sys.exit(2)
+    sys.stdout.write(result.get("stdout", ""))
+    sys.stderr.write(result.get("stderr", ""))
+    sys.exit(int(result.get("code", 1)))
