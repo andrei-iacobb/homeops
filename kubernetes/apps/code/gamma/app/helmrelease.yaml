@@ -103,6 +103,10 @@ spec:
               PUID: "1000"
               PGID: "1000"
               TITLE: gamma desktop
+              # Stream at the browser's CSS resolution and let it scale up: the
+              # desktop stays at 96 DPI, so panels and title bars (fixed pixel
+              # sizes) are not microscopic on HiDPI screens.
+              SELKIES_USE_CSS_SCALING: "true"
             # ephemeral-storage bounds the container layer (firefox-esr is
             # reinstalled there on each start): overflow evicts this pod, not
             # the whole node.
@@ -160,6 +164,10 @@ spec:
             desktop:
               - path: /custom-cont-init.d/50-adx-setup
                 subPath: 50-adx-setup
+              - path: /custom-cont-init.d/60-adx-look
+                subPath: 60-adx-look
+              - path: /opt/adx/adx-wallpaper.py
+                subPath: adx-wallpaper.py
               - path: /custom-services.d/adx-relay
                 subPath: adx-relay
               - path: /opt/adx/adx-local
