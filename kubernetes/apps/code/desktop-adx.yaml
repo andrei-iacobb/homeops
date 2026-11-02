@@ -7,6 +7,11 @@
 #   - from the Mac:   `adx alpha ...` -> kubectl exec -c desktop adx-local
 # Kill switch: touch /config/.agent-desktop/remote-disabled in the desktop
 # container. Audit log (caller + command name only): same dir, remote.log.
+# Both are advisory: an agent driving the GUI can open the desktop's terminal
+# (passwordless sudo) and undo them. Cut in-pod agents off with
+#   kubectl -n code exec <w>-0 -c desktop -- s6-svc -d /run/service/custom-svc-adx-relay
+# (also undoable from that terminal); the only absolute stop is removing the
+# sidecar or scaling the worker to zero.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,14 +24,20 @@ data:
     VER=1.0.2
     SHA=ad661b7a3fd8f990a769243f4889a240ca0e2c8dab3ef5bddd6019086c71e0b4
     DIR=/config/.adx/agent-desktop-$VER
-    if [ ! -x "$DIR/agent-desktop" ]; then
-      tmp=$(mktemp -d)
+    # Extract into a temporary sibling and rename only after the binary runs,
+    # so an interrupted install can never leave a cached half-written binary.
+    if ! "$DIR/agent-desktop" version >/dev/null 2>&1; then
+      mkdir -p /config/.adx
+      tmp=$(mktemp -d /config/.adx/.install.XXXXXX)
+      trap 'rm -rf "$tmp"' EXIT
       curl -fsSL --retry 3 -o "$tmp/ad.tgz" \
         "https://github.com/vercel-labs/agent-desktop/releases/download/v$VER/agent-desktop-v$VER-x86_64-unknown-linux-gnu.tar.gz"
       echo "$SHA  $tmp/ad.tgz" | sha256sum -c -
-      mkdir -p "$DIR"
-      tar -xzf "$tmp/ad.tgz" -C "$DIR"
-      rm -rf "$tmp"
+      mkdir "$tmp/out"
+      tar -xzf "$tmp/ad.tgz" -C "$tmp/out"
+      "$tmp/out/agent-desktop" version >/dev/null
+      rm -rf "$DIR"
+      mv "$tmp/out" "$DIR"
       chown -R abc:abc /config/.adx
     fi
     ln -sf "$DIR/agent-desktop" /usr/local/bin/agent-desktop

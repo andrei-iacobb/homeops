@@ -103,13 +103,18 @@ spec:
               PUID: "1000"
               PGID: "1000"
               TITLE: gamma desktop
+            # ephemeral-storage bounds the container layer (firefox-esr is
+            # reinstalled there on each start): overflow evicts this pod, not
+            # the whole node.
             resources:
               requests:
                 cpu: 100m
                 memory: 512Mi
+                ephemeral-storage: 1Gi
               limits:
                 cpu: "2"
                 memory: 3Gi
+                ephemeral-storage: 3Gi
     defaultPodOptions:
       terminationGracePeriodSeconds: 30
     service:

@@ -75,3 +75,26 @@ spec:
         - ports:
             - port: "8317"
               protocol: TCP
+---
+# The fleet desktops (webtop sidecars, :3000) have no auth of their own and a
+# passwordless-sudo terminal. Only Envoy (behind Authentik) and Homepage may
+# reach them; deny overrides the broad intra-namespace and monitoring allows
+# above, so one worker's agents cannot open another worker's desktop. The
+# pod-local adx relay uses loopback and is not affected.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: code-desktop-deny
+  namespace: code
+spec:
+  endpointSelector: {}
+  ingressDeny:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: code
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
