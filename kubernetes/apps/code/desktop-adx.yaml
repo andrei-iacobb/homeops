@@ -32,14 +32,23 @@ data:
     ln -sf "$DIR/agent-desktop" /usr/local/bin/agent-desktop
     install -m 0755 /opt/adx/adx-local /usr/local/bin/adx-local
     install -m 0644 /opt/adx/adx-relay.py /usr/local/lib/adx-relay.py
-    # Chromium only exposes its UI on AT-SPI when asked to.
+    # Chromium needs this for page content on AT-SPI. Do not add
+    # ACCESSIBILITY_ENABLED=1: it forces the legacy ATK bridge.
     printf '%s\n' \
-      '# adx: expose the browser UI and pages on AT-SPI for agent-desktop' \
-      'export ACCESSIBILITY_ENABLED=1' \
+      '# adx: expose page content on AT-SPI for agent-desktop' \
       'export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --force-renderer-accessibility"' \
       > /etc/chromium.d/zz-accessibility
     install -d -m 0700 -o abc -g abc /config/.agent-desktop
     echo "adx: agent-desktop $VER ready"
+    # Firefox ESR is the browser agents type into: Chromium 156 (Debian)
+    # segfaults in its AT-SPI bridge when Enter is pressed in the omnibox while
+    # agent-desktop is attached. Lives in the container layer (~300M), so it is
+    # reinstalled on each start; a failure here leaves the desktop usable.
+    if ! command -v firefox-esr >/dev/null; then
+      ( apt-get update -qq && DEBIAN_FRONTEND=noninteractive \
+          apt-get install -y -qq --no-install-recommends firefox-esr ) >/dev/null 2>&1 \
+        && echo "adx: firefox-esr installed" || echo "adx: WARNING firefox-esr install failed"
+    fi
 
   # /custom-services.d: s6 longrun, the pod-local relay.
   adx-relay: |
@@ -71,6 +80,11 @@ data:
     fi
     bus=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^DBUS_SESSION_BUS_ADDRESS=//p')
     export HOME=/config DISPLAY=:1 DBUS_SESSION_BUS_ADDRESS="$bus"
+    # Tell toolkits assistive tech is on (what GNOME does for a screen reader),
+    # so browsers launched from here join the accessibility bus.
+    dbus-send --session --dest=org.a11y.Bus /org/a11y/bus \
+      org.freedesktop.DBus.Properties.Set string:org.a11y.Status \
+      string:IsEnabled variant:boolean:true >/dev/null 2>&1 || true
     exec /usr/local/bin/agent-desktop "$@"
 
   adx-relay.py: |
