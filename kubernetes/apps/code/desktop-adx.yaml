@@ -80,6 +80,9 @@ data:
     fi
     bus=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^DBUS_SESSION_BUS_ADDRESS=//p')
     export HOME=/config DISPLAY=:1 DBUS_SESSION_BUS_ADDRESS="$bus"
+    # Apps launched from here must join the accessibility bus at startup:
+    # Gecko/GTK read GNOME_ACCESSIBILITY, Qt reads QT_ACCESSIBILITY.
+    export GNOME_ACCESSIBILITY=1 QT_ACCESSIBILITY=1
     # Tell toolkits assistive tech is on (what GNOME does for a screen reader),
     # so browsers launched from here join the accessibility bus.
     dbus-send --session --dest=org.a11y.Bus /org/a11y/bus \
