@@ -59,17 +59,27 @@ data:
     # reinstalled on each start; a failure here leaves the desktop usable.
     # Firefox policy: pod restarts kill the browser uncleanly, so skip the
     # crash-restore page, welcome tabs and nags that get in agents' way.
-    mkdir -p /etc/firefox-esr/policies
-    cat > /etc/firefox-esr/policies/policies.json <<'EOF'
+    # Upstream Firefox reads /etc/firefox/policies; also drop a copy in the
+    # install's distribution dir (Debian's /etc/firefox-esr is not read).
+    mkdir -p /etc/firefox/policies
+    cat > /etc/firefox/policies/policies.json <<'EOF'
     {
       "policies": {
         "DisableAppUpdate": true,
         "DisableTelemetry": true,
         "DisableFirefoxStudies": true,
+        "DisablePocket": true,
         "DontCheckDefaultBrowser": true,
         "NoDefaultBookmarks": true,
+        "DisplayBookmarksToolbar": "never",
         "OverrideFirstRunPage": "",
         "OverridePostUpdatePage": "",
+        "NewTabPage": false,
+        "Homepage": {"StartPage": "none"},
+        "FirefoxHome": {"Search": false, "TopSites": false, "SponsoredTopSites": false,
+                        "Highlights": false, "Pocket": false, "SponsoredPocket": false,
+                        "Stories": false, "SponsoredStories": false, "Snippets": false,
+                        "Locked": true},
         "UserMessaging": {
           "WhatsNew": false,
           "ExtensionRecommendations": false,
@@ -78,16 +88,20 @@ data:
           "SkipOnboarding": true
         },
         "Preferences": {
-          "browser.sessionstore.resume_from_crash": {"Value": false, "Status": "default"}
+          "browser.sessionstore.resume_from_crash": {"Value": false, "Status": "default"},
+          "browser.newtabpage.activity-stream.showWeather": {"Value": false, "Status": "default"}
         }
       }
     }
     EOF
+    mkdir -p /usr/lib/firefox-esr/distribution
     if ! command -v firefox-esr >/dev/null; then
       ( apt-get update -qq && DEBIAN_FRONTEND=noninteractive \
           apt-get install -y -qq --no-install-recommends firefox-esr ) >/dev/null 2>&1 \
         && echo "adx: firefox-esr installed" || echo "adx: WARNING firefox-esr install failed"
     fi
+    [ -d /usr/lib/firefox-esr ] && \
+      cp /etc/firefox/policies/policies.json /usr/lib/firefox-esr/distribution/policies.json
 
   # /custom-cont-init.d, after 50: desktop look (theme, panel, wallpaper).
   60-adx-look: |
