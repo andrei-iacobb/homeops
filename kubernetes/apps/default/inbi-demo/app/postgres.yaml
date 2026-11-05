@@ -41,7 +41,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: postgres
-          image: postgres:16.15-bookworm@sha256:14952ad1d751328359b3b0512475d2760c8ddf968f0615bd911155010dc9901a
+          image: postgres:16.15-bookworm@sha256:5264710be20f409750ac6dc4e5706dcef929c87e241605463f0f9aefa932a8d9
           env:
             - name: POSTGRES_USER
               value: inbi_sandbox
