@@ -1,6 +1,6 @@
 # Repo-standard reproducible build for the BayWatch UI.
 # (The live image was pushed with `ko`; this Dockerfile is the docker-equivalent.)
-FROM golang:1.27.3-alpine@sha256:fa4881266890ef051f0ce63afdfaccb69bbe8186084387f4fafd60d7ecbabc71 AS build
+FROM golang:1.27.3-alpine@sha256:dbaa054703263d06c8b49576667418473b6231f8c0fa69dee103207fdb8e3654 AS build
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
