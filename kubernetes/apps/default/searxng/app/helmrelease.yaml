@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: searxng/searxng
-              tag: 2026.11.2-d138f443b
+              tag: 2026.11.5-adbf160ff
             env:
               SEARXNG_BASE_URL: "https://searxng.iacob.uk/"
             probes:
