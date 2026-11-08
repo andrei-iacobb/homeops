@@ -10,9 +10,6 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      name: planum
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
       name: authentik
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
@@ -20,12 +17,6 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: immich-server-app
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: sftpgo-webdav
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: inbi-s3
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: petkit-snapshotter

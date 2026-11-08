@@ -6,28 +6,20 @@ metadata:
   name: default-ingress
   namespace: default
 spec:
-  endpointSelector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: NotIn
-        values: [planum]
+  endpointSelector: {}
   ingress:
     # Envoy Gateway ingress (HTTPRoutes - both internal and external)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: network
-    # Intra-namespace (apps may query each other, e.g. informate→searxng)
+    # Intra-namespace (apps may query each other, e.g. lastorders→immich)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: default
-    # Media namespace (arr apps may call back to overseerr/pulsarr)
+    # Media namespace (arr apps may call back to pulsarr)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: media
-    # AI namespace (openwebui may query default namespace services)
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: ai
     # Monitoring namespace (prometheus scraping)
     - fromEndpoints:
         - matchLabels:
@@ -48,10 +40,10 @@ spec:
     matchExpressions:
       - key: app.kubernetes.io/name
         operator: In
-        values: [code-server, paperless, slate]
+        values: [slate]
   ingressDeny:
     - fromEndpoints:
         - matchExpressions:
             - key: k8s:io.kubernetes.pod.namespace
               operator: In
-              values: [default, media, ai, monitoring]
+              values: [default, media, monitoring]

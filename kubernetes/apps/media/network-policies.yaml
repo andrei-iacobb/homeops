@@ -17,7 +17,7 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: media
-    # Default namespace (overseerr/homepage may query arr APIs)
+    # Default namespace (pulsarr and other default apps may query arr APIs)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: default

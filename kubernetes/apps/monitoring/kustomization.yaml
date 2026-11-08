@@ -16,7 +16,6 @@ resources:
   - loki/ks.yaml
   # - promtail/ks.yaml  # replaced by alloy
   - alloy/ks.yaml
-  - uptime-kuma/ks.yaml
   - scrutiny/ks.yaml
   - bays/ks.yaml
   # - graphite-exporter/ks.yaml

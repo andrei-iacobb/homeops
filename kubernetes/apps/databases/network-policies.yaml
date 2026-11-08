@@ -10,7 +10,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: postgres
   ingress:
-    # Default namespace apps (immich, vaultwarden, outline, gitea, paperless, authentik, vikunja, informate)
+    # Default namespace apps (immich, vaultwarden, forgejo, authentik, neatplan, ...)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: default
@@ -49,7 +49,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: redis
   ingress:
-    # Default namespace apps (immich, outline, paperless)
+    # Default namespace apps (immich, ...)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: default
@@ -74,29 +74,6 @@ spec:
             - port: "6379"
               protocol: TCP
     # Kubelet health probes
-    - fromEntities:
-        - host
----
-# Qdrant: only allow from informate (default namespace)
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: qdrant-ingress
-  namespace: databases
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: qdrant
-  ingress:
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: default
-      toPorts:
-        - ports:
-            - port: "6333"
-              protocol: TCP
-            - port: "6334"
-              protocol: TCP
     - fromEntities:
         - host
 ---
@@ -138,7 +115,7 @@ spec:
     - fromEntities:
         - host
 ---
-# Mosquitto: allow from media namespace (ring-mqtt, frigate) and default (home assistant bridge)
+# Mosquitto: allow from media namespace (ring-mqtt) and default (home assistant bridge)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:

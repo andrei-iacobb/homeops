@@ -8,10 +8,8 @@ components:
 
 resources:
   - ./namespace.yaml
-  - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./plex/ks.yaml
-  - ./jellyfin/ks.yaml
   - ./sonarr/ks.yaml
   - ./radarr/ks.yaml
   - ./lidarr/ks.yaml
@@ -20,21 +18,11 @@ resources:
   - ./prowlarr/ks.yaml
   - ./qbittorrent/ks.yaml
   - ./sabnzbd/ks.yaml
-  - ./overseerr/ks.yaml
-  - ./calibre-web/ks.yaml
-  - ./tdarr/ks.yaml
   - ./recyclarr/ks.yaml
-  - ./agregarr/ks.yaml
   - ./tautulli/ks.yaml
   - ./pulsarr/ks.yaml
-  - ./wizarr/ks.yaml
   - ./ring-mqtt/ks.yaml
-  - ./frigate/ks.yaml
   - ./plexo/ks.yaml
-  - ./sonarr-lowq/ks.yaml
-  - ./radarr-lowq/ks.yaml
-  - ./ersatztv/ks.yaml
-  - ./scrypted/ks.yaml
   # - ./lidify/ks.yaml  # Disabled - custom image not built yet
   # TODO: netbootxyz — requires VLAN router setup first
   # - ./netbootxyz/ks.yaml

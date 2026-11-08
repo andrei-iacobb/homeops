@@ -52,7 +52,6 @@ spec:
               target:
                 group: helm.toolkit.fluxcd.io
                 kind: HelmRelease
-                labelSelector: app.kubernetes.io/name notin (jellyfin)
       target:
         group: kustomize.toolkit.fluxcd.io
         kind: Kustomization

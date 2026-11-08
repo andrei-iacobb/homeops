@@ -140,10 +140,7 @@
         "kubernetes/apps/default/forgejo/**",
         "kubernetes/apps/default/forgejo-runner/**",
         "kubernetes/apps/default/immich/**",
-        "kubernetes/apps/default/paperless/**",
-        "kubernetes/apps/default/n8n/**",
         "kubernetes/apps/default/unifi/**",
-        "kubernetes/apps/default/homepage/**",
         "kubernetes/apps/default/solis-charge/**",
         "kubernetes/flux/**",
         "kubernetes/components/**",
@@ -156,12 +153,6 @@
       automergeSchedule: ["after 1am and before 5am"],
       platformAutomerge: false,
     },
-    {
-      description: ["searxng publishes calendar tags like 2026.10.4-d48c4b555: tell Renovate how to order them"],
-      matchDatasources: ["docker"],
-      matchPackageNames: ["searxng/searxng", "docker.io/searxng/searxng"],
-      versioning: "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,3})-(?<build>[a-f0-9]+)$",
-    },
     // =====================
     // Floating tags - pin the digest so Renovate can still roll them
     // =====================
@@ -170,14 +161,6 @@
       matchDatasources: ["docker"],
       matchCurrentValue: "/^(latest|main|stable)$/",
       pinDigests: true,
-    },
-    {
-      description: [
-        "linuxserver overseerr/calibre-web: ignore legacy date-style tags (2021.x) that sort above the real semver tags",
-      ],
-      matchDatasources: ["docker"],
-      matchPackageNames: ["lscr.io/linuxserver/overseerr", "lscr.io/linuxserver/calibre-web"],
-      allowedVersions: "<2000",
     },
     {
       description: [
@@ -345,12 +328,6 @@
     {
       matchManagers: ["github-actions"],
       addLabels: ["renovate/github-action"],
-    },
-    {
-      description: ["Actual 26.10.0 runtime-only rebuild retains native modules compiled for Node 24 ABI 137."],
-      matchFileNames: ["kubernetes/apps/default/actual-budget/Dockerfile"],
-      matchPackageNames: ["node"],
-      allowedVersions: "<25",
     },
   ],
   customManagers: [

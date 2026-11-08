@@ -63,15 +63,6 @@ spec:
             - matchers:
                 - alertname="Watchdog"
               receiver: "null"
-            # Criticals are deliberately fanned out to BOTH paths: straight to
-            # Discord (continue: true) so a broken or unreachable triage pipeline
-            # can never silently swallow a critical alert, and then on to Hermes
-            # for triage. Warnings - the crash-loop/OOM noise - go to Hermes only.
-            - matchers:
-                - severity="critical"
-              receiver: "n8n-webhook"
-              repeat_interval: 1h
-              continue: true
             - matchers:
                 - severity="critical"
               receiver: "hermes-triage"
@@ -93,12 +84,6 @@ spec:
                     X-Gitlab-Token:
                       files:
                         - /etc/alertmanager/secrets/alertmanager-hermes-webhook/token
-          - name: "n8n-webhook"
-            webhook_configs:
-              # n8n workflow -> Discord. Now only used for critical alerts, as the
-              # always-delivered safety net behind Hermes triage.
-              - url: "http://n8n.default.svc.cluster.local:5678/webhook/alertmanager"
-                send_resolved: true
         inhibit_rules:
           - source_matchers:
               - severity="critical"

@@ -44,26 +44,3 @@ spec:
       - __meta_kubernetes_service_name
       regex: alloy
       action: keep
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: qdrant
-spec:
-  namespaceSelector:
-    matchNames:
-    - databases
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: qdrant
-      app.kubernetes.io/instance: qdrant
-  endpoints:
-  - port: http
-    path: /metrics
-    interval: 60s
-    scrapeTimeout: 10s
-    relabelings:
-    - sourceLabels:
-      - __meta_kubernetes_service_name
-      regex: qdrant
-      action: keep
