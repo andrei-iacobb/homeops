@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: ebrianne/adguard-exporter:latest
+        image: ebrianne/adguard-exporter:latest@sha256:03b2fda733121eb7de3310362bc1b5bc0a7b2d93aca6946a6b5c31e97f4cd85b
         env:
         - name: ADGUARD_PROTOCOL
           value: "http"
