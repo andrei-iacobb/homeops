@@ -1,5 +1,5 @@
 # GPU worker: load the proprietary NVIDIA modules shipped by the
-# nonfree-kmod-nvidia-production extension (Quadro P1000 passed through from dl380).
+# nonfree-kmod-nvidia-lts extension (Quadro P1000 passed through from dl380).
 machine:
   kernel:
     modules:

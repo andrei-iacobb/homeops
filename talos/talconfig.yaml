@@ -52,8 +52,8 @@ nodes:
     installDisk: "/dev/vda"
     machineSpec:
       secureboot: false
-    # schematic: qemu-guest-agent + nonfree-kmod-nvidia-production + nvidia-container-toolkit-production
-    talosImageURL: factory.talos.dev/installer/52223d70cd62926d81b640384b2ab9a5e9063d0613952e14e93b9702cdf8f625
+    # schematic: qemu-guest-agent + nonfree-kmod-nvidia-lts + nvidia-container-toolkit-lts (Pascal P1000 needs the 580 LTS branch; 595 production dropped it)
+    talosImageURL: factory.talos.dev/installer/9ad39c156013e1e82f18ddef8e1e1b2cd98c3553566fb2896e1a69889260388c
     controlPlane: false
     nodeLabels:
       nvidia.com/gpu.present: "true"
