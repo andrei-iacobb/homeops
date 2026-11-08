@@ -25,10 +25,13 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
-    # Plex/Jellyfin direct access from LAN clients + UniFi WireGuard VPN clients
+    # Plex/Jellyfin direct access from LAN clients (VLAN 1 + VLAN 20 main client
+    # VLAN, where the Apple TV/phones/laptops live) + UniFi WireGuard VPN clients.
+    # Without VLAN 20 the Apple TV falls back to the OCI relay and buffers 4K.
     - fromCIDR:
         - 192.168.1.0/24
         - 192.168.2.0/24
+        - 192.168.20.0/24
     # Kubelet health probes
     - fromEntities:
         - host
