@@ -8,13 +8,8 @@ metadata:
 spec:
   kubernetes:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    version: v1.35.10
-  maintenance:
-    windows:
-      # After the Talos slot, so the two never compete for the window.
-      - start: "0 3 * * *"
-        duration: 1h
-        timezone: Europe/London
+    version: v1.36.6
+  # maintenance window lifted 2026-11-08 for the manual 1.35 -> 1.36 step; restored after.
   healthChecks:
     - apiVersion: v1
       kind: Node
