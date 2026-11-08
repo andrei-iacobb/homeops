@@ -13,7 +13,12 @@ spec:
     # ghcr.io/siderolabs/installer is no longer published from Talos 1.14, so track GitHub releases.
     # renovate: datasource=github-releases depName=siderolabs/talos
     version: v1.14.5
-  # maintenance window lifted 2026-11-08 for the manual 1.12 -> 1.14 step-up; restored after.
+  maintenance:
+    windows:
+      # Start gate only: a node already upgrading finishes, so leave the following hours as overrun.
+      - start: "0 1 * * *"
+        duration: 1h
+        timezone: Europe/London
   healthChecks:
     - apiVersion: v1
       kind: Node
