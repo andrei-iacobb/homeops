@@ -9,10 +9,17 @@ spec:
     name: mc-router
   interval: 1h
   values:
+    global:
+      # The mc-router ServiceAccount (with its RBAC) lives in rbac.yaml; stop
+      # app-template 5 creating a same-named one Helm would clash with.
+      createDefaultServiceAccount: false
     controllers:
       mc-router:
         serviceAccount:
           name: mc-router
+        pod:
+          # app-template 5 defaults this to false; mc-router scales atm10 via the API.
+          automountServiceAccountToken: true
         containers:
           app:
             image:
