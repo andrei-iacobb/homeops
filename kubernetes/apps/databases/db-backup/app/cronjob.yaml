@@ -24,7 +24,7 @@ spec:
             fsGroup: 0
           containers:
             - name: pg-logical-backup
-              image: postgres:16.15-alpine
+              image: postgres:18.6-alpine
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
@@ -75,17 +75,10 @@ spec:
                 - -euc
                 - |
                   echo "[setup] installing tools"
-                  apk add --no-cache ca-certificates curl >/dev/null
-
-                  # minio-client: alpine's `mc` is Midnight Commander, so fetch the
-                  # real one from dl.min.io. Retry to tolerate transient egress blips.
-                  n=0
-                  until curl -fsSL -o /usr/local/bin/mc \
-                      https://dl.min.io/client/mc/release/linux-amd64/mc; do
-                    n=$((n+1)); [ "$n" -ge 5 ] && echo "mc download failed" && exit 1
-                    echo "[setup] mc download retry $n"; sleep 5
-                  done
-                  chmod +x /usr/local/bin/mc
+                  # minio-client: alpine's `mc` is Midnight Commander; the real client is
+                  # packaged as minio-client (binary mcli). dl.min.io now returns 410.
+                  apk add --no-cache ca-certificates minio-client >/dev/null
+                  ln -sf /usr/bin/mcli /usr/local/bin/mc
 
                   TS=$(date -u +"%Y%m%dT%H%M%SZ")
                   FILE="/tmp/postgres_${TS}.sql.gz"
