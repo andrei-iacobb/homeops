@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: ghcr.io/immich-app/postgres
-              tag: 16-vectorchord0.4.3
+              tag: 17-vectorchord0.4.3
             env:
               POSTGRES_PASSWORD:
                 valueFrom:
@@ -25,7 +25,8 @@ spec:
                     key: POSTGRES_PASSWORD
               POSTGRES_USER: postgres
               POSTGRES_DB: postgres
-              PGDATA: /var/lib/postgresql/data/pgdata
+              # pgdata (PG 16) stays beside it as the rollback for the 2026-11-08 upgrade.
+              PGDATA: /var/lib/postgresql/data/pgdata17
               IMMICH_DB_PASSWORD:
                 valueFrom:
                   secretKeyRef:
@@ -36,51 +37,16 @@ spec:
                   secretKeyRef:
                     name: postgres-secret
                     key: VAULTWARDEN_DB_PASSWORD
-              OUTLINE_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: OUTLINE_DB_PASSWORD
               GITEA_DB_PASSWORD:
                 valueFrom:
                   secretKeyRef:
                     name: postgres-secret
                     key: GITEA_DB_PASSWORD
-              PAPERLESS_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: PAPERLESS_DB_PASSWORD
               AUTHENTIK_DB_PASSWORD:
                 valueFrom:
                   secretKeyRef:
                     name: postgres-secret
                     key: AUTHENTIK_DB_PASSWORD
-              VIKUNJA_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: VIKUNJA_DB_PASSWORD
-              INFORMATE_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: INFORMATE_DB_PASSWORD
-              FIREFLY_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: FIREFLY_DB_PASSWORD
-              PLANUM_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: PLANUM_DB_PASSWORD
-              POSTPLAN_DB_PASSWORD:
-                valueFrom:
-                  secretKeyRef:
-                    name: postgres-secret
-                    key: POSTPLAN_DB_PASSWORD
             probes:
               liveness: &probes
                 enabled: true
