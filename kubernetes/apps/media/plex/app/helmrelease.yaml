@@ -118,7 +118,7 @@ spec:
           - path: /data/music
     route:
       app:
-        hostnames: ["plex.iacob.uk"]
+        hostnames: ["plex.iacob.uk", "plex.iacob.co.uk"]
         parentRefs:
           - name: envoy-internal
             namespace: network
