@@ -11,7 +11,6 @@ resources:
   - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./authentik/ks.yaml
-  - ./echo/ks.yaml
   - ./forgejo/ks.yaml
   - ./forgejo-backup/ks.yaml
   - ./renovate/ks.yaml
@@ -20,7 +19,6 @@ resources:
   - ./website/ks.yaml
   - ./neatplan/ks.yaml
   - ./shlink/ks.yaml
-  - ./unifi/ks.yaml
   - ./holden-systems/ks.yaml
   - ./burthorpe-pooch-parlour/ks.yaml
   - ./solis-charge/ks.yaml
@@ -32,6 +30,4 @@ resources:
   - ./minecraft-bedrock/ks.yaml
   - ./mc-router/ks.yaml
   - ./atm10/ks.yaml
-  - ./minecraft-crossplay/ks.yaml
-  - ./android-emulator/ks.yaml
   - ./lastorders/ks.yaml

@@ -140,7 +140,6 @@
         "kubernetes/apps/default/forgejo/**",
         "kubernetes/apps/default/forgejo-runner/**",
         "kubernetes/apps/default/immich/**",
-        "kubernetes/apps/default/unifi/**",
         "kubernetes/apps/default/solis-charge/**",
         "kubernetes/flux/**",
         "kubernetes/components/**",
