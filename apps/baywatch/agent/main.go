@@ -314,13 +314,15 @@ func (a *agent) reconcile() {
 // re-assert of the "on" bits to heal drift). On a write error it keeps the old
 // applied value so the next cycle retries.
 func (a *agent) applyLEDs(c *rawComp, want ledState, fullSync, reassert bool, reason string) {
-	key := compKey(c.logicalID, c.slot)
+	// Keyed by physical element, not public slot, so a renumbered bay can never
+	// inherit or lose another bay's last-applied LED state.
+	key := c.encName + "#e" + strconv.Itoa(c.elem)
 	prev := a.applied[key]
 	apply := func(field string, was, w bool) bool {
 		if w == was && !fullSync && !(reassert && w) {
 			return was
 		}
-		if err := setLED(c.sgDev, c.slot, field, w); err != nil {
+		if err := setLED(c.sgDev, c.elem, field, w); err != nil {
 			log.Printf("setLED %s slot %d %s=%v: %v", c.encName, c.slot, field, w, err)
 			return was // retry next cycle
 		}
