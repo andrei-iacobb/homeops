@@ -17,7 +17,8 @@ spec:
           app:
             image:
               repository: ghcr.io/diced/zipline
-              tag: v4
+              # Pinned: v4.8 needs a v4.7.0 migration first (Prisma -> Drizzle). Step to v4.8.x after 4.7.0 boots.
+              tag: v4.7.0
             env:
               CORE_PORT: &port 3000
               DATASOURCE_TYPE: local

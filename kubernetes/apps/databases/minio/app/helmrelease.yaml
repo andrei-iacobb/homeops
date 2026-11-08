@@ -15,8 +15,9 @@ spec:
         containers:
           app:
             image:
-              repository: minio/minio
-              tag: RELEASE.2025-07-23T15-54-02Z
+              # Upstream MinIO stopped publishing images (Docker Hub empty, quay.io 401); Coolify republishes builds.
+              repository: ghcr.io/coollabsio/minio
+              tag: RELEASE.2025-10-15T17-29-55Z@sha256:69b55a1c1c5dc285ce04db96689f5b2102317fc77a50680a1874ca6efd1c87f9
             args:
               - server
               - /data
