@@ -17,10 +17,12 @@ spec:
           app:
             image:
               repository: ghcr.io/diced/zipline
-              # Pinned: v4.8 needs a v4.7.0 migration first (Prisma -> Drizzle). Step to v4.8.x after 4.7.0 boots.
-              tag: 4.7.0
+              tag: 4.8.2
             env:
               CORE_PORT: &port 3000
+              # 4.8+: forwarded headers are only honoured from listed proxies (Envoy pods, pod CIDR).
+              CORE_TRUST_PROXY: "true"
+              CORE_TRUSTED_PROXIES: "10.67.0.0/16"
               DATASOURCE_TYPE: local
               DATASOURCE_LOCAL_DIRECTORY: /zipline/uploads
               # Allow multi-GB iPhone footage. Chunking is on by default
