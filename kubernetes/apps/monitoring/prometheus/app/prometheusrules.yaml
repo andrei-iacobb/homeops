@@ -258,22 +258,6 @@ spec:
         annotations:
           summary: Hardware monitoring target missing for {{ $labels.job }}
           description: Restore the iLO exporter and its scrape target. Missing telemetry is not healthy hardware.
-      - alert: GPUOverheating
-        expr: nvidia_smi_temperature_gpu > 85
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: GPU temperature exceeds 85 C on {{ $labels.node }}
-          description: Check GPU fan, airflow and running workloads.
-      - alert: GPUCollectionFailed
-        expr: nvidia_smi_last_collect_success == 0
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: GPU exporter cannot collect driver metrics
-          description: Exporter is reachable but NVIDIA driver telemetry collection failed.
       - alert: TrueNASPoolAlmostFull
         expr: truenas_pool_free_percent < 10
         for: 15m
@@ -303,15 +287,6 @@ spec:
             access before assuming storage is healthy.
     - name: monitoring-coverage
       rules:
-      - alert: GPUExporterMissing
-        expr: absent(up{job="gpu-exporter"}) and on() (count(kube_node_status_allocatable{resource="nvidia_com_gpu"})
-          > 0)
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: GPU monitoring target is missing
-          description: A GPU node is registered but Prometheus has no GPU exporter target.
       - alert: CLIProxyExporterMissing
         expr: absent(up{job="cliproxy-exporter"})
         for: 10m

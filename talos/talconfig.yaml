@@ -40,41 +40,13 @@ nodes:
         addresses:
           - "10.10.10.2/31"
         mtu: 9000
-      # 10G p2p link dl360<->dl380 (vmbr12) to the gpu-worker
+      # 10G p2p link dl360<->dl380 (vmbr12); unused since gpu-worker was removed 2026-11-08
       - deviceSelector:
           hardwareAddr: "bc:24:11:0a:11:42"
         dhcp: false
         addresses:
           - "10.10.20.12/24"
         mtu: 9000
-  - hostname: "gpu-worker"
-    ipAddress: "192.168.1.86"
-    installDisk: "/dev/vda"
-    machineSpec:
-      secureboot: false
-    # schematic: qemu-guest-agent + nonfree-kmod-nvidia-lts + nvidia-container-toolkit-lts (Pascal P1000 needs the 580 LTS branch; 595 production dropped it)
-    talosImageURL: factory.talos.dev/installer/9ad39c156013e1e82f18ddef8e1e1b2cd98c3553566fb2896e1a69889260388c
-    controlPlane: false
-    nodeLabels:
-      nvidia.com/gpu.present: "true"
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:0a:11:40"
-        dhcp: false
-        addresses:
-          - "192.168.1.86/24"
-        routes:
-          - gateway: "192.168.1.1"
-            network: 0.0.0.0/0
-        mtu: 1500
-      # 10G p2p link dl380<->dl360 (vmbr12)
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:0a:11:41"
-        dhcp: false
-        addresses:
-          - "10.10.20.11/24"
-        mtu: 9000
-
 # Global patches
 patches:
   - "@./patches/global/machine-files.yaml"
@@ -88,8 +60,3 @@ controlPlane:
   patches:
     - "@./patches/controller/cluster.yaml"
     - "@./patches/controller/machine-features.yaml"
-
-# Worker patches
-worker:
-  patches:
-    - "@./patches/worker/nvidia.yaml"

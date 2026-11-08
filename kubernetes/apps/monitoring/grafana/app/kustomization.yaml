@@ -11,6 +11,5 @@ resources:
   - dashboards/ilo-dashboard.yaml
   - dashboards/truenas-dashboard.yaml
   - dashboards/network-dashboard.yaml
-  - dashboards/gpu-dashboard.yaml
   - dashboards/ai-agents-dashboard.yaml
   - dashboards/platform-dashboard.yaml
