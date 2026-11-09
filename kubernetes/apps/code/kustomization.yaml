@@ -11,6 +11,7 @@ resources:
   - ./sso-bypass.yaml
   - ./network-policies.yaml
   - ./desktop-adx.yaml
+  - ./fleet-kubectl.yaml
   - ./alpha/ks.yaml
   - ./beta/ks.yaml
   - ./gamma/ks.yaml
