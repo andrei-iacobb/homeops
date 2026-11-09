@@ -1,9 +1,11 @@
 ---
 # devports - reach a dev server running inside a T3 worker from a browser:
-#   https://<port>.<worker>.iacob.uk  ->  <worker>-0:<port>
-# e.g. `next dev -p 3400` on beta is https://3400.beta.iacob.uk. Internal
+#   https://<port>-<worker>.iacob.uk  ->  <worker>-0:<port>
+# e.g. `next dev -p 3400` on beta is https://3400-beta.iacob.uk. Internal
 # gateway only (home network / WireGuard), behind the gateway-wide Authentik
-# SSO. Certificate: network/envoy-gateway/app/certificate-code-workers.yaml.
+# SSO. One label under iacob.uk, so the existing *.iacob.uk certificate
+# covers it. The route is a wildcard: exact hostnames on envoy-internal win,
+# and nginx answers 404 for any other name that falls through to it.
 # Routing lives in nginx.conf; workers.yaml points at each worker pod.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -62,7 +64,7 @@ spec:
             port: *port
     route:
       app:
-        hostnames: ["*.alpha.iacob.uk", "*.beta.iacob.uk", "*.gamma.iacob.uk"]
+        hostnames: ["*.iacob.uk"]
         parentRefs:
           - name: envoy-internal
             namespace: network

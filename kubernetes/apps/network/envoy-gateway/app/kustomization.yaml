@@ -5,7 +5,6 @@ resources:
   - ./certificate.yaml
   - ./certificate-iacob-uk.yaml
   - ./certificate-iacobapp-dev.yaml
-  - ./certificate-code-workers.yaml
   - ./envoy.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
