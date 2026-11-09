@@ -1,0 +1,32 @@
+---
+# One headless Service per worker: its DNS name resolves straight to the
+# worker pod's IP, so nginx can reach any port without listing ports here.
+apiVersion: v1
+kind: Service
+metadata:
+  name: alpha-devports
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: alpha
+    app.kubernetes.io/controller: alpha
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: beta-devports
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: beta
+    app.kubernetes.io/controller: beta
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gamma-devports
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: gamma
+    app.kubernetes.io/controller: gamma
