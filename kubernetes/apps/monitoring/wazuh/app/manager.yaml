@@ -40,6 +40,10 @@ spec:
       labels:
         app.kubernetes.io/name: wazuh-manager
         app.kubernetes.io/part-of: wazuh
+      annotations:
+        # OpenTelemetry SDK for the two Python bridge sidecars only.
+        instrumentation.opentelemetry.io/inject-python: "default"
+        instrumentation.opentelemetry.io/container-names: home-monitoring,home-log-monitoring
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
@@ -245,7 +249,7 @@ spec:
             memory: 32Mi
           limits:
             cpu: 100m
-            memory: 128Mi
+            memory: 256Mi # +OpenTelemetry SDK overhead
         volumeMounts:
         - name: config
           mountPath: /app/home-monitoring-bridge.py
@@ -280,7 +284,7 @@ spec:
             memory: 32Mi
           limits:
             cpu: 100m
-            memory: 128Mi
+            memory: 256Mi # +OpenTelemetry SDK overhead
         volumeMounts:
         - name: config
           mountPath: /app/home-monitoring-loki-bridge.py

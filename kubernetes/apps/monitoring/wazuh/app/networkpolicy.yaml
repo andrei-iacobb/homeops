@@ -115,6 +115,13 @@ spec:
     - ports:
       - port: '443'
         protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: alloy
+    toPorts:
+    - ports:
+      - port: '4318'
+        protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
