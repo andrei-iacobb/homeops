@@ -22,6 +22,10 @@ spec:
       value: none
     - name: OTEL_METRIC_EXPORT_INTERVAL
       value: "30000"
+    # Stable HTTP semantic conventions only: metrics are labelled by host and
+    # route, not full URL, which keeps series counts bounded.
+    - name: OTEL_SEMCONV_STABILITY_OPT_IN
+      value: http
   nodejs:
     env:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -35,3 +39,6 @@ spec:
         value: http/protobuf
       - name: OTEL_PYTHON_LOG_CORRELATION
         value: "true"
+      # Per-core host CPU metrics duplicate cAdvisor and multiply series.
+      - name: OTEL_PYTHON_DISABLED_INSTRUMENTATIONS
+        value: system_metrics
