@@ -1,0 +1,125 @@
+---
+# Adapted from wazuh/wazuh-kubernetes v4.14.10.
+# Copyright (C) 2019, Wazuh Inc.
+#
+# This program is a free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License (version 2) as published by the FSF - Free Software
+# Foundation.
+
+# Dashboard service. ClusterIP only; reached through envoy-internal, which
+# re-encrypts to the pod and verifies its certificate (see httproute.yaml).
+apiVersion: v1
+kind: Service
+metadata:
+  name: wazuh-dashboard
+  labels:
+    app.kubernetes.io/name: wazuh-dashboard
+    app.kubernetes.io/part-of: wazuh
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: wazuh-dashboard
+  ports:
+    - name: https
+      port: 443
+      targetPort: 5601
+---
+# Dashboard Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wazuh-dashboard
+  labels:
+    app.kubernetes.io/name: wazuh-dashboard
+    app.kubernetes.io/part-of: wazuh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wazuh-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wazuh-dashboard
+        app.kubernetes.io/part-of: wazuh
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: config
+          configMap:
+            name: wazuh-dashboard-conf
+        - name: dashboard-certs
+          secret:
+            secretName: wazuh-dashboard-certs
+            defaultMode: 0440
+      containers:
+        - name: wazuh-dashboard
+          image: wazuh/wazuh-dashboard:4.14.10@sha256:0eebab19802342b841a258f56d6fa0fb085cdae08ab5eb2e45f9455c906d719a
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            tcpSocket:
+              port: dashboard
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+              subPath: opensearch_dashboards.yml
+              readOnly: true
+            - name: dashboard-certs
+              mountPath: /usr/share/wazuh-dashboard/certs/cert.pem
+              readOnly: true
+              subPath: cert.pem
+            - name: dashboard-certs
+              mountPath: /usr/share/wazuh-dashboard/certs/key.pem
+              readOnly: true
+              subPath: key.pem
+            - name: dashboard-certs
+              mountPath: /usr/share/wazuh-dashboard/certs/root-ca.pem
+              subPath: root-ca.pem
+              readOnly: true
+          ports:
+            - containerPort: 5601
+              name: dashboard
+          env:
+            - name: DASHBOARD_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: DASHBOARD_USERNAME
+            - name: DASHBOARD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: DASHBOARD_PASSWORD
+            - name: WAZUH_API_URL
+              value: https://wazuh-manager
+            - name: API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: API_USERNAME
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: API_PASSWORD

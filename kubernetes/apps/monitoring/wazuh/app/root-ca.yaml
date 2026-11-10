@@ -1,0 +1,37 @@
+---
+# Public root CA certificate of the Wazuh demo PKI. Envoy uses it to verify
+# the dashboard's serving certificate (see BackendTLSPolicy in httproute.yaml).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wazuh-root-ca
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIEdTCCAt2gAwIBAgIUAW22Rr3CwfQafUbGhBnCouJEbCkwDQYJKoZIhvcNAQEL
+    BQAwUTELMAkGA1UEBhMCR0IxEDAOBgNVBAoMB2hvbWVvcHMxEzARBgNVBAsMCndh
+    enVoLWRlbW8xGzAZBgNVBAMMEndhenVoLWRlbW8tcm9vdC1jYTAeFw0yNjExMTAx
+    NDA4NTBaFw0zNjExMDcxNDA4NTBaMFExCzAJBgNVBAYTAkdCMRAwDgYDVQQKDAdo
+    b21lb3BzMRMwEQYDVQQLDAp3YXp1aC1kZW1vMRswGQYDVQQDDBJ3YXp1aC1kZW1v
+    LXJvb3QtY2EwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGKAoIBgQCf7hzIao2O
+    lNSCvTA5Jpe+Uq8mE2TQstcLITxulY2lGjC5iyqe8EYF7b/LAvF4c8UKbtNjMjsb
+    28JnThryC72CJeddZVnGqhRhELuijbOc9kb9/KMsE1Ro3Ja5Kq1iFTr9Kwtf2HL9
+    XvwlZnArChHX6xixgcKhAqWFle26Zwdw6XsC0qUEoKeyPZwU+um0WS58FR8h6jLe
+    Z4RWmvD0mw4OCBGSn1lkCj/9VWpLT/WbrpXgtPqOQLd23L6MlgBG1swFTZF6C1yG
+    DEQx8UDO4/ENltln8YZSOa4yKZ+GkwBZX1PzniexzOFZ+v+ueosjLf4j2bugXsxD
+    RqGojTbpcfTbC6F6YXJRBZ/EA/QLdneK4NEt16U33epNAgklBPjQcmXaC2k0Az5j
+    26PcIN1MHshYgwuu5fkgZatHThnXL+Z6Vl9yshdLof64LYY7WwM+7gAQFecYRhkZ
+    6eTDxVSk9yVw03Jz2P3idRfNzxf2qU1Uj5r1/Z7VHOn+G0OdJ6rGgK0CAwEAAaNF
+    MEMwHQYDVR0OBBYEFLIj2ntVt3cfoBxGWNDZbFnX7IsEMBIGA1UdEwEB/wQIMAYB
+    Af8CAQAwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3DQEBCwUAA4IBgQCIRAKQwT/I
+    he3XNPWYPfM66hSS5YDkgSldm8Gwiep1pLg6lEhwrS2WebQZ3A9bxXLTostAG3r5
+    qEvD+r35XBXP5HhLmN2tCiL5w5hTAsMmYEpHgNurD3rxF/HaNE8KBB7guHkDM6aH
+    GtJlI5cKD0zPuoNJmbdSRiY+3En7x4nzIDySEe2BOCQEH8XWQVfqn4/0IXfDBmkJ
+    ZDiF0qoIwZ+jL1ZHFBm2TZKvav7BOGnQ6WL6krFYTi0JCOCqag6qn170R3hjFSe9
+    6Iwsp8+F3BROqCzZRuTBtGfy0D1Q9tgu/Zj/yuPzvogVBhHHGNcG63PHih7vS/gb
+    6vsUPs7OlZF+FIW6AO7Nu10jDJluG7z1/1YtnJ0A+L9oELh6oQITH6fGoGYTiypG
+    N9pciTYMIRYTwF3oQPt4d90/xcClV7f4cGfDbTKOPDM6ObvPSkKyMlye1F2pgRTT
+    YUmfAMsca56ARaL4cCoVuWlQfq16BYSOXxB1iT6D5DNaFSNxO2M8N3E=
+    -----END CERTIFICATE-----

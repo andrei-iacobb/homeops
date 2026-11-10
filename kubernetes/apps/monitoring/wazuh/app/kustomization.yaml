@@ -1,0 +1,38 @@
+---
+# Adapted from wazuh/wazuh-kubernetes v4.14.10 (envs/local-env), commit
+# 97bc03d9fa03342302e76aca5b0f3200269a63a1.
+# Copyright (C) 2019, Wazuh Inc.
+#
+# This program is a free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License (version 2) as published by the FSF - Free Software
+# Foundation. See ../LICENSE.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./secret.sops.yaml
+  - ./certs.sops.yaml
+  - ./root-ca.yaml
+  - ./indexer.yaml
+  - ./manager.yaml
+  - ./dashboard.yaml
+  - ./httproute.yaml
+  - ./networkpolicy.yaml
+generatorOptions:
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+configMapGenerator:
+  - name: wazuh-indexer-conf
+    files:
+      - config/opensearch.yml
+  - name: wazuh-manager-conf
+    files:
+      - config/ossec.conf
+      - config/tpic_demo_decoders.xml
+      - config/tpic_demo_rules.xml
+      - config/10-tpic-demo.sh
+      - config/sample-suspicious-transfer.log
+      - config/sample-benign-backup.log
+  - name: wazuh-dashboard-conf
+    files:
+      - config/opensearch_dashboards.yml

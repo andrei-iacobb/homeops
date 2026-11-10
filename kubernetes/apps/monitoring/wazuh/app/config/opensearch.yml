@@ -1,0 +1,45 @@
+# Adapted from wazuh/wazuh-kubernetes v4.14.10
+# (wazuh/indexer_stack/wazuh-indexer/indexer_conf/opensearch.yml), GPLv2.
+cluster.name: wazuh-demo
+node.name: wazuh-indexer-0
+network.host: 0.0.0.0
+
+# One indexer only. single-node discovery also skips the production bootstrap
+# checks, so the node starts with the host's vm.max_map_count of 65530 and no
+# privileged sysctl init container is needed. mmap is turned off to match: the
+# store falls back to NIO, which is plenty for demo volumes.
+discovery.type: single-node
+node.store.allow_mmap: false
+
+path.data: /var/lib/wazuh-indexer
+path.logs: /var/log/wazuh-indexer
+plugins.security.ssl.http.pemcert_filepath: /usr/share/wazuh-indexer/config/certs/node.pem
+plugins.security.ssl.http.pemkey_filepath: /usr/share/wazuh-indexer/config/certs/node-key.pem
+plugins.security.ssl.http.pemtrustedcas_filepath: /usr/share/wazuh-indexer/config/certs/root-ca.pem
+plugins.security.ssl.transport.pemcert_filepath: /usr/share/wazuh-indexer/config/certs/node.pem
+plugins.security.ssl.transport.pemkey_filepath: /usr/share/wazuh-indexer/config/certs/node-key.pem
+plugins.security.ssl.transport.pemtrustedcas_filepath: /usr/share/wazuh-indexer/config/certs/root-ca.pem
+plugins.security.ssl.http.enabled: true
+plugins.security.ssl.transport.enforce_hostname_verification: false
+plugins.security.ssl.transport.resolve_hostname: false
+plugins.security.authcz.admin_dn:
+  - CN=admin,OU=wazuh-demo,O=homeops,C=GB
+plugins.security.check_snapshot_restore_write_privileges: true
+plugins.security.enable_snapshot_restore_privilege: true
+plugins.security.nodes_dn:
+  - CN=wazuh-indexer,OU=wazuh-demo,O=homeops,C=GB
+plugins.security.restapi.roles_enabled:
+  - "all_access"
+  - "security_rest_api_access"
+# First start only: builds the security index from config/opensearch-security,
+# where internal_users.yml is replaced by the one in the wazuh-credentials Secret.
+plugins.security.allow_default_init_securityindex: true
+
+# The data volume is a hostpath on the node's shared root disk, so the PVC size
+# is not enforced. Stop allocating/writing well before the node itself is full.
+cluster.routing.allocation.disk.threshold_enabled: true
+cluster.routing.allocation.disk.watermark.low: 20gb
+cluster.routing.allocation.disk.watermark.high: 15gb
+cluster.routing.allocation.disk.watermark.flood_stage: 10gb
+
+compatibility.override_main_response_version: true

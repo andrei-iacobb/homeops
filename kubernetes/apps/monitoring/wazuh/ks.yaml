@@ -1,0 +1,17 @@
+---
+# Wazuh demo (single indexer, single manager, dashboard). No postBuild
+# substitution on purpose: the configs and bcrypt hashes contain "$".
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: wazuh
+spec:
+  interval: 1h
+  path: ./kubernetes/apps/monitoring/wazuh/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: monitoring
+  wait: false

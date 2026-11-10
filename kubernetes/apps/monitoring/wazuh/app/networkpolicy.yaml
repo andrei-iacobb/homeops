@@ -1,0 +1,119 @@
+---
+# Wazuh demo network boundary. Nothing here is reachable from outside the
+# cluster except the dashboard through envoy-internal, and the pods can only
+# talk to each other and to cluster DNS (no outbound internet, so no external
+# notifications or feed downloads). `host` covers kubelet probes.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: wazuh-indexer
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: wazuh-indexer
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-manager
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-dashboard
+      toPorts:
+        - ports:
+            - port: "9200"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-indexer
+    - fromEntities:
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-indexer
+---
+# Add an ingress rule for 1514/1515 here when agents are enrolled.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: wazuh-manager
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: wazuh-manager
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-dashboard
+      toPorts:
+        - ports:
+            - port: "55000"
+              protocol: TCP
+    - fromEntities:
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-indexer
+      toPorts:
+        - ports:
+            - port: "9200"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: wazuh-dashboard
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: wazuh-dashboard
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.envoyproxy.io/owning-gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "5601"
+              protocol: TCP
+    - fromEntities:
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-indexer
+      toPorts:
+        - ports:
+            - port: "9200"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: wazuh-manager
+      toPorts:
+        - ports:
+            - port: "55000"
+              protocol: TCP

@@ -1,0 +1,16 @@
+<!--
+  TPIC demo decoder (homeops Wazuh demo). SYNTHETIC DATA ONLY.
+
+  Demo events are single lines of the form
+    tpic-demo-synthetic: {"tpic_demo":{"synthetic":true,"event_type":...}}
+  The marker prefix is what selects this decoder (bare JSON lines are taken by
+  Wazuh's built-in "json" decoder first). The JSON after the marker is handed
+  to the JSON plugin decoder. Every demo key lives under the "tpic_demo"
+  object, so the decoded fields are tpic_demo.<key> and are indexed as
+  data.tpic_demo.<key>; top-level keys such as "process" would collide with
+  typed fields in the Wazuh alerts index template and be rejected.
+-->
+<decoder name="tpic_demo">
+  <prematch>^tpic-demo-synthetic: </prematch>
+  <plugin_decoder offset="after_prematch">JSON_Decoder</plugin_decoder>
+</decoder>

@@ -1,0 +1,231 @@
+---
+# Adapted from wazuh/wazuh-kubernetes v4.14.10.
+# Copyright (C) 2019, Wazuh Inc.
+#
+# This program is a free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License (version 2) as published by the FSF - Free Software
+# Foundation.
+
+# Manager service: API (55000), agent enrollment (1515) and agent events
+# (1514). Headless and cluster-internal only; upstream uses LoadBalancers.
+apiVersion: v1
+kind: Service
+metadata:
+  name: wazuh-manager
+  labels:
+    app.kubernetes.io/name: wazuh-manager
+    app.kubernetes.io/part-of: wazuh
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: wazuh-manager
+  ports:
+    - name: api
+      port: 55000
+      targetPort: 55000
+    - name: registration
+      port: 1515
+      targetPort: 1515
+    - name: agents-events
+      port: 1514
+      targetPort: 1514
+---
+# Wazuh manager StatefulSet: single node (upstream master, no workers).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wazuh-manager
+  labels:
+    app.kubernetes.io/name: wazuh-manager
+    app.kubernetes.io/part-of: wazuh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wazuh-manager
+  serviceName: wazuh-manager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wazuh-manager
+        app.kubernetes.io/part-of: wazuh
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: config
+          configMap:
+            name: wazuh-manager-conf
+        - name: filebeat-certs
+          secret:
+            secretName: wazuh-manager-certs
+        - name: wazuh-authd-pass
+          secret:
+            secretName: wazuh-credentials
+            items:
+              - key: authd.pass
+                path: authd.pass
+        # Synthetic demo events are appended here by hand; see ossec.conf.
+        - name: tpic-demo
+          emptyDir:
+            sizeLimit: 64Mi
+      # The image is s6-based and has to start as root (it fixes ownership and
+      # runs daemons under several users). Not privileged, no host access.
+      securityContext:
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wazuh-manager
+          image: wazuh/wazuh-manager:4.14.10@sha256:dcda4869e2f792e92f03bce93f85b4bdf103756ea61cfca8ba9f3eabeb05365b
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            capabilities:
+              add: ["SYS_CHROOT"]
+          readinessProbe:
+            tcpSocket:
+              port: api
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+            # Everything under /wazuh-config-mount is copied into /var/ossec by
+            # the image at every start.
+            - name: config
+              mountPath: /wazuh-config-mount/etc/ossec.conf
+              subPath: ossec.conf
+              readOnly: true
+            - name: config
+              mountPath: /wazuh-config-mount/etc/decoders/tpic_demo_decoders.xml
+              subPath: tpic_demo_decoders.xml
+              readOnly: true
+            - name: config
+              mountPath: /wazuh-config-mount/etc/rules/tpic_demo_rules.xml
+              subPath: tpic_demo_rules.xml
+              readOnly: true
+            # Image hook, run before the daemons start (fixes file ownership).
+            - name: config
+              mountPath: /entrypoint-scripts/10-tpic-demo.sh
+              subPath: 10-tpic-demo.sh
+              readOnly: true
+            - name: config
+              mountPath: /opt/tpic-demo/samples/suspicious-transfer.log
+              subPath: sample-suspicious-transfer.log
+              readOnly: true
+            - name: config
+              mountPath: /opt/tpic-demo/samples/benign-backup.log
+              subPath: sample-benign-backup.log
+              readOnly: true
+            - name: tpic-demo
+              mountPath: /var/log/tpic-demo
+            - name: filebeat-certs
+              mountPath: /etc/ssl/root-ca.pem
+              readOnly: true
+              subPath: root-ca.pem
+            - name: filebeat-certs
+              mountPath: /etc/ssl/filebeat.pem
+              subPath: filebeat.pem
+              readOnly: true
+            - name: filebeat-certs
+              mountPath: /etc/ssl/filebeat.key
+              subPath: filebeat-key.pem
+              readOnly: true
+            - name: wazuh-authd-pass
+              mountPath: /wazuh-config-mount/etc/authd.pass
+              subPath: authd.pass
+              readOnly: true
+            - name: wazuh-manager
+              mountPath: /var/ossec/api/configuration
+              subPath: wazuh/var/ossec/api/configuration
+            - name: wazuh-manager
+              mountPath: /var/ossec/etc
+              subPath: wazuh/var/ossec/etc
+            - name: wazuh-manager
+              mountPath: /var/ossec/logs
+              subPath: wazuh/var/ossec/logs
+            - name: wazuh-manager
+              mountPath: /var/ossec/queue
+              subPath: wazuh/var/ossec/queue
+            - name: wazuh-manager
+              mountPath: /var/ossec/var/multigroups
+              subPath: wazuh/var/ossec/var/multigroups
+            - name: wazuh-manager
+              mountPath: /var/ossec/integrations
+              subPath: wazuh/var/ossec/integrations
+            - name: wazuh-manager
+              mountPath: /var/ossec/active-response/bin
+              subPath: wazuh/var/ossec/active-response/bin
+            - name: wazuh-manager
+              mountPath: /var/ossec/agentless
+              subPath: wazuh/var/ossec/agentless
+            - name: wazuh-manager
+              mountPath: /var/ossec/wodles
+              subPath: wazuh/var/ossec/wodles
+            - name: wazuh-manager
+              mountPath: /etc/filebeat
+              subPath: filebeat/etc/filebeat
+            - name: wazuh-manager
+              mountPath: /var/lib/filebeat
+              subPath: filebeat/var/lib/filebeat
+          ports:
+            - containerPort: 1514
+              name: agents-events
+            - containerPort: 1515
+              name: registration
+            - containerPort: 55000
+              name: api
+          env:
+            - name: INDEXER_URL
+              value: "https://wazuh-indexer:9200"
+            - name: INDEXER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: INDEXER_USERNAME
+            - name: INDEXER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: INDEXER_PASSWORD
+            - name: FILEBEAT_SSL_VERIFICATION_MODE
+              value: "full"
+            - name: SSL_CERTIFICATE_AUTHORITIES
+              value: /etc/ssl/root-ca.pem
+            - name: SSL_CERTIFICATE
+              value: /etc/ssl/filebeat.pem
+            - name: SSL_KEY
+              value: /etc/ssl/filebeat.key
+            # The image sets this password on API_USERNAME and randomises the
+            # other built-in API user ("wazuh") at every start.
+            - name: API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: API_USERNAME
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: API_PASSWORD
+            - name: WAZUH_CLUSTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: WAZUH_CLUSTER_KEY
+  volumeClaimTemplates:
+    - metadata:
+        name: wazuh-manager
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-hostpath
+        resources:
+          requests:
+            storage: 10Gi
