@@ -1,0 +1,50 @@
+---
+# Trace store for OpenTelemetry-instrumented apps. The metrics generator turns
+# spans into request rate/error/duration metrics and a service graph in
+# Prometheus, so every instrumented app gets RED metrics for free.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: tempo
+      version: 1.24.4
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: monitoring
+  values:
+    tempo:
+      reportingEnabled: false
+      retention: 168h
+      memBallastSizeMbs: 0
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 1Gi
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+      metricsGenerator:
+        enabled: true
+        remoteWriteUrl: http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write
+      overrides:
+        defaults:
+          metrics_generator:
+            processors:
+              - service-graphs
+              - span-metrics
+              - local-blocks
+    persistence:
+      enabled: true
+      storageClassName: openebs-hostpath
+      size: 10Gi

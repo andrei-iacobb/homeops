@@ -26,3 +26,12 @@ spec:
         - ports:
             - port: "8317"
               protocol: TCP
+    # OpenTelemetry traces and metrics to Alloy.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: alloy
+      toPorts:
+        - ports:
+            - port: "4318"
+              protocol: TCP

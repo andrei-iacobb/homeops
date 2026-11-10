@@ -16,6 +16,8 @@ resources:
   - loki/ks.yaml
   # - promtail/ks.yaml  # replaced by alloy
   - alloy/ks.yaml
+  - tempo/ks.yaml
+  - otel-operator/ks.yaml
   - scrutiny/ks.yaml
   - bays/ks.yaml
   - wazuh/ks.yaml

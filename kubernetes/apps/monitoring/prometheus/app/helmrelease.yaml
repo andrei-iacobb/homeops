@@ -19,6 +19,8 @@ spec:
       enabled: true
       prometheusSpec:
         retention: 14d
+        # Alloy (OpenTelemetry app metrics) and Tempo's metrics generator push here.
+        enableRemoteWriteReceiver: true
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -158,6 +160,36 @@ spec:
           url: http://loki.monitoring.svc.cluster.local:3100
           isDefault: false
           editable: true
+          jsonData:
+            derivedFields:
+              - name: TraceID
+                matcherType: regex
+                matcherRegex: '(?:trace_id|traceID|otelTraceID)[=:" ]+(\w{32})'
+                url: '${__value.raw}'
+                datasourceUid: tempo
+        - name: Tempo
+          uid: tempo
+          type: tempo
+          access: proxy
+          url: http://tempo.monitoring.svc.cluster.local:3200
+          isDefault: false
+          editable: false
+          jsonData:
+            serviceMap:
+              datasourceUid: prometheus
+            nodeGraph:
+              enabled: true
+            tracesToLogsV2:
+              datasourceUid: loki
+              spanStartTimeShift: -5m
+              spanEndTimeShift: 5m
+              filterByTraceID: true
+              customQuery: true
+              query: '{namespace="${__span.tags["k8s.namespace.name"]}"} |= "${__trace.traceId}"'
+            tracesToMetrics:
+              datasourceUid: prometheus
+            search:
+              hide: false
       # One SQLite DB on a RWO volume: a rolling update starts the new pod while
       # the old one still holds it, the new one crash-loops and Helm times out.
       deploymentStrategy:

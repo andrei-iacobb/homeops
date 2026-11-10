@@ -65,8 +65,66 @@ spec:
               url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
             }
           }
+
+          // OpenTelemetry ingest for instrumented apps (operator-injected SDKs
+          // or apps that ship their own). Send OTLP to alloy.monitoring:4317/4318.
+          otelcol.receiver.otlp "default" {
+            grpc {
+              endpoint = "0.0.0.0:4317"
+            }
+            http {
+              endpoint = "0.0.0.0:4318"
+            }
+            output {
+              metrics = [otelcol.processor.batch.default.input]
+              logs    = [otelcol.processor.batch.default.input]
+              traces  = [otelcol.processor.batch.default.input]
+            }
+          }
+
+          otelcol.processor.batch "default" {
+            output {
+              metrics = [otelcol.exporter.prometheus.default.input]
+              logs    = [otelcol.exporter.otlphttp.loki.input]
+              traces  = [otelcol.exporter.otlp.tempo.input]
+            }
+          }
+
+          otelcol.exporter.prometheus "default" {
+            forward_to = [prometheus.remote_write.default.receiver]
+          }
+
+          prometheus.remote_write "default" {
+            endpoint {
+              url = "http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write"
+            }
+          }
+
+          otelcol.exporter.otlphttp "loki" {
+            client {
+              endpoint = "http://loki.monitoring.svc.cluster.local:3100/otlp"
+            }
+          }
+
+          otelcol.exporter.otlp "tempo" {
+            client {
+              endpoint = "tempo.monitoring.svc.cluster.local:4317"
+              tls {
+                insecure = true
+              }
+            }
+          }
       clustering:
         enabled: false
+      extraPorts:
+        - name: otlp-grpc
+          port: 4317
+          targetPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          port: 4318
+          targetPort: 4318
+          protocol: TCP
     controller:
       type: daemonset
     rbac:
