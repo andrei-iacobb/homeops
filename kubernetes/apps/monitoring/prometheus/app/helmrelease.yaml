@@ -131,7 +131,7 @@ spec:
         userKey: admin-user
         passwordKey: admin-password
       env:
-        GF_PLUGINS_PREINSTALL_SYNC: "grafana-opensearch-datasource@2.34.6,grafana-clickhouse-datasource@4.23.2"
+        GF_PLUGINS_PREINSTALL_SYNC: "grafana-opensearch-datasource@2.34.6,grafana-clickhouse-datasource@4.23.2,grafana-github-datasource@2.9.4"
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /tmp/dashboards/everything.json
         GF_SECURITY_ALLOW_EMBEDDING: "true"
         GF_SECURITY_COOKIE_SAMESITE: "none"

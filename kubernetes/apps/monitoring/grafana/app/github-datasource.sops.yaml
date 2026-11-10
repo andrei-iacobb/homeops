@@ -1,0 +1,28 @@
+# Fine-grained read-only PAT (andrei-iacobb, all repos), expires 2026-12-10.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-grafana-datasource
+  labels:
+    grafana_datasource: "1"
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+type: Opaque
+stringData:
+  github.yaml: ENC[AES256_GCM,data:sqJSK/FlVNO9RfYa/39qM1mET9KcwEnKOX35hVQ20knu8Dvg7ijnTDE7E+8it+WIxDT9Ewh/IlfExgLTvO66j0JX0N4qO9gcRFZ8a2afImR5SI/YdFwHJR62prRNLsD80clS2EWLHbSTF9ZyOYf06j7vxPlN/4xcLUNhC48fRLER61rd53EMeJzvQiNQmldTN3+h/a8WbmN5R1t7rrXVFrMtbDaNxIv9+AWTOg/crQuMjoapWpthlSxUdtAA5C1FqAY8E2FxD5oku8XCK8NzXZFAZa79DdtCyTfroyUM/cL9iRkcCRvf1lQ7rGq6FuHnYLl0+3kZrdSgdtvJIu7+9C/LPyJq89ZKPgUlQR7KYW3mU70m/rYJECyaHUXub10cKC4W3Qw=,iv:MLglPlFi66+V++Z5DRsAFdlQ7dGY6jhxorzHJOiEyxU=,tag:j1bx9uSMGyes0fdmft83Rw==,type:str]
+sops:
+  age:
+    - enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB1NE1lN2pjSzZsazU2eUxP
+        N3g4cEdLOFd2YzhBYnhVQ2VvaFZUenFUc0hzCk83VmY0a1FjSlUzbUZ3ald2T3pt
+        SnFyRXAyQjBJYmlaZDZqZ2pobzVMSGcKLS0tIFFtcjBzcDdDUzBNYkg3Qi9ZVDhM
+        QjRYbTlaamlhdjVUSFVEYjVuamlZY1EKyVlAZ3JxecYx8z3zJmNo1NpaeQrTXvOX
+        vGB8Y7X3gbzqkn8WiYK19ltqzT2+OGrEozJ++POLw9Pqq8SuwKMObw==
+        -----END AGE ENCRYPTED FILE-----
+      recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+  encrypted_regex: ^(data|stringData)$
+  lastmodified: "2026-11-10T22:05:09Z"
+  mac: ENC[AES256_GCM,data:+qv/NthgCh/1WHWPOgbi7eGZBupY0z+MtWQOW0iNZj7Tgdm1/01oiFcInhk9wsheLxt9fkyaDbwDqg+R/kshfC0rdgPANNmyt9JQPihabycT9ZEphRnloPVbuYzwRIjeu5AtoQowQcvxF5cGXwsmYFILDiVrS44og+RUyXzXhmQ=,iv:B/2Uv/Q0uVT/PWWDQCGqGmuRoAW9pwCcEvkYroZ3qGk=,tag:la7e+PWrNyGRrhhZ2GhRgg==,type:str]
+  mac_only_encrypted: true
+  version: 3.13.3

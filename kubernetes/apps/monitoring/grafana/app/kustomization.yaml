@@ -5,6 +5,7 @@ resources:
   - httproute.yaml
   - networkpolicy.yaml
   - plausible-datasource.sops.yaml
+  - github-datasource.sops.yaml
   - dashboards/everything-dashboard.yaml
   - dashboards/home-overview-dashboard.yaml
   - dashboards/kubernetes-dashboard.yaml
