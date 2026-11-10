@@ -37,5 +37,3 @@ spec:
         enabled: true
       pods:
         failurePolicy: Ignore
-    kubeRBACProxy:
-      enabled: false
