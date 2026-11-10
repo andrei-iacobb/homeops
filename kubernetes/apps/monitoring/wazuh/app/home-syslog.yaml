@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wazuh-home-syslog
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: wazuh-manager
+  ports:
+  - name: syslog
+    port: 5514
+    targetPort: 5514
+    nodePort: 30514
+    protocol: UDP

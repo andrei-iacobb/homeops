@@ -1,0 +1,11 @@
+<group name="home_unifi,syslog,">
+  <rule id="100700" level="3">
+    <decoded_as>home-unifi-cef</decoded_as>
+    <description>Home UniFi: $(home_unifi.event)</description>
+  </rule>
+  <rule id="100701" level="7">
+    <if_sid>100700</if_sid>
+    <field name="home_unifi.severity" type="pcre2">^(?:[7-9]|10|High|Very-High)$</field>
+    <description>Home UniFi high-severity event: $(home_unifi.event)</description>
+  </rule>
+</group>

@@ -1,0 +1,5 @@
+<decoder name="home-unifi-cef">
+  <prematch type="pcre2">^CEF:\d+\|Ubiquiti\|</prematch>
+  <regex type="pcre2">^CEF:\d+\|Ubiquiti\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(.*)$</regex>
+  <order>home_unifi.product,home_unifi.version,home_unifi.event_id,home_unifi.event,home_unifi.severity,home_unifi.details</order>
+</decoder>
