@@ -43,6 +43,13 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 60
+      # External API hosts (Microsoft 365) must resolve under their real names so
+      # the Cilium toFQDNs allow-list matches; the cluster resolver also answers
+      # search-suffixed variants, which ndots:5 would query first.
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "1"
       volumes:
       - name: config
         configMap:
