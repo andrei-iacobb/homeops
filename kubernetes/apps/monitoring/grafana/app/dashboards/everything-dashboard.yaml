@@ -82,6 +82,29 @@ data:
             "sort": 1
           },
           {
+            "name": "repo",
+            "label": "GitHub repo",
+            "type": "query",
+            "datasource": {
+              "type": "grafana-github-datasource",
+              "uid": "github"
+            },
+            "query": {
+              "refId": "repo",
+              "queryType": "Repositories",
+              "owner": "andrei-iacobb",
+              "options": {},
+              "key": "name",
+              "field": "name"
+            },
+            "current": {
+              "text": "homeops",
+              "value": "homeops"
+            },
+            "refresh": 1,
+            "sort": 1
+          },
+          {
             "name": "site",
             "label": "Site",
             "type": "custom",
@@ -3036,7 +3059,7 @@ data:
         },
         {
           "type": "row",
-          "title": "Backups and scheduled jobs",
+          "title": "GitHub",
           "id": 55,
           "collapsed": false,
           "gridPos": {
@@ -3049,8 +3072,248 @@ data:
         },
         {
           "type": "stat",
-          "title": "Backups out of sync",
+          "title": "Commits in range",
           "id": 56,
+          "datasource": {
+            "type": "grafana-github-datasource",
+            "uid": "github"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 4,
+            "x": 0,
+            "y": 136
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "grafana-github-datasource",
+                "uid": "github"
+              },
+              "queryType": "Commits",
+              "owner": "andrei-iacobb",
+              "options": {
+                "gitRef": "HEAD"
+              },
+              "repository": "$repo"
+            }
+          ],
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "count"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "value",
+            "justifyMode": "center"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "description": "Commits on the default branch of the selected repo in the dashboard time range."
+        },
+        {
+          "type": "table",
+          "title": "Recent commits",
+          "id": 57,
+          "datasource": {
+            "type": "grafana-github-datasource",
+            "uid": "github"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 4,
+            "y": 136
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "grafana-github-datasource",
+                "uid": "github"
+              },
+              "queryType": "Commits",
+              "owner": "andrei-iacobb",
+              "options": {
+                "gitRef": "HEAD"
+              },
+              "repository": "$repo"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "includeByName": {
+                  "committed_at": true,
+                  "author_login": true,
+                  "message": true
+                },
+                "indexByName": {
+                  "committed_at": 0,
+                  "author_login": 1,
+                  "message": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "title": "Pull requests",
+          "id": 58,
+          "datasource": {
+            "type": "grafana-github-datasource",
+            "uid": "github"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 136
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "grafana-github-datasource",
+                "uid": "github"
+              },
+              "queryType": "Pull_Requests",
+              "owner": "andrei-iacobb",
+              "options": {
+                "timeField": 1,
+                "query": ""
+              },
+              "repository": "$repo"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "includeByName": {
+                  "number": true,
+                  "title": true,
+                  "state": true,
+                  "author_login": true,
+                  "updated_at": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "title": "Repositories",
+          "id": 59,
+          "datasource": {
+            "type": "grafana-github-datasource",
+            "uid": "github"
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 144
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "grafana-github-datasource",
+                "uid": "github"
+              },
+              "queryType": "Repositories",
+              "owner": "andrei-iacobb",
+              "options": {}
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "includeByName": {
+                  "name": true,
+                  "is_private": true,
+                  "is_fork": true,
+                  "created_at": true,
+                  "url": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Backups and scheduled jobs",
+          "id": 60,
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 151
+          },
+          "panels": []
+        },
+        {
+          "type": "stat",
+          "title": "Backups out of sync",
+          "id": 61,
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -3059,7 +3322,7 @@ data:
             "h": 6,
             "w": 4,
             "x": 0,
-            "y": 136
+            "y": 152
           },
           "targets": [
             {
@@ -3112,7 +3375,7 @@ data:
         {
           "type": "stat",
           "title": "Failed jobs (24h)",
-          "id": 57,
+          "id": 62,
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -3121,7 +3384,7 @@ data:
             "h": 6,
             "w": 4,
             "x": 4,
-            "y": 136
+            "y": 152
           },
           "targets": [
             {
@@ -3174,7 +3437,7 @@ data:
         {
           "type": "table",
           "title": "Last backup per volume",
-          "id": 58,
+          "id": 63,
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -3183,7 +3446,7 @@ data:
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 136
+            "y": 152
           },
           "targets": [
             {
@@ -3216,7 +3479,7 @@ data:
         {
           "type": "table",
           "title": "Failed jobs",
-          "id": 59,
+          "id": 64,
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -3225,7 +3488,7 @@ data:
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 136
+            "y": 152
           },
           "targets": [
             {
