@@ -1,0 +1,19 @@
+{
+  "cluster_permissions": [
+    "cluster_composite_ops_ro",
+    "cluster_monitor"
+  ],
+  "index_permissions": [
+    {
+      "index_patterns": [
+        "wazuh-alerts-*"
+      ],
+      "allowed_actions": [
+        "read",
+        "indices:admin/mappings/get",
+        "indices:admin/get"
+      ]
+    }
+  ],
+  "tenant_permissions": []
+}

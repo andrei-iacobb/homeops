@@ -17,6 +17,8 @@ spec:
             app.kubernetes.io/name: wazuh-manager
         - matchLabels:
             app.kubernetes.io/name: wazuh-dashboard
+        - matchLabels:
+            app.kubernetes.io/name: grafana
       toPorts:
         - ports:
             - port: "9200"

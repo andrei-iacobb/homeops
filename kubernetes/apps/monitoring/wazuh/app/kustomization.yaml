@@ -12,6 +12,7 @@ kind: Kustomization
 resources:
   - ./secret.sops.yaml
   - ./certs.sops.yaml
+  - ./grafana-datasource.sops.yaml
   - ./root-ca.yaml
   - ./indexer.yaml
   - ./manager.yaml
