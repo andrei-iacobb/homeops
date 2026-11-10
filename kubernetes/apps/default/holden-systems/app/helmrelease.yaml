@@ -12,6 +12,10 @@ spec:
     controllers:
       holden-systems:
         replicas: 2 # zero-downtime rollouts and survives single-pod restart
+        pod:
+          annotations:
+            # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+            instrumentation.opentelemetry.io/inject-nodejs: "default"
         strategy: RollingUpdate
         rollingUpdate:
           maxUnavailable: 0
@@ -40,7 +44,7 @@ spec:
                 cpu: 5m
                 memory: 64Mi
               limits:
-                memory: 128Mi
+                memory: 256Mi # +OpenTelemetry SDK overhead
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true

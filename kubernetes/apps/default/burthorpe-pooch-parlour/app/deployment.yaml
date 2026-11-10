@@ -17,6 +17,9 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: burthorpe-pooch-parlour
+      annotations:
+        # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+        instrumentation.opentelemetry.io/inject-nodejs: "default"
     spec:
       nodeSelector:
         kubernetes.io/hostname: home-cluster
