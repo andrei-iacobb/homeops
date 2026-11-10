@@ -129,6 +129,15 @@ spec:
           clickhouse:
             app:
               - path: /var/lib/clickhouse
+      clickhouse-grafana-user:
+        type: configMap
+        name: plausible-clickhouse-grafana-user
+        advancedMounts:
+          clickhouse:
+            app:
+              - path: /etc/clickhouse-server/users.d/grafana.xml
+                subPath: grafana.xml
+                readOnly: true
       clickhouse-logs:
         type: emptyDir
         advancedMounts:

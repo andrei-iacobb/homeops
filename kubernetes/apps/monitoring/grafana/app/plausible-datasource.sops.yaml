@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: plausible-grafana-datasource
+  labels:
+    grafana_datasource: "1"
+  annotations:
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+type: Opaque
+stringData:
+  plausible.yaml: ENC[AES256_GCM,data:Gn0Cd6Q2f8BIz1jaFB6mVw/AJT58FPKamwaW33+1TbbW8wbQiZAb+Oi5ZE3Z8/7luRDvy0vE7d6nEx96FyqtCteaP3ZKKXxz+BJlBwrSs+E31JyiNWuGhi5FbZHy8U2961+pHCWnuwe3U3iQwHM5twsbwwl7LDsBXZe5I8XI/PPYxkjMGwKdPszPeF3bqo89K4NHgQ6Bb4fNRYnHlyYpVp1kzaGwYDEi4cNo3CIBJYslgv28dwBpwSvueBSw3tJ8NkcDlTOeUcxzWeCLjHfLjAT32Zjk+FiMwf6WmRbyId92N00T+QRAsHWkfA6LC8M7NfJp+7Q6UkzBF7oGY6aYkPgwBPGgRlTWi08+NYZutURUf0xLblmidmdgKAia7EqXXj9P9xHNWHyK4Kuwz+zvEDOfTkQu8oAP7xYu5eIo/cQaHk0tyKRmRNz2kfH7LX6u7M34hAQoBFnOdVPM9J8BcGCZptCx3RVuHObi,iv:d8HXvAs8slig4KRaZID47Sqhz827M9H5FJdYv8et/vA=,tag:WiaQzbQ0xd69CDtGLMvefA==,type:str]
+sops:
+  age:
+    - enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSAzODN2Y0V3SXRWODZoRk5C
+        UzY1ZXVzQURyREo3ZGtNbnVJb21QOVFuSWcwCjZQSVgvL3JXUW1JMjYraVpzeU1q
+        TVNlbWJTSisyV3dRaUYvb3FoSXU1RTgKLS0tIHl0WDNMaCt4dk41TnN2T3A5bUhD
+        TnYrR0J5YjJjUWpuZTdpQ3ZHMytxQ2cKE51nWPgy8PiDLYP9AWiu7/erk+dkWRch
+        mnhJhIrI+fbM0I3R5qDjdlndMDaDUk8pqHSxw6ACoUeFHo5f3Xqm0A==
+        -----END AGE ENCRYPTED FILE-----
+      recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+  encrypted_regex: ^(data|stringData)$
+  lastmodified: "2026-11-10T21:35:15Z"
+  mac: ENC[AES256_GCM,data:0eECE+fUbSo+0ICiS/0OFzKnMGEtUoXzufzcwFAR3P/ZLKFO4zf5hVVxBO/if0OMp+oGRQWvqGnSxsyjQajV+6Irkk588U7lwUThqSobFTl1Og4Dk0yuISU6pv/wum0iz5GS3qI6nOLUfOtE+5YJIjPx1FjDUxgw5sL6yZuqejA=,iv:cZAu3N/yox9f+GbIjkT7DW1m294UUPGOBtLi+rO1dhI=,tag:o1MKxo9ni2eqUXmsnCvT5g==,type:str]
+  mac_only_encrypted: true
+  version: 3.13.3

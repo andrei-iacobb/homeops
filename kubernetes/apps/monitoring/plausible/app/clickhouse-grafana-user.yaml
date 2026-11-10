@@ -1,0 +1,27 @@
+---
+# Read-only ClickHouse user for the Grafana "Plausible" data source. Only the
+# SHA-256 of the password lives here; the password is in grafana's SOPS secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plausible-clickhouse-grafana-user
+data:
+  grafana.xml: |
+    <clickhouse>
+      <users>
+        <grafana>
+          <password_sha256_hex>83df490d02e69cd0190cceb88c82552c6abe5a17172bbe5f9fea116aaa6c0384</password_sha256_hex>
+          <profile>grafana_readonly</profile>
+          <quota>default</quota>
+          <networks><ip>::/0</ip></networks>
+          <allow_databases><database>plausible_events_db</database></allow_databases>
+        </grafana>
+      </users>
+      <profiles>
+        <grafana_readonly>
+          <readonly>2</readonly>
+          <max_execution_time>30</max_execution_time>
+          <max_memory_usage>1000000000</max_memory_usage>
+        </grafana_readonly>
+      </profiles>
+    </clickhouse>

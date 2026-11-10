@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - httproute.yaml
   - networkpolicy.yaml
+  - plausible-datasource.sops.yaml
   - dashboards/home-overview-dashboard.yaml
   - dashboards/kubernetes-dashboard.yaml
   - dashboards/nodes-dashboard.yaml
