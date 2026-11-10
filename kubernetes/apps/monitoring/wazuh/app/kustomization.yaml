@@ -4,7 +4,6 @@ resources:
 - ./secret.sops.yaml
 - ./certs.sops.yaml
 - ./grafana-datasource.sops.yaml
-- ./grafana-dashboard.yaml
 - ./root-ca.yaml
 - ./indexer.yaml
 - ./manager.yaml
@@ -12,7 +11,6 @@ resources:
 - ./httproute.yaml
 - ./networkpolicy.yaml
 - ./home-syslog.yaml
-- ./home-dashboard.yaml
 - ./home-agents.yaml
 generatorOptions:
   annotations:
@@ -24,11 +22,6 @@ configMapGenerator:
 - name: wazuh-manager-conf
   files:
   - config/ossec.conf
-  - config/tpic_demo_decoders.xml
-  - config/tpic_demo_rules.xml
-  - config/10-tpic-demo.sh
-  - config/sample-suspicious-transfer.log
-  - config/sample-benign-backup.log
   - config/home-syslog-decoders.xml
   - config/home-syslog-rules.xml
   - config/home-monitoring-bridge.py

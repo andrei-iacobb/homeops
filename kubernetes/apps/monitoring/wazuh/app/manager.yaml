@@ -56,9 +56,6 @@ spec:
           items:
           - key: authd.pass
             path: authd.pass
-      - name: tpic-demo
-        emptyDir:
-          sizeLimit: 64Mi
       securityContext:
         fsGroup: 101
         seccompProfile:
@@ -88,28 +85,6 @@ spec:
           mountPath: /wazuh-config-mount/etc/ossec.conf
           subPath: ossec.conf
           readOnly: true
-        - name: config
-          mountPath: /wazuh-config-mount/etc/decoders/tpic_demo_decoders.xml
-          subPath: tpic_demo_decoders.xml
-          readOnly: true
-        - name: config
-          mountPath: /wazuh-config-mount/etc/rules/tpic_demo_rules.xml
-          subPath: tpic_demo_rules.xml
-          readOnly: true
-        - name: config
-          mountPath: /entrypoint-scripts/10-tpic-demo.sh
-          subPath: 10-tpic-demo.sh
-          readOnly: true
-        - name: config
-          mountPath: /opt/tpic-demo/samples/suspicious-transfer.log
-          subPath: sample-suspicious-transfer.log
-          readOnly: true
-        - name: config
-          mountPath: /opt/tpic-demo/samples/benign-backup.log
-          subPath: sample-benign-backup.log
-          readOnly: true
-        - name: tpic-demo
-          mountPath: /var/log/tpic-demo
         - name: filebeat-certs
           mountPath: /etc/ssl/root-ca.pem
           readOnly: true
