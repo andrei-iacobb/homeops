@@ -15,6 +15,9 @@ spec:
     metadata:
       labels:
         app: petkit-snapshotter
+      annotations:
+        # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+        instrumentation.opentelemetry.io/inject-python: "default"
     spec:
       automountServiceAccountToken: false
       securityContext:

@@ -31,6 +31,12 @@ spec:
       # schedule indefinitely, so bound it below the 15 min cadence.
       activeDeadlineSeconds: 660
       template:
+        metadata:
+          annotations:
+            # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+            instrumentation.opentelemetry.io/inject-python: "default"
+            # Alpine image: use the musl build of the SDK.
+            instrumentation.opentelemetry.io/otel-python-platform: musl
         spec:
           restartPolicy: OnFailure
           containers:
@@ -51,7 +57,7 @@ spec:
                   cpu: 50m
                   memory: 64Mi
                 limits:
-                  memory: 128Mi
+                  memory: 256Mi # +OpenTelemetry SDK overhead
           volumes:
             - name: script
               configMap:

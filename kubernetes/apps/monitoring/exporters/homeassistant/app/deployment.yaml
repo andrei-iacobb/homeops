@@ -21,6 +21,9 @@ spec:
     metadata:
       labels:
         app: homeassistant-metrics
+      annotations:
+        # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+        instrumentation.opentelemetry.io/inject-python: "default"
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
@@ -64,7 +67,7 @@ spec:
             cpu: 10m
             memory: 128Mi
           limits:
-            memory: 256Mi
+            memory: 384Mi # +OpenTelemetry SDK overhead
         # /healthz is the loop heartbeat, not HA reachability: restarting the
         # pod cannot fix an unreachable HA, but it does fix a wedged loop.
         livenessProbe:
