@@ -1,5 +1,5 @@
 loki.relabel "journal" {
-  forward_to = [loki.write.home.receiver]
+  forward_to = []
   rule {
     source_labels = ["__journal_container_name"]
     target_label  = "app"
@@ -13,7 +13,8 @@ loki.source.journal "homeassistant" {
   path          = "/var/log/journal"
   max_age       = "1h"
   labels        = {namespace = "homeassistant", job = "homeassistant-journal", host = "haos"}
-  forward_to    = [loki.relabel.journal.receiver]
+  relabel_rules = loki.relabel.journal.rules
+  forward_to    = [loki.write.home.receiver]
 }
 loki.write "home" {
   endpoint {

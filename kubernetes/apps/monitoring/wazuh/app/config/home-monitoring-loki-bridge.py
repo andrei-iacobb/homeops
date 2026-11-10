@@ -21,6 +21,7 @@ MAX_BACKLOG = 6 * 3600
 SELECTORS = (
     '{namespace=~"network|kube-system|flux-system|monitoring",app!~"wazuh.*|alloy|loki.*"}',
     '{namespace="default",app="authentik"}',
+    '{namespace="homeassistant"}',
 )
 # RE2 word boundaries reduce matches of names such as error_count in healthy output.
 PATTERN = r'(?i)(\b(error|fatal|panic|failed|failure|denied|unauthorized)\b|"response_code"\s*:\s*"?5[0-9][0-9])'
@@ -44,7 +45,7 @@ def parse(document):
     for row in rows:
         metric = row.get('metric', {})
         namespace, app = metric.get('namespace'), metric.get('app', '')
-        if (not isinstance(namespace, str) or namespace not in ('network','kube-system','flux-system','monitoring','default')
+        if (not isinstance(namespace, str) or namespace not in ('network','kube-system','flux-system','monitoring','default','homeassistant')
                 or not isinstance(app, str) or len(app) > 128
                 or (namespace == 'default' and app != 'authentik')):
             raise ValueError('unexpected_labels')
