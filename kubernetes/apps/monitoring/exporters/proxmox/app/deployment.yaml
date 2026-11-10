@@ -32,11 +32,16 @@ spec:
             secretKeyRef:
               name: proxmox-secret
               key: PROXMOX_USER
-        - name: PROXMOX_PASSWORD
+        - name: PROXMOX_TOKEN_NAME
           valueFrom:
             secretKeyRef:
               name: proxmox-secret
-              key: PROXMOX_PASSWORD
+              key: PROXMOX_TOKEN_NAME
+        - name: PROXMOX_TOKEN_VALUE
+          valueFrom:
+            secretKeyRef:
+              name: proxmox-secret
+              key: PROXMOX_TOKEN_VALUE
         command:
           - /bin/sh
           - -c
@@ -44,7 +49,8 @@ spec:
             cat > /tmp/pve.yml <<EOF
             default:
               user: "${PROXMOX_USER}"
-              password: "${PROXMOX_PASSWORD}"
+              token_name: "${PROXMOX_TOKEN_NAME}"
+              token_value: "${PROXMOX_TOKEN_VALUE}"
               verify_ssl: false
             EOF
             exec pve_exporter --config.file=/tmp/pve.yml --web.listen-address=:9221
