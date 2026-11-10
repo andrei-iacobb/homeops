@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: k4tech
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: K4 Tech
+    gethomepage.dev/group: Websites
+    gethomepage.dev/href: https://k4tech.co.uk
+    gethomepage.dev/description: Vehicle diagnostics
+spec:
+  selector:
+    app: k4tech
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

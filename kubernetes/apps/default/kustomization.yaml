@@ -31,3 +31,4 @@ resources:
   - ./mc-router/ks.yaml
   - ./atm10/ks.yaml
   - ./lastorders/ks.yaml
+  - ./k4tech/ks.yaml
