@@ -27,13 +27,16 @@ data:
     \        },\n          \"query\": \"rule.groups:tpic_demo\",\n          \"queryType\"\
     : \"lucene\",\n          \"metrics\": [\n            {\n              \"id\":\
     \ \"1\",\n              \"type\": \"count\"\n            }\n          ],\n   \
-    \       \"bucketAggs\": [],\n          \"timeField\": \"timestamp\",\n       \
-    \   \"format\": \"table\"\n        }\n      ],\n      \"fieldConfig\": {\n   \
-    \     \"defaults\": {},\n        \"overrides\": []\n      },\n      \"options\"\
-    : {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"sum\"\
-    \n          ],\n          \"fields\": \"\",\n          \"values\": false\n   \
-    \     },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\": \"\
-    value\"\n      }\n    },\n    {\n      \"id\": 3,\n      \"title\": \"Suspicious\
+    \       \"bucketAggs\": [\n            {\n              \"id\": \"2\",\n     \
+    \         \"type\": \"date_histogram\",\n              \"field\": \"timestamp\"\
+    ,\n              \"settings\": {\n                \"interval\": \"auto\"\n   \
+    \           }\n            }\n          ],\n          \"timeField\": \"timestamp\"\
+    ,\n          \"format\": \"time_series\"\n        }\n      ],\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {},\n        \"overrides\": []\n      },\n      \"\
+    options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n         \
+    \   \"sum\"\n          ],\n          \"fields\": \"\",\n          \"values\":\
+    \ false\n        },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\"\
+    : \"value\"\n      }\n    },\n    {\n      \"id\": 3,\n      \"title\": \"Suspicious\
     \ transfers \\u00b7 level 12\",\n      \"type\": \"stat\",\n      \"gridPos\"\
     : {\n        \"x\": 8,\n        \"y\": 4,\n        \"w\": 8,\n        \"h\": 4\n\
     \      },\n      \"datasource\": {\n        \"type\": \"grafana-opensearch-datasource\"\
@@ -43,13 +46,16 @@ data:
     \        },\n          \"query\": \"rule.id:100503\",\n          \"queryType\"\
     : \"lucene\",\n          \"metrics\": [\n            {\n              \"id\":\
     \ \"1\",\n              \"type\": \"count\"\n            }\n          ],\n   \
-    \       \"bucketAggs\": [],\n          \"timeField\": \"timestamp\",\n       \
-    \   \"format\": \"table\"\n        }\n      ],\n      \"fieldConfig\": {\n   \
-    \     \"defaults\": {},\n        \"overrides\": []\n      },\n      \"options\"\
-    : {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"sum\"\
-    \n          ],\n          \"fields\": \"\",\n          \"values\": false\n   \
-    \     },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\": \"\
-    value\"\n      }\n    },\n    {\n      \"id\": 4,\n      \"title\": \"Approved\
+    \       \"bucketAggs\": [\n            {\n              \"id\": \"2\",\n     \
+    \         \"type\": \"date_histogram\",\n              \"field\": \"timestamp\"\
+    ,\n              \"settings\": {\n                \"interval\": \"auto\"\n   \
+    \           }\n            }\n          ],\n          \"timeField\": \"timestamp\"\
+    ,\n          \"format\": \"time_series\"\n        }\n      ],\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {},\n        \"overrides\": []\n      },\n      \"\
+    options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n         \
+    \   \"sum\"\n          ],\n          \"fields\": \"\",\n          \"values\":\
+    \ false\n        },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\"\
+    : \"value\"\n      }\n    },\n    {\n      \"id\": 4,\n      \"title\": \"Approved\
     \ backups \\u00b7 level 3\",\n      \"type\": \"stat\",\n      \"gridPos\": {\n\
     \        \"x\": 16,\n        \"y\": 4,\n        \"w\": 8,\n        \"h\": 4\n\
     \      },\n      \"datasource\": {\n        \"type\": \"grafana-opensearch-datasource\"\
@@ -59,13 +65,16 @@ data:
     \        },\n          \"query\": \"rule.id:100501\",\n          \"queryType\"\
     : \"lucene\",\n          \"metrics\": [\n            {\n              \"id\":\
     \ \"1\",\n              \"type\": \"count\"\n            }\n          ],\n   \
-    \       \"bucketAggs\": [],\n          \"timeField\": \"timestamp\",\n       \
-    \   \"format\": \"table\"\n        }\n      ],\n      \"fieldConfig\": {\n   \
-    \     \"defaults\": {},\n        \"overrides\": []\n      },\n      \"options\"\
-    : {\n        \"reduceOptions\": {\n          \"calcs\": [\n            \"sum\"\
-    \n          ],\n          \"fields\": \"\",\n          \"values\": false\n   \
-    \     },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\": \"\
-    value\"\n      }\n    },\n    {\n      \"id\": 5,\n      \"title\": \"Synthetic\
+    \       \"bucketAggs\": [\n            {\n              \"id\": \"2\",\n     \
+    \         \"type\": \"date_histogram\",\n              \"field\": \"timestamp\"\
+    ,\n              \"settings\": {\n                \"interval\": \"auto\"\n   \
+    \           }\n            }\n          ],\n          \"timeField\": \"timestamp\"\
+    ,\n          \"format\": \"time_series\"\n        }\n      ],\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {},\n        \"overrides\": []\n      },\n      \"\
+    options\": {\n        \"reduceOptions\": {\n          \"calcs\": [\n         \
+    \   \"sum\"\n          ],\n          \"fields\": \"\",\n          \"values\":\
+    \ false\n        },\n        \"textMode\": \"value_and_name\",\n        \"colorMode\"\
+    : \"value\"\n      }\n    },\n    {\n      \"id\": 5,\n      \"title\": \"Synthetic\
     \ detections over time\",\n      \"type\": \"timeseries\",\n      \"gridPos\"\
     : {\n        \"x\": 0,\n        \"y\": 8,\n        \"w\": 24,\n        \"h\":\
     \ 8\n      },\n      \"datasource\": {\n        \"type\": \"grafana-opensearch-datasource\"\
@@ -96,17 +105,21 @@ data:
     \                \"size\": \"100\"\n              }\n            }\n         \
     \ ],\n          \"bucketAggs\": [],\n          \"timeField\": \"timestamp\",\n\
     \          \"format\": \"table\"\n        }\n      ],\n      \"fieldConfig\":\
-    \ {\n        \"defaults\": {},\n        \"overrides\": []\n      },\n      \"\
-    options\": {\n        \"showHeader\": true\n      },\n      \"transformations\"\
+    \ {\n        \"defaults\": {},\n        \"overrides\": [\n          {\n      \
+    \      \"matcher\": {\n              \"id\": \"byName\",\n              \"options\"\
+    : \"data.tpic_demo.bytes_out\"\n            },\n            \"properties\": [\n\
+    \              {\n                \"id\": \"unit\",\n                \"value\"\
+    : \"bytes\"\n              }\n            ]\n          }\n        ]\n      },\n\
+    \      \"options\": {\n        \"showHeader\": true\n      },\n      \"transformations\"\
     : [\n        {\n          \"id\": \"organize\",\n          \"options\": {\n  \
     \          \"includeByName\": {\n              \"timestamp\": true,\n        \
     \      \"rule.description\": true,\n              \"rule.level\": true,\n    \
-    \          \"data.tpic_demo.host\": true,\n              \"data.tpic_demo.user\"\
-    : true,\n              \"data.tpic_demo.process\": true,\n              \"data.tpic_demo.destination\"\
-    : true,\n              \"data.tpic_demo.bytes_out\": true\n            },\n  \
+    \          \"data.tpic_demo.process\": true,\n              \"data.tpic_demo.bytes_out\"\
+    : true,\n              \"data.tpic_demo.src_host\": true,\n              \"data.tpic_demo.src_user\"\
+    : true,\n              \"data.tpic_demo.dest_host\": true\n            },\n  \
     \          \"indexByName\": {\n              \"timestamp\": 0,\n             \
     \ \"rule.level\": 1,\n              \"rule.description\": 2,\n              \"\
-    data.tpic_demo.host\": 3,\n              \"data.tpic_demo.user\": 4,\n       \
-    \       \"data.tpic_demo.process\": 5,\n              \"data.tpic_demo.destination\"\
-    : 6,\n              \"data.tpic_demo.bytes_out\": 7\n            }\n         \
+    data.tpic_demo.process\": 5,\n              \"data.tpic_demo.bytes_out\": 7,\n\
+    \              \"data.tpic_demo.src_host\": 3,\n              \"data.tpic_demo.src_user\"\
+    : 4,\n              \"data.tpic_demo.dest_host\": 6\n            }\n         \
     \ }\n        }\n      ]\n    }\n  ]\n}"
