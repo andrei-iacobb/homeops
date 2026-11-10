@@ -9,3 +9,10 @@
     <description>Home UniFi high-severity event: $(home_unifi.event)</description>
   </rule>
 </group>
+
+<group name="home_hardware,ilo,operations,">
+  <rule id="100710" level="3">
+    <location type="pcre2">^192\.168\.1\.(175|180)$</location>
+    <description>Home iLO management or hardware event</description>
+  </rule>
+</group>
