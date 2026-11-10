@@ -22,6 +22,9 @@ spec:
         app.kubernetes.io/controller: website
         app.kubernetes.io/instance: website
         app.kubernetes.io/name: website
+      annotations:
+        # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+        instrumentation.opentelemetry.io/inject-nodejs: "default"
     spec:
       securityContext:
         runAsNonRoot: true
