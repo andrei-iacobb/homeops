@@ -1,0 +1,56 @@
+---
+# Trend-based capacity alerts: fire when the last day's growth would fill a
+# volume soon, not when it crosses a fixed percentage. A disk sitting at 85%
+# that is not growing stays quiet; one at 50% that is filling fast does not.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: capacity-forecast
+  namespace: monitoring
+  labels:
+    prometheus: kube-prometheus-stack
+    role: alert-rules
+spec:
+  groups:
+    - name: capacity-forecast
+      rules:
+        - record: homelab:volume_days_until_full
+          expr: |
+            label_replace(label_join(
+              node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|ramfs"}
+                / clamp_max(deriv(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|ramfs"}[12h]), -1) / -86400,
+              "volume", " ", "instance", "mountpoint"), "volume", "node $1", "volume", "(.*)")
+        - record: homelab:volume_days_until_full
+          expr: |
+            label_replace(label_join(
+              kubelet_volume_stats_available_bytes
+                / clamp_max(deriv(kubelet_volume_stats_available_bytes[12h]), -1) / -86400,
+              "volume", "/", "namespace", "persistentvolumeclaim"), "volume", "pvc $1", "volume", "(.*)")
+        - record: homelab:volume_days_until_full
+          expr: |
+            label_replace(
+              truenas_pool_free_bytes / clamp_max(deriv(truenas_pool_free_bytes[24h]), -1) / -86400,
+              "volume", "truenas $1", "pool", "(.*)")
+        - record: homelab:volume_days_until_full
+          expr: |
+            label_replace(
+              (pve_disk_size_bytes{id=~"storage/.+"} - pve_disk_usage_bytes{id=~"storage/.+"})
+                / clamp_max(deriv((pve_disk_size_bytes{id=~"storage/.+"} - pve_disk_usage_bytes{id=~"storage/.+"})[24h:15m]), -1) / -86400,
+              "volume", "proxmox $1", "id", "storage/(.*)")
+
+        - alert: VolumeWillFillWithin3Days
+          expr: homelab:volume_days_until_full < 3 and homelab:volume_days_until_full > 0
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.volume }} will be full in {{ $value | printf \"%.1f\" }} days at the current rate"
+            description: "Free space on {{ $labels.volume }} has been falling steadily; at the rate seen over the last day it runs out in under 3 days."
+        - alert: VolumeWillFillWithin14Days
+          expr: homelab:volume_days_until_full < 14 and homelab:volume_days_until_full >= 3
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.volume }} will be full in {{ $value | printf \"%.0f\" }} days at the current rate"
+            description: "Free space on {{ $labels.volume }} is trending to zero within two weeks. Not urgent; plan cleanup or expansion."

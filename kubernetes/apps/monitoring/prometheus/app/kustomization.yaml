@@ -8,4 +8,5 @@ resources:
   - secret.sops.yaml
   - alertmanager-secret.sops.yaml
   - prometheusrules.yaml
+  - capacity-forecast-rules.yaml
   - ./alertmanager-httproute.yaml
