@@ -1,5 +1,3 @@
-# Adapted from wazuh/wazuh-kubernetes v4.14.10. Copyright (C) 2019, Wazuh Inc.
-# GPLv2; see ../LICENSE.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -15,6 +13,7 @@ resources:
 - ./networkpolicy.yaml
 - ./home-syslog.yaml
 - ./home-dashboard.yaml
+- ./home-agents.yaml
 generatorOptions:
   annotations:
     kustomize.toolkit.fluxcd.io/substitute: disabled
