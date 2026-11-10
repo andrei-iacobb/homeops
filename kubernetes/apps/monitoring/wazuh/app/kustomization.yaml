@@ -13,6 +13,7 @@ resources:
   - ./secret.sops.yaml
   - ./certs.sops.yaml
   - ./grafana-datasource.sops.yaml
+  - ./grafana-dashboard.yaml
   - ./root-ca.yaml
   - ./indexer.yaml
   - ./manager.yaml
