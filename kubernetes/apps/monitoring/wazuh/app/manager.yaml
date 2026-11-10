@@ -1,12 +1,5 @@
-# Adapted from wazuh/wazuh-kubernetes v4.14.10.
-# Copyright (C) 2019, Wazuh Inc.
-#
-# This program is a free software; you can redistribute it
-# and/or modify it under the terms of the GNU General Public
-# License (version 2) as published by the FSF - Free Software
-# Foundation.
-# Manager service: API (55000), agent enrollment (1515) and agent events
-# (1514). Headless and cluster-internal only; upstream uses LoadBalancers.
+# Adapted from wazuh/wazuh-kubernetes v4.14.10. Copyright (C) 2019, Wazuh Inc.
+# GPLv2; see ../LICENSE.
 apiVersion: v1
 kind: Service
 metadata:
@@ -182,6 +175,14 @@ spec:
           mountPath: /wazuh-config-mount/etc/rules/home-monitoring-rules.xml
           subPath: home-monitoring-rules.xml
           readOnly: true
+        - name: config
+          mountPath: /wazuh-config-mount/etc/decoders/home-monitoring-loki-decoder.xml
+          subPath: home-monitoring-loki-decoder.xml
+          readOnly: true
+        - name: config
+          mountPath: /wazuh-config-mount/etc/rules/home-monitoring-loki-rules.xml
+          subPath: home-monitoring-loki-rules.xml
+          readOnly: true
         ports:
         - containerPort: 1514
           name: agents-events
@@ -256,6 +257,41 @@ spec:
         - name: config
           mountPath: /app/home-monitoring-bridge.py
           subPath: home-monitoring-bridge.py
+          readOnly: true
+        - name: wazuh-manager
+          mountPath: /var/ossec/logs
+          subPath: wazuh/var/ossec/logs
+      - name: home-log-monitoring
+        image: docker.io/library/python:3.15.2-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
+        command:
+        - python3
+        - -u
+        - /app/home-monitoring-loki-bridge.py
+        env:
+        - name: STATE_DIR
+          value: /var/ossec/logs/home-log-monitoring
+        - name: PYTHONDONTWRITEBYTECODE
+          value: '1'
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - name: config
+          mountPath: /app/home-monitoring-loki-bridge.py
+          subPath: home-monitoring-loki-bridge.py
           readOnly: true
         - name: wazuh-manager
           mountPath: /var/ossec/logs

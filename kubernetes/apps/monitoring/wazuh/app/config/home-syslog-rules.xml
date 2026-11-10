@@ -16,3 +16,10 @@
     <description>Home iLO management or hardware event</description>
   </rule>
 </group>
+
+<group name="home_unifi,syslog,">
+  <rule id="100702" level="3">
+    <location type="pcre2">^192\.168\.1\.1$</location>
+    <description>Home UniFi gateway syslog event</description>
+  </rule>
+</group>

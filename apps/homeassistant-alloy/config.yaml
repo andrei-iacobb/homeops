@@ -1,0 +1,12 @@
+name: Home cluster log collector
+version: 1.0.0
+slug: home_cluster_alloy
+description: Forward Home Assistant OS journal logs to the private home Loki service
+arch:
+  - amd64
+startup: services
+boot: auto
+init: false
+journald: true
+options: {}
+schema: {}

@@ -1,17 +1,16 @@
----
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
 resources:
-  - deployment.yaml
-  - service.yaml
-  - servicemonitor.yaml
-  - secret.sops.yaml
-  - pvc.yaml
+- deployment.yaml
+- service.yaml
+- servicemonitor.yaml
+- secret.sops.yaml
+- pvc.yaml
+- ./native-metrics.yaml
 components:
-  - ../../../../../components/volsync
-# Name hash left on so an edit to bridge.py rolls the Deployment.
+- ../../../../../components/volsync
 configMapGenerator:
-  - name: homeassistant-metrics-bridge
-    files:
-      - bridge.py
+- name: homeassistant-metrics-bridge
+  files:
+  - bridge.py

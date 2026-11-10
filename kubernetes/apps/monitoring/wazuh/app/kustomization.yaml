@@ -1,11 +1,5 @@
-# Adapted from wazuh/wazuh-kubernetes v4.14.10 (envs/local-env), commit
-# 97bc03d9fa03342302e76aca5b0f3200269a63a1.
-# Copyright (C) 2019, Wazuh Inc.
-#
-# This program is a free software; you can redistribute it
-# and/or modify it under the terms of the GNU General Public
-# License (version 2) as published by the FSF - Free Software
-# Foundation. See ../LICENSE.
+# Adapted from wazuh/wazuh-kubernetes v4.14.10. Copyright (C) 2019, Wazuh Inc.
+# GPLv2; see ../LICENSE.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -20,6 +14,7 @@ resources:
 - ./httproute.yaml
 - ./networkpolicy.yaml
 - ./home-syslog.yaml
+- ./home-dashboard.yaml
 generatorOptions:
   annotations:
     kustomize.toolkit.fluxcd.io/substitute: disabled
@@ -40,6 +35,9 @@ configMapGenerator:
   - config/home-monitoring-bridge.py
   - config/home-monitoring-decoder.xml
   - config/home-monitoring-rules.xml
+  - config/home-monitoring-loki-bridge.py
+  - config/home-monitoring-loki-decoder.xml
+  - config/home-monitoring-loki-rules.xml
 - name: wazuh-dashboard-conf
   files:
   - config/opensearch_dashboards.yml

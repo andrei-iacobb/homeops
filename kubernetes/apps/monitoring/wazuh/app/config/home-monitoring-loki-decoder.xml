@@ -1,0 +1,4 @@
+<decoder name="home_log_monitoring">
+  <prematch>^home-log-monitoring: </prematch>
+  <plugin_decoder offset="after_prematch">JSON_Decoder</plugin_decoder>
+</decoder>

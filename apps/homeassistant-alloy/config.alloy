@@ -1,0 +1,22 @@
+loki.relabel "journal" {
+  forward_to = [loki.write.home.receiver]
+  rule {
+    source_labels = ["__journal_container_name"]
+    target_label  = "app"
+  }
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+}
+loki.source.journal "homeassistant" {
+  path          = "/var/log/journal"
+  max_age       = "1h"
+  labels        = {namespace = "homeassistant", job = "homeassistant-journal", host = "haos"}
+  forward_to    = [loki.relabel.journal.receiver]
+}
+loki.write "home" {
+  endpoint {
+    url = "http://192.168.1.85:30100/loki/api/v1/push"
+  }
+}

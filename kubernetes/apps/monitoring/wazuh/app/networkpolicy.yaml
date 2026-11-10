@@ -85,6 +85,13 @@ spec:
     - ports:
       - port: '9090'
         protocol: TCP
+  - toEndpoints:
+    - matchLabels:
+        app.kubernetes.io/name: loki
+    toPorts:
+    - ports:
+      - port: '3100'
+        protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

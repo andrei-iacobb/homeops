@@ -1,0 +1,30 @@
+<!-- Keyword summaries are investigation leads, not intrusion evidence. -->
+<group name="home_log_monitoring,operations,">
+  <rule id="100800" level="3">
+    <decoded_as>home_log_monitoring</decoded_as>
+    <field name="home_log_monitoring.scope">^operations$</field>
+    <description>Home log monitoring: $(home_log_monitoring.event_type) $(home_log_monitoring.status)</description>
+  </rule>
+  <rule id="100801" level="5">
+    <if_sid>100800</if_sid>
+    <field name="home_log_monitoring.event_type">^error_summary$</field>
+    <description>Operational log keyword matches: $(home_log_monitoring.matched_lines) lines in $(home_log_monitoring.namespace)/$(home_log_monitoring.app) over five minutes; investigate in Loki</description>
+  </rule>
+  <rule id="100802" level="7">
+    <if_sid>100800</if_sid>
+    <field name="home_log_monitoring.event_type">^collector_health$</field>
+    <field name="home_log_monitoring.status">^unavailable$</field>
+    <description>Home log collector cannot obtain complete Loki counts; no quiet or recovery conclusion is available</description>
+  </rule>
+  <rule id="100803" level="3">
+    <if_sid>100800</if_sid>
+    <field name="home_log_monitoring.event_type">^collector_health$</field>
+    <field name="home_log_monitoring.status">^recovered$</field>
+    <description>Home log collector recovered Loki query access</description>
+  </rule>
+  <rule id="100804" level="7">
+    <if_sid>100800</if_sid>
+    <field name="home_log_monitoring.event_type">^collection_gap$</field>
+    <description>Home log collector skipped $(home_log_monitoring.skipped_buckets) old windows after prolonged outage; older evidence remains subject to Loki retention</description>
+  </rule>
+</group>
