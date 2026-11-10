@@ -84,6 +84,17 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	shutdownOTel, err := setupOTel(ctx, os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "")
+	if err != nil {
+		log.Printf("WARNING: OpenTelemetry disabled: %v", err)
+		shutdownOTel = func(context.Context) error { return nil }
+	}
+	defer func() {
+		sc, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = shutdownOTel(sc)
+	}()
 	s.fleet.run(ctx, cfg.Agents)
 
 	sub, _ := fs.Sub(staticFS, "static")
@@ -95,7 +106,7 @@ func main() {
 	mux.HandleFunc("GET /api/stream", s.handleStream)
 	mux.HandleFunc("POST /api/locate", s.handleLocate)
 
-	srv := &http.Server{Addr: cfg.Bind, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	srv := &http.Server{Addr: cfg.Bind, Handler: instrument(mux), ReadHeaderTimeout: 10 * time.Second}
 	go func() {
 		<-ctx.Done()
 		sc, cancel := context.WithTimeout(context.Background(), 5*time.Second)
