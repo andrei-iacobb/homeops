@@ -57,8 +57,12 @@ spec:
               mountPath: /tmp
       volumes:
         - name: site
-          configMap:
-            name: k4tech-site
+          projected:
+            sources:
+              - configMap:
+                  name: k4tech-site
+              - configMap:
+                  name: k4tech-image
         - name: tmp
           emptyDir:
             sizeLimit: 32Mi
