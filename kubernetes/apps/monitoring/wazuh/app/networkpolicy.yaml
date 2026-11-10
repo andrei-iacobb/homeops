@@ -83,6 +83,9 @@ spec:
     - ports:
       - port: '53'
         protocol: ANY
+      rules:
+        dns:
+        - matchPattern: '*'
   - toEndpoints:
     - matchLabels:
         app.kubernetes.io/name: wazuh-indexer
@@ -103,6 +106,14 @@ spec:
     toPorts:
     - ports:
       - port: '3100'
+        protocol: TCP
+  - toFQDNs:
+    - matchName: login.microsoftonline.com
+    - matchName: manage.office.com
+    - matchName: graph.microsoft.com
+    toPorts:
+    - ports:
+      - port: '443'
         protocol: TCP
 ---
 apiVersion: cilium.io/v2

@@ -4,6 +4,7 @@ resources:
 - ./secret.sops.yaml
 - ./certs.sops.yaml
 - ./grafana-datasource.sops.yaml
+- ./m365.sops.yaml
 - ./root-ca.yaml
 - ./indexer.yaml
 - ./manager.yaml
@@ -22,6 +23,7 @@ configMapGenerator:
 - name: wazuh-manager-conf
   files:
   - config/ossec.conf
+  - config/20-m365.sh
   - config/home-syslog-decoders.xml
   - config/home-syslog-rules.xml
   - config/home-monitoring-bridge.py

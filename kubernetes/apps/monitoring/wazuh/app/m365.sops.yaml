@@ -1,0 +1,27 @@
+# Entra app wazuh-home (iacob.co.uk): read-only Office 365 audit feed + Graph directory audits. Secret expires 2028-11.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wazuh-m365
+  namespace: monitoring
+type: Opaque
+stringData:
+  tenant_id: ENC[AES256_GCM,data:wcfHf5GLQ0oXv7oDHv5laAMR0y2j085cRaMZr40+qRvNwyc4,iv:Cb9MriOVwA+9cgYXSn0+VOI2AM3xzeMpYmXHNMnljC8=,tag:NjBeGQ9nTsYbf5PDpDiFXg==,type:str]
+  client_id: ENC[AES256_GCM,data:vmvOQjmtt6DRo3pSBPKO5nI1TQ8Zv5IK+95TZ28LKJ9kqO6i,iv:Xh/Nt0yup3R1fo7a6x7hPshDfRL84u5/tJ+48UkXGh4=,tag:Z/o6Re/gwFqSQ3nCps+IvA==,type:str]
+  client_secret: ENC[AES256_GCM,data:epDPJuEP9FQw+p5B/jqcd/9s84f1J+cTGSijmpNYJ2+5aGa1MQbtGw==,iv:MB1yi+1Y4q4n62FtUI2l3TCfL3aVlitM96Lajrblk6o=,tag:1+Aq11KnH96GDH9pq0rovA==,type:str]
+sops:
+  age:
+    - enc: |
+        -----BEGIN AGE ENCRYPTED FILE-----
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBUSTFvRy9qUTcxVDFpZy9I
+        SkRIMVQwRVQxZHdDSnpSbHEzam9TYVNCMTM0Ckt6cTJUajdRRUxwNFBiWUpZQ25o
+        MkhHOUs2TXlYR1hjZWtwN1Z5eHZadG8KLS0tIFVHeTdUVjIva3RUQ0JiYnVMUXk3
+        azNSelNRODR3c1F5YXcwaHRhUXFYTXcKiEB4kaGij0xoh3sXTxEPTu8VVVJWrSg0
+        Aagb+2AJTKI86zLXDq6CPR+3kdkUY23c3/qi2GUTTszn4iENNfOcSQ==
+        -----END AGE ENCRYPTED FILE-----
+      recipient: age1eer8sfrzmafe78ts498r449cu709g500zfw4pemhptac8rqpwq9qkxm0yq
+  encrypted_regex: ^(data|stringData)$
+  lastmodified: "2026-11-10T21:12:10Z"
+  mac: ENC[AES256_GCM,data:qNKiraioo0Tn6GwCKW9gnbSG48Tyq8yjMtDXuxRrSeycruPkbBZzwDiJpni3mzaIOP7C77XK322Y4y/BST+IIA+1y+vHIEGPg6quMDe4mGSWv7Md6Zmv38E3gk8D54asdGk3ctCBRTNbVO499gEUQVJSwTQyf4vAR2yBVZlE5wc=,iv:0re9vNmZGH4ZBxbXIabXlS7Grc2bEzKEBEIfqZpgW3U=,tag:B27ABD1t9Vgdkdz0M016ZQ==,type:str]
+  mac_only_encrypted: true
+  version: 3.13.3

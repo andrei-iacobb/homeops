@@ -50,6 +50,10 @@ spec:
       - name: filebeat-certs
         secret:
           secretName: wazuh-manager-certs
+      - name: m365
+        secret:
+          secretName: wazuh-m365
+          defaultMode: 0400
       - name: wazuh-authd-pass
         secret:
           secretName: wazuh-credentials
@@ -84,6 +88,13 @@ spec:
         - name: config
           mountPath: /wazuh-config-mount/etc/ossec.conf
           subPath: ossec.conf
+          readOnly: true
+        - name: config
+          mountPath: /entrypoint-scripts/20-m365.sh
+          subPath: 20-m365.sh
+          readOnly: true
+        - name: m365
+          mountPath: /etc/wazuh-m365
           readOnly: true
         - name: filebeat-certs
           mountPath: /etc/ssl/root-ca.pem
