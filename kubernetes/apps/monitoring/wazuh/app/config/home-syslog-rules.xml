@@ -19,7 +19,7 @@
 
 <group name="home_unifi,syslog,">
   <rule id="100702" level="3">
-    <location type="pcre2">^192\.168\.1\.1$</location>
+    <location type="pcre2">^192\.168\.1\.(1|213|133)$</location>
     <description>Home UniFi gateway syslog event</description>
   </rule>
 </group>

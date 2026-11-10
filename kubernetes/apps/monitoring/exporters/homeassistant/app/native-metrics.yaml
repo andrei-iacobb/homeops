@@ -10,22 +10,17 @@ spec:
     port: 8123
     targetPort: 8123
 ---
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
+apiVersion: v1
+kind: Endpoints
 metadata:
   name: homeassistant-native
-  labels:
-    kubernetes.io/service-name: homeassistant-native
-addressType: IPv4
-ports:
-- name: http
-  port: 8123
-  protocol: TCP
-endpoints:
+subsets:
 - addresses:
-  - 192.168.1.90
-  conditions:
-    ready: true
+  - ip: 192.168.1.90
+  ports:
+  - name: http
+    port: 8123
+    protocol: TCP
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
