@@ -12,6 +12,6 @@ spec:
     - prometheus.iacob.uk
   rules:
     - backendRefs:
-        - name: prometheus-kube-prometheus-stack-prometheus
+        - name: prometheus-kube-prometheus-prometheus
           namespace: monitoring
           port: 9090
