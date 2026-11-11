@@ -19,7 +19,7 @@ data:
       "timezone": "browser",
       "editable": true,
       "graphTooltip": 1,
-      "refresh": "1m",
+      "refresh": "5m",
       "schemaVersion": 41,
       "time": {
         "from": "now-24h",
@@ -1008,7 +1008,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "sum by (namespace, app) (count_over_time({namespace=~\"$namespace\"} |~ `(?i)(level=(error|fatal|crit)|\\b(error|exception|fatal|panic|traceback)\\b)` [5m]))",
+              "expr": "sum by (namespace, app) (count_over_time({namespace=~\"$namespace\"} |~ `(?i)(error|exception|fatal|panic|traceback|level=crit)` [5m]))",
               "legendFormat": "{{namespace}}/{{app}}",
               "queryType": "range"
             }
@@ -1117,7 +1117,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{namespace=~\"$namespace\"} |~ `(?i)(level=(error|fatal|crit)|\\b(error|exception|fatal|panic|traceback)\\b)`",
+              "expr": "{namespace=~\"$namespace\"} |~ `(?i)(error|exception|fatal|panic|traceback|level=crit)`",
               "legendFormat": "",
               "queryType": "range"
             }
@@ -2269,7 +2269,7 @@ data:
                 "type": "loki",
                 "uid": "loki"
               },
-              "expr": "{job=~\"proxmox-journal|homeassistant-journal\"} |~ `(?i)(level=(error|fatal|crit)|\\b(error|exception|fatal|panic|traceback)\\b)`",
+              "expr": "{job=~\"proxmox-journal|homeassistant-journal\"} |~ `(?i)(error|exception|fatal|panic|traceback|level=crit)`",
               "legendFormat": "",
               "queryType": "range"
             }
