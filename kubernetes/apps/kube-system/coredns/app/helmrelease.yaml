@@ -20,6 +20,18 @@ spec:
       clusterIP: "10.41.0.10"
     replicaCount: 2
     servers:
+      # Internal HTTPRoute names must resolve through the cluster's gateway DNS.
+      # Public upstream resolvers cannot answer these private iacob.uk names.
+      - zones:
+          - zone: iacob.uk
+            scheme: dns://
+        port: 53
+        plugins:
+          - name: errors
+          - name: forward
+            parameters: . 192.168.1.6
+          - name: cache
+            parameters: "30"
       - zones:
           - zone: .
             scheme: dns://
