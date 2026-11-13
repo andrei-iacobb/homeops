@@ -1,7 +1,7 @@
 ---
 # See kubernetes/apps/default/sso-bypass.yaml. OpenClaw nodes and apps talk to
 # the gateway over websockets with their own token. The devbox preview apps
-# (NeatPlan) have their own login and serve tablets that cannot do Authentik.
+# (NeatPlan) have their own login, and delta (T3 on the Arch PC) uses T3 pairing and serve tablets that cannot do Authentik.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -14,5 +14,8 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: devbox-apps
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: delta
   authorization:
     defaultAction: Allow

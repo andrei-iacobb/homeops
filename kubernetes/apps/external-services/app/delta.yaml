@@ -1,0 +1,51 @@
+---
+# delta - T3 Code server on Andrei's Arch PC (LVM Arch, user unit t3serve).
+# The PC is off unless a GPU task needs it, so this route is often down.
+# T3 has its own pairing auth; SSO is bypassed in sso-bypass.yaml.
+apiVersion: v1
+kind: Service
+metadata:
+  name: delta
+  namespace: external-services
+  labels:
+    app.kubernetes.io/name: delta
+spec:
+  ports:
+    - name: http
+      port: 3773
+      protocol: TCP
+      targetPort: 3773
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: delta
+  namespace: external-services
+  labels:
+    kubernetes.io/service-name: delta
+addressType: IPv4
+ports:
+  - name: http
+    appProtocol: http
+    protocol: TCP
+    port: 3773
+endpoints:
+  - addresses:
+      - "192.168.20.85"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: delta
+  namespace: external-services
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  hostnames:
+    - delta.iacob.uk
+  rules:
+    - backendRefs:
+        - name: delta
+          port: 3773
