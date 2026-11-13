@@ -18,7 +18,9 @@ spec:
     prometheus:
       enabled: true
       prometheusSpec:
-        retention: 14d
+        # Disable age-based expiry (Prometheus >= 3.11 config-based retention).
+        # Do not add size/percentage retention: preserve history as storage grows.
+        retention: 0s
         # Alloy (OpenTelemetry app metrics) and Tempo's metrics generator push here.
         enableRemoteWriteReceiver: true
         storageSpec:
