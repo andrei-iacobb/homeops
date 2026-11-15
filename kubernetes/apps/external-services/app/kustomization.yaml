@@ -12,3 +12,4 @@ resources:
   - ./sso-bypass.yaml
   - ./devbox-apps.yaml
   - ./delta.yaml
+  - ./devbox.yaml
