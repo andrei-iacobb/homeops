@@ -1729,7 +1729,14 @@ class Recorder:
         """Best effort: a failed measurement only loses the hint, never the analysis."""
         side = self.config.door_sides.get(str(row["device_slug"]))
         duration = float(row["duration"] or 0)
-        if not side or duration <= 0 or (row["detection"] != "human" and row["kind"] != "ding"):
+        if not side or duration <= 0:
+            return None
+        try:
+            quick = json.loads(row["quick"] or "null")
+        except (json.JSONDecodeError, TypeError):
+            quick = None
+        # Ring rarely labels front-door motion, so skip only when the quick look saw nobody.
+        if isinstance(quick, dict) and not quick.get("people") and row["detection"] != "human":
             return None
         try:
             frames = []

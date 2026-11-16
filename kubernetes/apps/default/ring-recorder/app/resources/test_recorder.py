@@ -921,6 +921,14 @@ class DirectionTests(Fixture):
             self.rec.analyse_event("1")
         return tracked, analyse, json.loads(self.store.get_row("1")["analysis"])
 
+    def test_unlabelled_motion_with_people_is_tracked(self):
+        with self.store.connect() as connection:
+            connection.execute("UPDATE events SET detection = NULL, quick = ? WHERE event_id = '1'",
+                               (json.dumps({"people": ["man in hoodie"]}),))
+        tracked, _, stored = self.analyse([[], ["left"], ["right"], []], "Leaving home")
+        tracked.assert_called_once()
+        self.assertEqual(stored["label"], "Arriving home")
+
     def test_measured_arrival_corrects_label_and_reaches_prompt(self):
         tracked, analyse, stored = self.analyse([[], ["middle"], ["right"], []], "Leaving home")
         self.assertEqual(len(tracked.call_args.args[0]), recorder.TRACK_FRAMES)
@@ -951,6 +959,13 @@ class DirectionTests(Fixture):
         good = json.dumps({"frames": [{"t": 0, "people": []}, {"t": 5, "people": ["right"]}]})
         with patch.object(self.rec.gemini, "_generate", return_value=good):
             self.assertEqual(self.rec.gemini.track_people(frames), [[], ["right"]])
+
+    def test_empty_quick_look_skips_tracking(self):
+        with self.store.connect() as connection:
+            connection.execute("UPDATE events SET detection = NULL, quick = ? WHERE event_id = '1'",
+                               (json.dumps({"people": [], "nothing_there": True}),))
+        tracked, _, _ = self.analyse([], "No one visible")
+        tracked.assert_not_called()
 
     def test_other_cameras_are_not_tracked(self):
         self.config.door_sides = {}
