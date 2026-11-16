@@ -14,6 +14,7 @@ configMapGenerator:
       - recorder.py=resources/recorder.py
       - index.html=resources/index.html
       - ring-events-card.js=resources/ring-events-card.js
+      - scenes.json=resources/scenes.json
     options:
       annotations:
         # The card uses JS template literals. Keep Flux envsubst away from this ConfigMap.

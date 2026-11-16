@@ -14,6 +14,7 @@ import queue
 import re
 import signal
 import sqlite3
+import subprocess
 import tempfile
 import threading
 import time
@@ -63,6 +64,27 @@ MAX_QUESTION_CHARS = 2000
 NOT_READY_GIVE_UP = timedelta(hours=24)
 AUTH_BACKOFF_SECONDS = 600
 FILE_ACTIVE_TIMEOUT = 300
+# The quick look runs on stills the moment a clip lands; the full pass watches the video.
+# Backlog older than this only gets the quick look, which keeps Gemini usage low.
+QUICK_ONLY_AFTER = timedelta(hours=48)
+# Phone alerts only for events this fresh, so a backlog never pages anyone.
+ALERT_MAX_AGE = timedelta(minutes=10)
+FULL_UPDATE_MAX_AGE = timedelta(minutes=30)
+CONTEXT_WINDOW = timedelta(minutes=5)
+PRESENCE_LOOKBACK = timedelta(minutes=30)
+PRESENCE_RETENTION = timedelta(days=30)
+THUMB_WIDTH = 640
+QUICK_FRAME_WIDTH = 512
+QUICK_FRAME_SPACING = 2.0
+DEFAULT_HERO_OFFSET = 3.0
+THUMB_LINK_SECONDS = 7 * 24 * 3600
+FFMPEG_TIMEOUT = 30
+# A model that is out of quota or overloaded is skipped for a while instead of costing
+# every clip a failed request first.
+MODEL_COOLDOWN_SECONDS = 900
+# Old clips are paced so the free tier's per-minute limit stays free for new ones.
+BACKLOG_AGE = timedelta(hours=1)
+BACKLOG_PACE_SECONDS = 5
 SAFE_SLUG = re.compile(r"[^a-z0-9_-]+")
 SAFE_EVENT_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -116,6 +138,57 @@ def read_limited(response: Any, limit: int = MAX_JSON_BYTES) -> bytes:
     if len(body) > limit:
         raise ValueError("response exceeded the configured limit")
     return body
+
+
+def ring_detection(event: dict[str, Any], created: datetime) -> tuple[str | None, float | None]:
+    """Ring's own classifier (human/motion/...) and seconds into the clip where it confirmed it."""
+    cv = event.get("cv_properties")
+    if not isinstance(cv, dict):
+        return None, None
+    detection = cv.get("detection_type") if isinstance(cv.get("detection_type"), str) else None
+    hero: float | None = None
+    entries = cv.get("detection_types") if isinstance(cv.get("detection_types"), list) else []
+    for entry in entries:
+        stamps = entry.get("verified_timestamps") if isinstance(entry, dict) else None
+        for stamp in stamps if isinstance(stamps, list) else []:
+            if isinstance(stamp, (int, float)) and not isinstance(stamp, bool):
+                offset = stamp / 1000 - created.timestamp()
+                if 0 <= offset <= 600 and (hero is None or offset < hero):
+                    hero = offset
+    return detection, hero
+
+
+def extract_frame(ffmpeg: str, clip: Path, offset: float, width: int) -> bytes:
+    """One JPEG frame; falls back to the first frame when the offset is past the end."""
+    for start in (max(offset, 0.0), 0.0):
+        result = subprocess.run(
+            [
+                ffmpeg, "-nostdin", "-loglevel", "error", "-ss", f"{start:.2f}", "-i", str(clip),
+                "-frames:v", "1", "-vf", f"scale={width}:-2", "-q:v", "5",
+                "-f", "image2", "-c:v", "mjpeg", "-",
+            ],
+            capture_output=True,
+            timeout=FFMPEG_TIMEOUT,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout:
+            return result.stdout
+    raise ValueError("ffmpeg could not extract a frame")
+
+
+def load_scenes(path: Path) -> dict[str, str]:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    return {str(key): str(value) for key, value in loaded.items() if isinstance(value, str)}
+
+
+def sign_thumb(secret: str, event_id: str, expires: int) -> str:
+    message = f"thumb:{event_id}:{expires}".encode()
+    return hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
 
 
 def json_bytes(value: Any) -> bytes:
@@ -213,6 +286,20 @@ class Config:
             host.strip().lower() for host in os.environ.get("AUTH_HOSTS", "").split(",") if host.strip()
         }
         self.ha_url = os.environ.get("HA_URL", "").rstrip("/")
+        # Outdoor cameras are polled this often so the quick look lands fast;
+        # indoor ones keep POLL_SECONDS.
+        self.fast_poll_seconds = max(5, int(os.environ.get("FAST_POLL_SECONDS", "15")))
+        self.gemini_quick_model = os.environ.get("GEMINI_QUICK_MODEL", "").strip() or self.gemini_model
+        self.ffmpeg = os.environ.get("FFMPEG", "ffmpeg")
+        self.scenes = load_scenes(Path(os.environ.get("SCENES_PATH", "/app/scenes.json")))
+        # Home Assistant webhook that turns quick looks into phone alerts (policy lives in HA).
+        self.ha_webhook_url = os.environ.get("HA_WEBHOOK_URL", "").strip()
+        # Public base for signed thumbnail links inside notifications.
+        self.notify_base_url = os.environ.get("NOTIFY_BASE_URL", "").rstrip("/")
+        # Cameras where any person counts as worth an alert (the doorbell).
+        self.alert_devices = {
+            slug.strip() for slug in os.environ.get("ALERT_DEVICES", "front-door").split(",") if slug.strip()
+        }
 
     @property
     def database_path(self) -> Path:
@@ -225,6 +312,10 @@ class Config:
     @property
     def clips_dir(self) -> Path:
         return self.storage_dir / "clips"
+
+    @property
+    def thumbs_dir(self) -> Path:
+        return self.storage_dir / "thumbs"
 
 
 class Metrics:
@@ -371,6 +462,26 @@ class EventStore:
                 connection.execute(
                     "ALTER TABLE events ADD COLUMN recording_ready INTEGER NOT NULL DEFAULT 0"
                 )
+            for name, ddl in (
+                ("detection", "TEXT"),
+                ("hero_offset", "REAL"),
+                ("quick", "TEXT"),
+                ("quick_status", "TEXT"),
+                ("alerted", "INTEGER NOT NULL DEFAULT 0"),
+            ):
+                if name not in columns:
+                    connection.execute(f"ALTER TABLE events ADD COLUMN {name} {ddl}")
+            connection.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS presence (
+                    person TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS presence_at_idx ON presence(at);
+                CREATE INDEX IF NOT EXISTS events_quick_status_idx ON events(quick_status);
+                """
+            )
 
     def upsert_device(self, device: dict[str, str]) -> None:
         with self.connect() as connection:
@@ -411,10 +522,16 @@ class EventStore:
     def update_recording_readiness(self, event_id: str, event: dict[str, Any]) -> None:
         recording = event.get("recording")
         ready = isinstance(recording, dict) and recording.get("status") == "ready"
+        created = parse_datetime(event.get("created_at"))
+        detection, hero = ring_detection(event, created) if created else (None, None)
         with self.connect() as connection:
             connection.execute(
-                "UPDATE events SET recording_ready = ? WHERE event_id = ?",
-                (int(ready), event_id),
+                """
+                UPDATE events SET recording_ready = ?,
+                    detection = COALESCE(?, detection), hero_offset = COALESCE(?, hero_offset)
+                WHERE event_id = ?
+                """,
+                (int(ready), detection, hero, event_id),
             )
 
     def add_discovered_event(self, event: dict[str, Any], device: dict[str, str], disabled: bool) -> bool:
@@ -429,14 +546,15 @@ class EventStore:
         recording_ready = int(
             isinstance(recording, dict) and recording.get("status") == "ready"
         )
+        detection, hero = ring_detection(event, created)
         with self.connect() as connection:
             cursor = connection.execute(
                 """
                 INSERT OR IGNORE INTO events(
                     event_id, device_id, device_name, device_slug, kind, created_at,
                     duration, analysis_status, recording_status, recording_ready,
-                    recording_first_seen
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+                    recording_first_seen, detection, hero_offset
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
                 """,
                 (
                     event_id,
@@ -449,6 +567,8 @@ class EventStore:
                     status,
                     recording_ready,
                     iso_utc(),
+                    detection,
+                    hero,
                 ),
             )
         return cursor.rowcount > 0
@@ -550,10 +670,77 @@ class EventStore:
                 """
                 SELECT event_id FROM events
                 WHERE clip_path IS NOT NULL AND analysis_status = 'pending'
+                    AND quick_status IS NOT NULL
                 ORDER BY created_at DESC
                 """
             ).fetchall()
         return [str(row["event_id"]) for row in rows]
+
+    def pending_quick(self) -> list[str]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT event_id FROM events
+                WHERE clip_path IS NOT NULL AND analysis_status = 'pending'
+                    AND quick_status IS NULL
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+        return [str(row["event_id"]) for row in rows]
+
+    def set_quick(
+        self, event_id: str, status: str, quick: dict[str, Any] | None, *, alerted: bool = False
+    ) -> None:
+        # One write: the full-pass sweep sees quick_status and alerted together.
+        with self.connect() as connection:
+            connection.execute(
+                "UPDATE events SET quick_status = ?, quick = ?, alerted = MAX(alerted, ?) WHERE event_id = ?",
+                (status, json.dumps(quick) if quick is not None else None, int(alerted), event_id),
+            )
+
+    def nearby_events(self, row: sqlite3.Row, window: timedelta) -> list[sqlite3.Row]:
+        created = parse_datetime(row["created_at"])
+        if created is None:
+            return []
+        with self.connect() as connection:
+            return list(
+                connection.execute(
+                    """
+                    SELECT * FROM events
+                    WHERE created_at >= ? AND created_at <= ? AND event_id != ?
+                    ORDER BY created_at LIMIT 12
+                    """,
+                    (iso_utc(created - window), iso_utc(created + window), row["event_id"]),
+                ).fetchall()
+            )
+
+    def add_presence(self, person: str, state: str, at: datetime) -> None:
+        with self.connect() as connection:
+            connection.execute(
+                "INSERT INTO presence(person, state, at) VALUES (?, ?, ?)", (person, state, iso_utc(at))
+            )
+
+    def presence_between(self, start: datetime, end: datetime) -> list[sqlite3.Row]:
+        with self.connect() as connection:
+            return list(
+                connection.execute(
+                    "SELECT * FROM presence WHERE at >= ? AND at <= ? ORDER BY at LIMIT 20",
+                    (iso_utc(start), iso_utc(end)),
+                ).fetchall()
+            )
+
+    def thumb_for_event(self, event_id: str) -> Path | None:
+        """Thumbnail path mirroring the clip path; None when there is no clip."""
+        row = self.get_row(event_id)
+        if row is None or not row["clip_path"]:
+            return None
+        root = self.config.thumbs_dir.resolve()
+        candidate = (self.config.thumbs_dir / str(row["clip_path"])).with_suffix(".jpg").resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            return None
+        return candidate
 
     def get_row(self, event_id: str) -> sqlite3.Row | None:
         with self.connect() as connection:
@@ -646,7 +833,20 @@ class EventStore:
         clip_url = None
         if row["clip_path"]:
             clip_url = f"{self.config.public_base_url}/clips/{quote(str(row['event_id']))}.mp4"
+        quick: dict[str, Any] | None = None
+        if row["quick"]:
+            try:
+                loaded_quick = json.loads(row["quick"])
+                quick = loaded_quick if isinstance(loaded_quick, dict) else None
+            except json.JSONDecodeError:
+                quick = None
         item = {
+            "thumb_url": (
+                f"{self.config.public_base_url}/thumbs/{quote(str(row['event_id']))}.jpg"
+                if row["clip_path"] else None
+            ),
+            "quick": quick,
+            "detection": row["detection"],
             "id": row["event_id"],
             "device": row["device_slug"],
             "device_name": row["device_name"],
@@ -680,12 +880,19 @@ class EventStore:
                 except ValueError:
                     continue
                 candidate.unlink(missing_ok=True)
+                thumb = (self.config.thumbs_dir / str(relative)).with_suffix(".jpg")
+                thumb.unlink(missing_ok=True)
             connection.execute("DELETE FROM events WHERE created_at < ?", (cutoff,))
+            connection.execute(
+                "DELETE FROM presence WHERE at < ?",
+                (iso_utc((now or utc_now()) - PRESENCE_RETENTION),),
+            )
         self._remove_empty_clip_dirs()
         return len(rows)
 
     def _remove_empty_clip_dirs(self) -> None:
-        for directory in sorted(self.config.clips_dir.rglob("*"), reverse=True):
+        directories = [*self.config.clips_dir.rglob("*"), *self.config.thumbs_dir.rglob("*")]
+        for directory in sorted(directories, reverse=True):
             if directory.is_dir():
                 try:
                     directory.rmdir()
@@ -883,8 +1090,24 @@ class GeminiClient:
             "activity_tags": {"type": "ARRAY", "items": {"type": "STRING"}},
             "notable": {"type": "BOOLEAN"},
             "confidence": {"type": "NUMBER"},
+            "persons": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "description": {"type": "STRING"},
+                        "role": {
+                            "type": "STRING",
+                            "enum": ["resident", "visitor", "delivery", "passer-by", "worker", "unknown"],
+                        },
+                        "action": {"type": "STRING"},
+                    },
+                    "required": ["description", "role", "action"],
+                },
+            },
         },
         "required": [
+            "persons",
             "label",
             "summary",
             "detail",
@@ -898,8 +1121,23 @@ class GeminiClient:
         ],
     }
 
+    QUICK_SCHEMA = {
+        "type": "OBJECT",
+        "properties": {
+            "headline": {"type": "STRING"},
+            "label": {"type": "STRING"},
+            "people": {"type": "ARRAY", "items": {"type": "STRING"}},
+            "vehicles": {"type": "INTEGER"},
+            "notable": {"type": "BOOLEAN"},
+            "nothing_there": {"type": "BOOLEAN"},
+        },
+        "required": ["headline", "label", "people", "vehicles", "notable", "nothing_there"],
+    }
+
     def __init__(self, config: Config) -> None:
         self.config = config
+        self._cooldown: dict[str, float] = {}
+        self._cooldown_lock = threading.Lock()
 
     def _request_json(
         self,
@@ -1061,7 +1299,12 @@ class GeminiClient:
         payload = {"contents": contents, "generationConfig": generation_config}
         # GEMINI_MODEL is a comma-separated preference list; fall through to the
         # next model only when the current one is busy or out of quota.
-        models = [m.strip() for m in model_list.split(",") if m.strip()]
+        listed = [m.strip() for m in model_list.split(",") if m.strip()]
+        now = time.monotonic()
+        with self._cooldown_lock:
+            models = [m for m in listed if self._cooldown.get(m, 0.0) <= now]
+        if not models:
+            raise GeminiError("every Gemini model is cooling down", transient=True)
         response = None
         for index, model in enumerate(models):
             try:
@@ -1075,6 +1318,9 @@ class GeminiClient:
                 )
                 break
             except GeminiError as error:
+                if error.transient:
+                    with self._cooldown_lock:
+                        self._cooldown[model] = time.monotonic() + MODEL_COOLDOWN_SECONDS
                 if not error.transient or index == len(models) - 1:
                     raise
                 LOG.warning("Gemini model %s unavailable, trying %s", model, models[index + 1])
@@ -1083,32 +1329,90 @@ class GeminiClient:
         except (KeyError, IndexError, TypeError) as error:
             raise GeminiError("Gemini response contained no text") from error
 
-    def analyse_clip(self, path: Path, event: dict[str, Any]) -> dict[str, Any]:
+    def _scene(self, event: dict[str, Any]) -> str:
+        scene = self.config.scenes.get(str(event.get("device") or ""))
+        return scene or "No layout notes for this camera."
+
+    def quick_look(self, frames: list[bytes], event: dict[str, Any]) -> dict[str, Any]:
+        """Fast first look from a few stills around Ring's detection moment."""
+        local_time = event.get("local_time") or event.get("created_at")
+        device = event.get("device_name") or event.get("device")
+        kind = event.get("kind") or "motion"
+        detection = event.get("detection") or "not classified"
+        prompt = (
+            f"{len(frames)} stills in time order, {QUICK_FRAME_SPACING:.0f} s apart, from a Ring {kind} alert "
+            f"on the {device} camera at {local_time} (UK). Ring's detector said: {detection}.\n"
+            f"Camera layout: {self._scene(event)}\n"
+            "Work out movement by comparing the stills: someone growing larger or facing the camera is coming "
+            "towards it; use the layout to say where they are heading. "
+            "headline: max 12 words, present tense, who + what + where, e.g. 'Two men walking up the path to "
+            "the front door', 'Courier leaving a parcel on the step', 'Car pulling into the parking area'. "
+            "label: 1 to 3 words for a timeline chip. people: one short visual description per person "
+            "(clothing, what they carry). Never guess identity, and only say delivery when a parcel or courier "
+            "uniform is visible. vehicles: moving or arriving vehicles only. nothing_there: true only if no "
+            "person, animal or moving vehicle is visible. notable: true only for clear warning signs (face "
+            "hidden, trying doors or windows, looking into cars, taking a parcel); ordinary arrivals, visitors "
+            "and deliveries are not notable."
+        )
+        parts: list[dict[str, Any]] = [{"text": prompt}]
+        for frame in frames:
+            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(frame).decode()}})
+        text = self._generate(
+            [{"role": "user", "parts": parts}],
+            {
+                "responseMimeType": "application/json",
+                "responseSchema": self.QUICK_SCHEMA,
+                "mediaResolution": "MEDIA_RESOLUTION_LOW",
+            },
+            self.config.gemini_quick_model,
+        )
+        try:
+            result = json.loads(text)
+        except json.JSONDecodeError as error:
+            raise GeminiError("Gemini quick look was invalid JSON") from error
+        if not isinstance(result, dict):
+            raise GeminiError("Gemini quick look was not an object")
+        return result
+
+    def analyse_clip(self, path: Path, event: dict[str, Any], context: str = "") -> dict[str, Any]:
         local_time = event.get("local_time") or event.get("created_at")
         device = event.get("device_name") or event.get("device")
         kind = event.get("kind") or "unknown"
-        context = (
-            "Analyse this Ring recording from a UK house. Front Door is an outdoor "
-            "doorbell facing the drive and street; Driveway and Garden are outdoor "
-            "cameras over the drive and garden. A ding means someone pressed the bell. "
-            "Describe only visible evidence. Label is 1 to 3 words in sentence case for "
-            "a timeline chip, naming what happened, e.g. 'Parcel delivered', 'Person at "
-            "door', 'Car arrives', 'Cat', 'Passer-by', 'Family leaving'; use 'No one "
-            "visible' when nothing is there. "
-            "Summary must be one plain sentence and detail must be 2 to 4 "
-            "sentences. Activity tags should be short, such as delivery, visitor, "
-            "passer-by, car, cat, family, unknown person, or nothing. Notable is true "
-            "for an unknown person lingering, someone trying doors, a package dropped "
-            "or taken, or anything security-relevant at night. "
-            f"Camera: {device}. Local timestamp: {local_time}. Event kind: {kind}."
+        detection = event.get("detection") or "not classified"
+        quick = event.get("quick") if isinstance(event.get("quick"), dict) else {}
+        first_look = quick.get("headline") or "none"
+        prompt = (
+            f"You review Ring recordings for a family home in the UK. This clip is a {kind} event on the "
+            f"{device} camera starting {local_time}. Ring's detector said: {detection}.\n"
+            f"Camera layout (use it to work out where people go): {self._scene(event)}\n"
+            f"What else happened around this time:\n{context or '- nothing else recorded'}\n"
+            f"A quick look at a few stills said: {first_look}. Correct it if the video shows otherwise.\n\n"
+            "Watch the whole clip and track each person from entry to exit. Decide where they came from and "
+            "where they went using the layout, especially whether they went into or came out of the house. "
+            "Anyone who opens the door and walks in, comes out of the house, or comes home through the back "
+            "gate from the parking area is a resident unless something contradicts it; residents coming and "
+            "going are routine. Indoor motion right after someone reaches the door means they came in. "
+            "Phone presence is weak support only and never a reason to name someone.\n"
+            "label: 1 to 3 words, sentence case, for a timeline chip (e.g. 'Arriving home', 'Leaving home', "
+            "'Parcel delivered', 'Visitor at door', 'Passer-by', 'Car arrives', 'Cat in garden', "
+            "'No one visible').\n"
+            "summary: one plain sentence a person would say, under 20 words, naming the outcome.\n"
+            "detail: 2 to 3 sentences on the sequence with rough timings, visible facts only.\n"
+            "persons: one entry per person with role and what they did. people and vehicles are counts. "
+            "activity_tags are short words such as delivery, visitor, passer-by, car, cat, family, resident, "
+            "unknown person or nothing.\n"
+            "notable: true only for unknown people lingering, trying doors or windows, looking into cars, "
+            "taking parcels, or anyone unexpected at night. Residents and deliveries are not notable."
         )
         parts, uploaded = self._video_parts([(path, "Recording to analyse")])
         try:
             text = self._generate(
-                [{"role": "user", "parts": [{"text": context}, *parts]}],
+                [{"role": "user", "parts": [{"text": prompt}, *parts]}],
                 {
                     "responseMimeType": "application/json",
                     "responseSchema": self.RESPONSE_SCHEMA,
+                    # A fraction of the tokens per frame; enough to follow people on these cameras.
+                    "mediaResolution": "MEDIA_RESOLUTION_LOW",
                 },
             )
             result = json.loads(text)
@@ -1159,15 +1463,190 @@ class Recorder:
         self.gemini = GeminiClient(self.config)
         # Newest first, so a backlog never delays today's clips.
         self.analysis_queue: queue.PriorityQueue[tuple[float, str]] = queue.PriorityQueue()
+        self.quick_queue: queue.PriorityQueue[tuple[float, str]] = queue.PriorityQueue()
         self.store.exclude_devices(self.config.gemini_exclude)
+        self._devices: list[dict[str, str]] = []
+        self._last_full_poll = 0.0
+
+    def _priority(self, event_id: str) -> float:
+        row = self.store.get_row(event_id)
+        created = parse_datetime(row["created_at"]) if row else None
+        return -created.timestamp() if created else 0.0
 
     def enqueue_analysis(self, event_id: str) -> None:
+        self.analysis_queue.put((self._priority(event_id), event_id))
+
+    def enqueue_quick(self, event_id: str) -> None:
+        self.quick_queue.put((self._priority(event_id), event_id))
+
+    def hero_offset(self, row: sqlite3.Row) -> float:
+        if row["hero_offset"] is not None:
+            return float(row["hero_offset"])
+        if row["kind"] == "ding":
+            return 1.0
+        duration = float(row["duration"] or 0)
+        return min(DEFAULT_HERO_OFFSET, duration / 2) if duration else DEFAULT_HERO_OFFSET
+
+    def ensure_thumb(self, event_id: str) -> Path | None:
+        """Hero-frame JPEG for the timeline, made on first use and kept beside the clip."""
+        thumb = self.store.thumb_for_event(event_id)
+        if thumb is None or thumb.is_file():
+            return thumb
+        clip = self.store.clip_for_event(event_id)
         row = self.store.get_row(event_id)
+        if clip is None or row is None:
+            return None
         try:
-            when = datetime.fromisoformat(str(row["created_at"])).timestamp() if row else 0.0
-        except ValueError:
-            when = 0.0
-        self.analysis_queue.put((-when, event_id))
+            frame = extract_frame(self.config.ffmpeg, clip, self.hero_offset(row), THUMB_WIDTH)
+        except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+            LOG.warning("Could not make thumbnail for %s: %s", event_id, type(error).__name__)
+            return None
+        thumb.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary = tempfile.mkstemp(prefix=f".{thumb.name}.", suffix=".tmp", dir=thumb.parent)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(frame)
+            os.replace(temporary, thumb)
+        except OSError:
+            Path(temporary).unlink(missing_ok=True)
+            return None
+        return thumb
+
+    def thumb_link(self, event_id: str) -> str | None:
+        """Signed, expiring thumbnail URL a phone can fetch without a browser session."""
+        if not self.config.notify_base_url or not self.config.api_token:
+            return None
+        expires = int(time.time()) + THUMB_LINK_SECONDS
+        signature = sign_thumb(self.config.api_token, event_id, expires)
+        return f"{self.config.notify_base_url}/thumbs/{quote(event_id)}.jpg?exp={expires}&sig={signature}"
+
+    def notify(self, row: sqlite3.Row, stage: str, label: str, message: str, notable: bool) -> None:
+        if not self.config.ha_webhook_url:
+            return
+        created = parse_datetime(row["created_at"])
+        payload = {
+            "event_id": row["event_id"],
+            # One notification per camera: the full pass replaces the quick one, which
+            # replaces Home Assistant's instant doorbell alert.
+            "tag": f"ring-{row['device_slug']}",
+            "stage": stage,
+            "camera": row["device_name"],
+            "camera_slug": row["device_slug"],
+            "kind": row["kind"],
+            "time": created.astimezone(self.config.time_zone).strftime("%H:%M") if created else "",
+            "label": label,
+            "message": message,
+            "notable": notable,
+            "image": self.thumb_link(str(row["event_id"])),
+        }
+        request = Request(
+            self.config.ha_webhook_url,
+            data=json_bytes(payload),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=10):
+                pass
+        except (HTTPError, URLError, OSError) as error:
+            LOG.warning("Home Assistant webhook failed: %s", type(error).__name__)
+
+    def should_alert(self, row: sqlite3.Row, quick: dict[str, Any]) -> bool:
+        if row["kind"] == "ding" or quick.get("notable") is True:
+            return True
+        people = quick.get("people") if isinstance(quick.get("people"), list) else []
+        return row["device_slug"] in self.config.alert_devices and (bool(people) or row["detection"] == "human")
+
+    @staticmethod
+    def analysis_from_quick(quick: dict[str, Any]) -> dict[str, Any]:
+        people = quick.get("people") if isinstance(quick.get("people"), list) else []
+        nothing = quick.get("nothing_there") is True
+        return {
+            "label": "No one visible" if nothing else str(quick.get("label") or "Motion"),
+            "summary": str(quick.get("headline") or ""),
+            "detail": "",
+            "people": len(people),
+            "vehicles": int(quick.get("vehicles") or 0) if isinstance(quick.get("vehicles"), int) else 0,
+            "activity_tags": ["nothing"] if nothing else [],
+            "notable": quick.get("notable") is True,
+            "persons": [{"description": str(person), "role": "unknown", "action": ""} for person in people],
+            "source": "quick",
+        }
+
+    def quick_event(self, event_id: str) -> str | None:
+        row = self.store.get_row(event_id)
+        if row is None or row["quick_status"] is not None or row["analysis_status"] != "pending":
+            return None
+        if row["device_slug"] in self.config.gemini_exclude:
+            self.store.set_quick(event_id, "skipped", None)
+            return None
+        clip = self.store.clip_for_event(event_id)
+        created = parse_datetime(row["created_at"])
+        if clip is None or created is None:
+            return None
+        age = utc_now() - created
+        hero = self.hero_offset(row)
+        try:
+            frames = [
+                extract_frame(self.config.ffmpeg, clip, hero + step * QUICK_FRAME_SPACING, QUICK_FRAME_WIDTH)
+                for step in (-1, 0, 1)
+            ]
+            event = self.store.row_to_api(row)
+            quick = self.gemini.quick_look(frames, event)
+        except GeminiError as error:
+            if error.transient and age > QUICK_ONLY_AFTER:
+                LOG.warning("Gemini quick look busy (%s); backing off", error)
+                return "backoff"
+            return self._quick_failed(event_id, age, str(error))
+        except (OSError, ValueError, subprocess.TimeoutExpired, HTTPError, URLError) as error:
+            return self._quick_failed(event_id, age, type(error).__name__)
+        alert = age <= ALERT_MAX_AGE and self.should_alert(row, quick)
+        self.store.set_quick(event_id, "ok", quick, alerted=alert)
+        if alert:
+            self.notify(
+                row, "quick", str(quick.get("label") or "Motion"), str(quick.get("headline") or ""),
+                quick.get("notable") is True,
+            )
+        # Stills miss small or fast movement (night on the high cameras), so an empty quick
+        # look never skips the full pass; only the old backlog stops at the quick look.
+        if age > QUICK_ONLY_AFTER:
+            self.store.mark_analysis(event_id, "ok", self.analysis_from_quick(quick))
+            self.metrics.analysis_ok()
+        else:
+            self.enqueue_analysis(event_id)
+        return "backlog" if age > BACKLOG_AGE else None
+
+    def _quick_failed(self, event_id: str, age: timedelta, reason: str) -> str | None:
+        LOG.warning("Quick look failed for %s: %s", event_id, reason)
+        self.store.set_quick(event_id, "failed", None)
+        if age > QUICK_ONLY_AFTER:
+            # Backlog never earns a full pass.
+            self.store.mark_analysis(event_id, "failed", {"error": reason[:500]})
+            self.metrics.analysis_failed()
+            return "backlog"
+        self.enqueue_analysis(event_id)
+        return "backlog" if age > BACKLOG_AGE else None
+
+    def deep_context(self, row: sqlite3.Row) -> str:
+        lines: list[str] = []
+        zone = self.config.time_zone
+        for other in self.store.nearby_events(row, CONTEXT_WINDOW):
+            when = parse_datetime(other["created_at"])
+            stamp = when.astimezone(zone).strftime("%H:%M:%S") if when else "?"
+            if other["device_slug"] in self.config.gemini_exclude:
+                what = f"{other['kind']} (indoor camera, not analysed)"
+            else:
+                api = self.store.row_to_api(other)
+                quick = api.get("quick") or {}
+                what = api.get("summary") or quick.get("headline") or other["kind"]
+            lines.append(f"- {stamp} {other['device_name']}: {what}")
+        created = parse_datetime(row["created_at"])
+        if created:
+            for entry in self.store.presence_between(created - PRESENCE_LOOKBACK, created + CONTEXT_WINDOW):
+                when = parse_datetime(entry["at"])
+                stamp = when.astimezone(zone).strftime("%H:%M") if when else "?"
+                lines.append(f"- {stamp} {entry['person']}'s phone reported {entry['state']}")
+        return "\n".join(lines)
 
     def history_events(self, device: dict[str, str]) -> list[dict[str, Any]]:
         discovered: list[dict[str, Any]] = []
@@ -1266,23 +1745,55 @@ class Recorder:
                 continue
             self.store.mark_downloaded(event_id, relative.as_posix(), size)
             self.metrics.archived()
-            if self.config.gemini_api_key:
-                self.enqueue_analysis(event_id)
+            self.ensure_thumb(event_id)
+            if self.config.gemini_api_key and row["device_slug"] not in self.config.gemini_exclude:
+                self.enqueue_quick(event_id)
 
     def poll_once(self) -> None:
-        devices = self.ring.devices()
-        # Auth works and the API answers: serve the archive while the (possibly
-        # hours-long) first backfill is still downloading.
-        self.metrics.set_ready(True)
-        for device in devices:
-            self.store.upsert_device(device)
-            self.history_events(device)
-        self.process_pending_recordings()
+        try:
+            failures = self._poll_histories()
+        finally:
+            self.process_pending_recordings()
+        if failures:
+            raise ValueError(f"{failures} camera histories failed")
         self.metrics.poll_ok()
+
+    def _poll_histories(self) -> int:
+        now = time.monotonic()
+        full = not self._devices or now - self._last_full_poll >= self.config.poll_seconds
+        if full:
+            try:
+                devices = self.ring.devices()
+            except AuthenticationError:
+                raise
+            except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError):
+                if not self._devices:
+                    raise
+                LOG.warning("Ring device list failed; keeping the cached cameras")
+            else:
+                self._devices = devices
+                # Auth works and the API answers: serve the archive while the (possibly
+                # hours-long) first backfill is still downloading.
+                self.metrics.set_ready(True)
+                for device in devices:
+                    self.store.upsert_device(device)
+            self._last_full_poll = now
+        failures = 0
+        for device in self._devices:
+            if not (full or device["slug"] not in self.config.gemini_exclude):
+                continue
+            try:
+                self.history_events(device)
+            except AuthenticationError:
+                raise
+            except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError) as error:
+                failures += 1
+                LOG.warning("Ring history for %s failed: %s", device["slug"], type(error).__name__)
+        return failures
 
     def polling_loop(self, stop: threading.Event) -> None:
         while not stop.is_set():
-            delay = self.config.poll_seconds
+            delay = min(self.config.fast_poll_seconds, self.config.poll_seconds)
             try:
                 self.poll_once()
             except AuthenticationError as error:
@@ -1294,6 +1805,35 @@ class Recorder:
                 detail = f" {error.code} {urlparse(error.url or '').path}" if isinstance(error, HTTPError) else ""
                 LOG.warning("Ring poll failed: %s%s", type(error).__name__, detail)
             stop.wait(delay)
+
+    def quick_loop(self, stop: threading.Event) -> None:
+        next_sweep = 0.0
+        while not stop.is_set():
+            if time.monotonic() >= next_sweep:
+                for event_id in self.store.pending_quick():
+                    self.enqueue_quick(event_id)
+                next_sweep = time.monotonic() + ANALYSIS_SWEEP_SECONDS
+            try:
+                _, event_id = self.quick_queue.get(timeout=1)
+            except queue.Empty:
+                continue
+            try:
+                result = self.quick_event(event_id)
+                if result == "backlog":
+                    stop.wait(BACKLOG_PACE_SECONDS)
+                elif result == "backoff":
+                    while True:
+                        try:
+                            self.quick_queue.get_nowait()
+                            self.quick_queue.task_done()
+                        except queue.Empty:
+                            break
+                    next_sweep = time.monotonic() + ANALYSIS_BACKOFF_SECONDS
+                    stop.wait(ANALYSIS_BACKOFF_SECONDS)
+            except Exception:  # keep the worker alive; the sweep retries later
+                LOG.exception("Quick look crashed for %s", event_id)
+            finally:
+                self.quick_queue.task_done()
 
     def analysis_loop(self, stop: threading.Event) -> None:
         # Pending rows are re-swept every ANALYSIS_SWEEP_SECONDS so clips left
@@ -1309,7 +1849,10 @@ class Recorder:
             except queue.Empty:
                 continue
             try:
-                if self.analyse_event(event_id) == "backoff":
+                result = self.analyse_event(event_id)
+                if result == "backlog":
+                    stop.wait(BACKLOG_PACE_SECONDS)
+                if result == "backoff":
                     # Drain the queue; the next sweep refills it newest first.
                     while True:
                         try:
@@ -1334,8 +1877,10 @@ class Recorder:
             self.store.mark_analysis(event_id, "disabled", None)
             return
         event = self.store.row_to_api(row)
+        created = parse_datetime(row["created_at"])
+        paced = "backlog" if created is None or utc_now() - created > BACKLOG_AGE else None
         try:
-            analysis = self.gemini.analyse_clip(path, event)
+            analysis = self.gemini.analyse_clip(path, event, self.deep_context(row))
         except GeminiError as error:
             if error.transient:
                 LOG.warning("Gemini busy or out of quota (%s); backing off", error)
@@ -1343,15 +1888,21 @@ class Recorder:
             self.store.mark_analysis(event_id, "failed", {"error": str(error)[:500]})
             self.metrics.analysis_failed()
             LOG.warning("Gemini analysis failed for %s: %s", event_id, error)
-            return None
+            return paced
         except (HTTPError, URLError, OSError, ValueError) as error:
             self.store.mark_analysis(event_id, "failed", {"error": str(error)[:500]})
             self.metrics.analysis_failed()
             LOG.warning("Gemini analysis failed for %s: %s", event_id, type(error).__name__)
-            return
+            return paced
         self.store.mark_analysis(event_id, "ok", analysis)
         self.metrics.analysis_ok()
-        return None
+        current = self.store.get_row(event_id)
+        if current is not None and current["alerted"] and created and utc_now() - created <= FULL_UPDATE_MAX_AGE:
+            self.notify(
+                row, "full", str(analysis.get("label") or "Motion"), str(analysis.get("summary") or ""),
+                analysis.get("notable") is True,
+            )
+        return paced
 
     def retention_loop(self, stop: threading.Event) -> None:
         while not stop.is_set():
@@ -1632,8 +2183,12 @@ class RequestHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {"ready": ready},
             )
+        elif path.startswith("/thumbs/") and path.endswith(".jpg") and self._signed_thumb(path, query):
+            self._thumb(path.removeprefix("/thumbs/").removesuffix(".jpg"))
         elif not self._logged_in():
             return
+        elif path.startswith("/thumbs/") and path.endswith(".jpg"):
+            self._thumb(path.removeprefix("/thumbs/").removesuffix(".jpg"))
         elif path == "/metrics":
             self._send(
                 HTTPStatus.OK,
@@ -1659,6 +2214,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         path = unquote(urlparse(self.path).path)
         if path == "/api/session":
             self._create_session()
+            return
+        if path == "/api/presence":
+            # Machine-to-machine from Home Assistant: the API token alone is enough, even on
+            # the public host, because this endpoint only appends a home/away row.
+            if self._authorized():
+                payload = self._read_json()
+                if payload is not None:
+                    self._presence(payload)
             return
         if not self._logged_in() or not self._authorized():
             return
@@ -1752,6 +2315,38 @@ class RequestHandler(BaseHTTPRequestHandler):
                 }
             )
         self._send_json(HTTPStatus.OK, {"date": raw, "events": events})
+
+    def _signed_thumb(self, path: str, query: dict[str, list[str]]) -> bool:
+        secret = self.server.recorder.config.api_token
+        expires_text = query.get("exp", [""])[0]
+        supplied = query.get("sig", [""])[0]
+        if (
+            not secret or not supplied or len(expires_text) > 12 or not expires_text.isdigit()
+            or int(expires_text) < time.time()
+        ):
+            return False
+        event_id = path.removeprefix("/thumbs/").removesuffix(".jpg")
+        expected = sign_thumb(secret, event_id, int(expires_text))
+        return hmac.compare_digest(supplied.encode(), expected.encode())
+
+    def _thumb(self, event_id: str) -> None:
+        if not SAFE_EVENT_ID.fullmatch(event_id):
+            self._error(HTTPStatus.NOT_FOUND, "thumbnail not found")
+            return
+        thumb = self.server.recorder.ensure_thumb(event_id)
+        if thumb is None:
+            self._error(HTTPStatus.NOT_FOUND, "thumbnail not found")
+            return
+        self._send(HTTPStatus.OK, thumb.read_bytes(), "image/jpeg", cache_control="private, max-age=86400")
+
+    def _presence(self, payload: dict[str, Any]) -> None:
+        person = payload.get("person")
+        state = payload.get("state")
+        if not isinstance(person, str) or not isinstance(state, str) or not person.strip() or not state.strip():
+            self._error(HTTPStatus.BAD_REQUEST, "person and state are required")
+            return
+        self.server.recorder.store.add_presence(person.strip()[:64], state.strip()[:32], utc_now())
+        self._send_json(HTTPStatus.OK, {"ok": True})
 
     def _clip(self, event_id: str) -> None:
         if not SAFE_EVENT_ID.fullmatch(event_id):
@@ -1890,6 +2485,7 @@ def main() -> None:
     signal.signal(signal.SIGINT, shutdown)
     threads = [
         threading.Thread(target=recorder.polling_loop, args=(stop,), name="ring-poller", daemon=True),
+        threading.Thread(target=recorder.quick_loop, args=(stop,), name="quick-look", daemon=True),
         threading.Thread(target=recorder.analysis_loop, args=(stop,), name="gemini-worker", daemon=True),
         threading.Thread(target=recorder.retention_loop, args=(stop,), name="retention", daemon=True),
     ]

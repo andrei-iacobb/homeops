@@ -61,8 +61,18 @@ spec:
                   name: ring-recorder-secret
                   key: API_TOKEN
                   optional: true
+            # Home Assistant webhook for phone alerts; the id is secret.
+            - name: HA_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ring-recorder-secret
+                  key: HA_WEBHOOK_URL
+                  optional: true
             - name: PUBLIC_BASE_URL
               value: "https://hass.iacob.uk/ring-events"
+            # Signed thumbnail links in notifications must load on the phone away from home.
+            - name: NOTIFY_BASE_URL
+              value: "https://hass.${SECRET_DOMAIN}/ring-events"
             - name: AUTH_HOSTS
               value: "hass.${SECRET_DOMAIN}"
             - name: HA_URL
@@ -83,9 +93,21 @@ spec:
               value: "180"
             - name: TIME_ZONE
               value: "Europe/London"
-            # Per-clip summaries: Flash-Lite is ~10x faster than Flash on Ring clips.
+            # Outdoor cameras polled this often so a clip is picked up soon after it ends.
+            - name: FAST_POLL_SECONDS
+              value: "15"
+            # Quick look: three stills around Ring's detection moment, answered in ~2 s.
+            - name: GEMINI_QUICK_MODEL
+              value: "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite"
+            # Full pass: whole clip at low media resolution (~3k tokens). 3.5 Flash-Lite
+            # reads these cameras as well as 3.5 Flash with the scene notes, and Flash's
+            # free tier is only 20 requests a day.
             - name: GEMINI_MODEL
-              value: "gemini-3.1-flash-lite,gemini-flash-lite-latest,gemini-3.5-flash"
+              value: "gemini-3.5-flash-lite,gemini-2.5-flash,gemini-flash-lite-latest,gemini-3.1-flash-lite"
+            - name: FFMPEG
+              value: "/opt/ffmpeg/ffmpeg"
+            - name: SCENES_PATH
+              value: "/app/scenes.json"
             # Questions via /api/analyze: stronger model first.
             # Indoor cameras are archived but never sent to Gemini (free-tier key).
             - name: GEMINI_EXCLUDE_DEVICES
@@ -125,7 +147,15 @@ spec:
               mountPath: /data
             - name: tmp
               mountPath: /tmp
+            - name: ffmpeg
+              mountPath: /opt/ffmpeg
+              readOnly: true
       volumes:
+        # Static ffmpeg/ffprobe (FROM scratch) mounted as an image volume for frame grabs.
+        - name: ffmpeg
+          image:
+            reference: mwader/static-ffmpeg:9.0.2-1@sha256:f5d100184884eb3e82b0eb14bb5ebf98da99826ac824989720297fb9ef21c822
+            pullPolicy: IfNotPresent
         - name: app
           configMap:
             name: ring-recorder-code

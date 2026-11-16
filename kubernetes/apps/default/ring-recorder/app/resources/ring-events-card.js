@@ -128,6 +128,7 @@ function relativeWhen(date, language) {
 
 function eventLabel(event) {
   if (event.analysis.label) return event.analysis.label;
+  if (event.quick.label) return event.quick.label;
   const tags = event.analysis.tags.map((tag) => tag.toLowerCase());
   for (const [tag, label] of TAG_LABELS) if (tags.includes(tag)) return label;
   if (event.kind === "ding") return "Doorbell";
@@ -140,6 +141,8 @@ function normaliseEvent(raw) {
   const date = parseDate(String(raw.created_at));
   if (!date) return null;
   const a = raw.analysis && typeof raw.analysis === "object" ? raw.analysis : {};
+  const q = raw.quick && typeof raw.quick === "object" ? raw.quick : null;
+  const persons = Array.isArray(a.persons) ? a.persons.filter((p) => p && typeof p.role === "string") : [];
   const tags = Array.isArray(a.activity_tags) ? a.activity_tags : Array.isArray(a.tags) ? a.tags : [];
   const device = slugify(raw.device || raw.device_slug || raw.device_name);
   return {
@@ -149,7 +152,12 @@ function normaliseEvent(raw) {
     kind: String(raw.kind || "motion"),
     date,
     clipUrl: typeof raw.clip_url === "string" && raw.clip_url ? raw.clip_url : null,
+    thumbUrl: typeof raw.thumb_url === "string" && raw.thumb_url ? raw.thumb_url : null,
     duration: Number(raw.duration) || null,
+    quick: {
+      label: q && typeof q.label === "string" ? q.label.trim() : "",
+      headline: q && typeof q.headline === "string" ? q.headline.trim() : "",
+    },
     status: String(raw.status || "pending"),
     analysis: {
       label: typeof a.label === "string" ? a.label.trim() : "",
@@ -157,8 +165,24 @@ function normaliseEvent(raw) {
       detail: typeof a.detail === "string" ? a.detail : "",
       tags: tags.map(String).filter(Boolean),
       notable: a.notable === true,
+      roles: persons.map((p) => p.role),
+      fromQuick: a.source === "quick",
     },
   };
+}
+
+/* "2 residents", "Resident and visitor": who the full pass saw, for the meta line. */
+function describeRoles(roles) {
+  const counts = new Map();
+  for (const role of roles) if (role && role !== "unknown") counts.set(role, (counts.get(role) || 0) + 1);
+  const parts = [...counts].map(([role, n]) => {
+    const word = role === "passer-by" ? "passer-by" : role;
+    if (n === 1) return word;
+    return `${n} ${word === "passer-by" ? "passers-by" : word === "delivery" ? "couriers" : `${word}s`}`;
+  });
+  if (!parts.length) return "";
+  const text = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function sortEvents(events) {
@@ -724,9 +748,7 @@ class RingEventsCard extends HTMLElement {
     const rows = Array.isArray(payload) ? payload : (payload && payload.events) || [];
     let events = rows.map(normaliseEvent).filter(Boolean);
     // Server builds clip URLs for the LAN host; serve them from whichever route we use.
-    for (const event of events) {
-      if (event.clipUrl) event.clipUrl = `${this._config.baseUrl}/clips/${encodeURIComponent(event.id)}.mp4`;
-    }
+    for (const event of events) this._localise(event);
     if (this._camera === "all" && this._config.cameras) {
       events = events.filter((event) => this._config.cameras.includes(event.device));
     }
@@ -838,12 +860,12 @@ class RingEventsCard extends HTMLElement {
       const current = this._selectedEvent();
       if (current && !current.clipUrl && !page.events.some((event) => event.id === current.id)) {
         const one = normaliseEvent(await this._get(`/api/events/${encodeURIComponent(current.id)}`));
-        if (one && one.clipUrl) one.clipUrl = `${this._config.baseUrl}/clips/${encodeURIComponent(one.id)}.mp4`;
+        if (one) this._localise(one);
         if (one) page.events.push(one);
       }
       if (seq !== this._fetchSeq || refreshSeq !== this._refreshSeq || this._loading || !this.isConnected) return;
       const byId = new Map(this._events.map((event) => [event.id, event]));
-      const stamp = (event) => JSON.stringify([event.clipUrl, event.status, event.analysis]);
+      const stamp = (event) => JSON.stringify([event.clipUrl, event.status, event.analysis, event.quick]);
       const added = page.events.some((event) => !byId.has(event.id));
       const updated = page.events.filter((event) => byId.has(event.id) && stamp(byId.get(event.id)) !== stamp(event));
       if (!added && !updated.length) return;
@@ -970,7 +992,12 @@ class RingEventsCard extends HTMLElement {
         "aria-label": `${event.deviceName}, ${label}, ${relativeWhen(event.date, language)}`,
       });
       const thumb = el("span", "thumb");
-      if (event.clipUrl) {
+      if (event.thumbUrl) {
+        // Hero frame at the moment Ring saw someone: a small JPEG instead of a video per tile.
+        const img = el("img", "", { alt: "", loading: "lazy", decoding: "async", src: event.thumbUrl });
+        img.addEventListener("error", () => img.remove(), { once: true });
+        thumb.append(img);
+      } else if (event.clipUrl) {
         const video = el("video", "", { muted: "", playsinline: "", preload: "none", "aria-hidden": "true" });
         video.muted = true;
         video.dataset.src = `${event.clipUrl}#t=0.6`;
@@ -1117,6 +1144,7 @@ class RingEventsCard extends HTMLElement {
         const video = el("video", "", { controls: "", playsinline: "", preload: "auto" });
         video.muted = true;
         video.autoplay = !reducedMotion();
+        if (event.thumbUrl) video.poster = event.thumbUrl;
         video.src = event.clipUrl;
         video.setAttribute("aria-label", `${event.deviceName} recording, ${relativeWhen(event.date, language)}`);
         this._stage.append(video);
@@ -1172,8 +1200,13 @@ class RingEventsCard extends HTMLElement {
       this._label.append(flag);
     }
     this._label.append(document.createTextNode(label));
-    this._meta.textContent = `${event.deviceName} · ${relativeWhen(event.date, language)}`;
+    const who = describeRoles(event.analysis.roles);
+    this._meta.textContent = [event.deviceName, relativeWhen(event.date, language), who].filter(Boolean).join(" · ");
     let summary = event.analysis.summary;
+    if (!summary && event.quick.headline) {
+      // The quick look lands within seconds of the clip; the full pass refines it.
+      summary = event.status === "pending" ? `${event.quick.headline}. Watching the full clip...` : event.quick.headline;
+    }
     if (!summary) {
       summary = event.status === "excluded" ? "Indoor camera: not sent for AI description."
         : event.status === "pending"
@@ -1188,6 +1221,13 @@ class RingEventsCard extends HTMLElement {
     this._more.setAttribute("aria-expanded", String(this._detailOpen));
     this._detail.textContent = event.analysis.detail;
     this._detail.hidden = !(hasDetail && this._detailOpen);
+  }
+
+  _localise(event) {
+    // The server builds URLs for the LAN host; serve them from whichever route this card uses.
+    const id = encodeURIComponent(event.id);
+    if (event.clipUrl) event.clipUrl = `${this._config.baseUrl}/clips/${id}.mp4`;
+    if (event.thumbUrl) event.thumbUrl = `${this._config.baseUrl}/thumbs/${id}.jpg`;
   }
 
   _clearStage() {

@@ -469,10 +469,12 @@ class GeminiFallbackTests(RecorderTestCase):
 
     def test_transient_error_keeps_clip_pending(self):
         rec = recorder.Recorder(self.config)
-        row = {"analysis_status": "pending", "device_slug": "driveway"}
+        row = {"analysis_status": "pending", "device_slug": "driveway", "event_id": "1",
+               "created_at": "2026-11-16T19:00:00+00:00", "alerted": 0}
         with patch.object(rec.store, "get_row", return_value=row), patch.object(
                 rec.store, "clip_for_event", return_value=self.config.clips_dir / "x.mp4"), patch.object(
                 rec.store, "row_to_api", return_value={}), patch.object(
+                rec, "deep_context", return_value=""), patch.object(
                 rec.gemini, "analyse_clip",
                 side_effect=recorder.GeminiError("429", transient=True)), patch.object(
                 rec.store, "mark_analysis") as mark:
@@ -596,3 +598,270 @@ class PublicHostAuthTests(RecorderTestCase):
         self.server.recorder.config.api_token = "secret"
         response, _ = self.request("POST", "/api/analyze", "hass.example.org", {"Authorization": "Bearer secret", "Content-Type": "application/json"})
         self.assertEqual(response.status, 401)
+
+
+class Fixture(unittest.TestCase):
+    """RecorderTestCase's setup and helpers without re-running its tests."""
+
+    setUp = RecorderTestCase.setUp
+    make_recorder = RecorderTestCase.make_recorder
+    add_event = RecorderTestCase.add_event
+
+
+class QuickLookTests(Fixture):
+    def setUp(self):
+        Fixture.setUp(self)
+        self.config.gemini_api_key = "k"
+        self.config.gemini_exclude = {"hallway"}
+        self.config.api_token = "secret"
+        self.config.notify_base_url = "https://hass.example.org/ring-events"
+        self.config.ha_webhook_url = "http://ha.invalid/api/webhook/x"
+        self.rec = self.make_recorder()
+        self.store = self.rec.store
+
+    def downloaded(self, event_id, created, device=None):
+        self.add_event(self.store, event_id, created, device)
+        slug = (device or {}).get("slug", "front-door")
+        clip = self.config.clips_dir / slug / f"{event_id}.mp4"
+        clip.parent.mkdir(parents=True, exist_ok=True)
+        clip.write_bytes(b"mp4")
+        self.store.mark_downloaded(event_id, f"{slug}/{event_id}.mp4", 3)
+
+    def run_quick(self, event_id, quick):
+        with patch.object(recorder, "extract_frame", return_value=b"jpg"), patch.object(
+                self.rec.gemini, "quick_look", return_value=quick) as look, patch.object(
+                self.rec, "notify") as notify:
+            self.rec.quick_event(event_id)
+        return look, notify
+
+    def test_ring_detection_offset_comes_from_verified_timestamp(self):
+        created = datetime(2026, 11, 16, 19, 37, 10, 894000, tzinfo=timezone.utc)
+        event = {"cv_properties": {"detection_type": "human", "detection_types": [
+            {"detection_type": "human", "verified_timestamps": [int(created.timestamp() * 1000) + 4577]}]}}
+        detection, hero = recorder.ring_detection(event, created)
+        self.assertEqual(detection, "human")
+        self.assertAlmostEqual(hero, 4.577, places=2)
+        self.assertEqual(recorder.ring_detection({}, created), (None, None))
+
+    def test_full_pass_waits_for_quick_look(self):
+        now = recorder.iso_utc()
+        self.downloaded("1", now)
+        self.assertEqual(self.store.pending_analyses(), [])
+        self.assertEqual(self.store.pending_quick(), ["1"])
+
+    def test_fresh_person_at_doorbell_alerts_and_queues_full_pass(self):
+        self.downloaded("1", recorder.iso_utc())
+        quick = {"headline": "Man walking up to the door", "label": "Person at door",
+                 "people": ["man in dark coat"], "vehicles": 0, "notable": False, "nothing_there": False}
+        _, notify = self.run_quick("1", quick)
+        row = self.store.get_row("1")
+        self.assertEqual(row["quick_status"], "ok")
+        self.assertEqual(row["analysis_status"], "pending")
+        self.assertEqual(row["alerted"], 1)
+        self.assertEqual(self.store.pending_analyses(), ["1"])
+        notify.assert_called_once()
+        self.assertEqual(notify.call_args.args[1:3], ("quick", "Person at door"))
+
+    def test_empty_quick_look_still_gets_full_pass_but_no_alert(self):
+        device = {"id": "d3", "name": "Driveway", "slug": "driveway", "kind": "cam"}
+        self.downloaded("1", recorder.iso_utc(), device)
+        quick = {"headline": "Empty path", "label": "Nothing", "people": [], "vehicles": 0,
+                 "notable": False, "nothing_there": True}
+        _, notify = self.run_quick("1", quick)
+        self.assertEqual(self.store.pending_analyses(), ["1"])
+        notify.assert_not_called()
+
+    def test_busy_model_is_skipped_on_the_next_call(self):
+        self.config.gemini_model = "busy,good"
+        client = recorder.GeminiClient(self.config)
+        calls = []
+
+        def fake(url, **_kwargs):
+            calls.append(url)
+            if "busy" in url:
+                raise recorder.GeminiError("429", transient=True)
+            return {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}, {}
+
+        with patch.object(client, "_request_json", side_effect=fake):
+            client._generate([], {})
+            client._generate([], {})
+        self.assertEqual([("busy" in url) for url in calls], [True, False, False])
+
+    def test_webhook_payload_carries_camera_tag_and_signed_image(self):
+        self.downloaded("1", recorder.iso_utc())
+        sent = []
+        with patch.object(recorder, "urlopen", side_effect=lambda request, timeout: sent.append(
+                json.loads(request.data)) or FakeResponse()):
+            self.rec.notify(self.store.get_row("1"), "quick", "Person at door", "Man at door", False)
+        self.assertEqual(sent[0]["tag"], "ring-front-door")
+        self.assertTrue(sent[0]["image"].startswith("https://hass.example.org/ring-events/thumbs/1.jpg?exp="))
+
+    def test_backlog_gets_quick_look_only_and_never_alerts(self):
+        old = recorder.iso_utc(recorder.utc_now() - timedelta(days=5))
+        self.downloaded("1", old)
+        quick = {"headline": "Courier at the door", "label": "Delivery", "people": ["courier"],
+                 "vehicles": 0, "notable": False, "nothing_there": False}
+        _, notify = self.run_quick("1", quick)
+        row = self.store.get_row("1")
+        self.assertEqual(row["analysis_status"], "ok")
+        self.assertEqual(json.loads(row["analysis"])["source"], "quick")
+        notify.assert_not_called()
+
+    def test_indoor_camera_skips_quick_look(self):
+        device = {"id": "d2", "name": "Hallway", "slug": "hallway", "kind": "cam"}
+        self.downloaded("1", recorder.iso_utc(), device)
+        look, _ = self.run_quick("1", {})
+        look.assert_not_called()
+        self.assertEqual(self.store.get_row("1")["quick_status"], "skipped")
+
+    def test_transient_failure_on_fresh_event_falls_through_to_full_pass(self):
+        self.downloaded("1", recorder.iso_utc())
+        with patch.object(recorder, "extract_frame", return_value=b"jpg"), patch.object(
+                self.rec.gemini, "quick_look", side_effect=recorder.GeminiError("429", transient=True)):
+            self.assertIsNone(self.rec.quick_event("1"))
+        self.assertEqual(self.store.get_row("1")["quick_status"], "failed")
+        self.assertEqual(self.store.pending_analyses(), ["1"])
+
+    def test_transient_failure_on_backlog_backs_off(self):
+        self.downloaded("1", recorder.iso_utc(recorder.utc_now() - timedelta(days=5)))
+        with patch.object(recorder, "extract_frame", return_value=b"jpg"), patch.object(
+                self.rec.gemini, "quick_look", side_effect=recorder.GeminiError("429", transient=True)):
+            self.assertEqual(self.rec.quick_event("1"), "backoff")
+        self.assertIsNone(self.store.get_row("1")["quick_status"])
+
+    def test_deep_context_lists_neighbours_and_presence(self):
+        base = recorder.utc_now()
+        self.downloaded("1", recorder.iso_utc(base))
+        self.add_event(self.store, "2", recorder.iso_utc(base + timedelta(seconds=40)),
+                       {"id": "d2", "name": "Hallway", "slug": "hallway", "kind": "cam"})
+        self.store.add_presence("andrei", "home", base - timedelta(minutes=5))
+        context = self.rec.deep_context(self.store.get_row("1"))
+        self.assertIn("Hallway: motion (indoor camera, not analysed)", context)
+        self.assertIn("andrei's phone reported home", context)
+
+    def test_poll_checks_indoor_cameras_only_on_the_slow_cadence(self):
+        devices = [{"id": "a", "name": "Front Door", "slug": "front-door", "kind": "doorbell"},
+                   {"id": "b", "name": "Hallway", "slug": "hallway", "kind": "cam"}]
+        polled = []
+        with patch.object(self.rec.ring, "devices", return_value=devices) as listed, patch.object(
+                self.rec, "history_events", side_effect=lambda d: polled.append(d["slug"])), patch.object(
+                self.rec, "process_pending_recordings"):
+            self.rec.poll_once()
+            self.rec.poll_once()
+        self.assertEqual(polled, ["front-door", "hallway", "front-door"])
+        self.assertEqual(listed.call_count, 1)
+
+
+class ThumbAndPresenceHttpTests(Fixture):
+    def setUp(self):
+        Fixture.setUp(self)
+        import http.client
+        import threading
+
+        self.http = http.client
+        self.config.auth_hosts = {"hass.example.org"}
+        self.server = recorder.RingHTTPServer(("127.0.0.1", 0), self.make_recorder())
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        rec = self.server.recorder
+        rec.config.api_token = "secret"
+        self.add_event(rec.store, "1", recorder.iso_utc())
+        rec.store.mark_downloaded("1", "front-door/1.mp4", 3)
+        thumb = rec.store.thumb_for_event("1")
+        thumb.parent.mkdir(parents=True, exist_ok=True)
+        thumb.write_bytes(b"jpeg")
+
+    request = PublicHostAuthTests.request
+
+    def test_signed_thumb_link_works_without_session_and_expires(self):
+        expires = int(recorder.time.time()) + 60
+        sig = recorder.sign_thumb("secret", "1", expires)
+        response, body = self.request("GET", f"/thumbs/1.jpg?exp={expires}&sig={sig}", "hass.example.org")
+        self.assertEqual((response.status, body), (200, b"jpeg"))
+        bad, _ = self.request("GET", f"/thumbs/1.jpg?exp={expires}&sig={'0' * 64}", "hass.example.org")
+        self.assertEqual(bad.status, 401)
+        past = int(recorder.time.time()) - 1
+        stale, _ = self.request(
+            "GET", f"/thumbs/1.jpg?exp={past}&sig={recorder.sign_thumb('secret', '1', past)}", "hass.example.org")
+        self.assertEqual(stale.status, 401)
+        other, _ = self.request("GET", f"/thumbs/2.jpg?exp={expires}&sig={sig}", "hass.example.org")
+        self.assertEqual(other.status, 401)
+
+    def test_presence_needs_token_and_is_stored(self):
+        body = json.dumps({"person": "andrei", "state": "home"})
+        connection = self.http.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=5)
+        connection.request("POST", "/api/presence", body=body, headers={
+            "Host": "hass.iacob.uk", "Content-Type": "application/json"})
+        self.assertEqual(connection.getresponse().status, 401)
+        connection.close()
+        connection = self.http.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=5)
+        connection.request("POST", "/api/presence", body=body, headers={
+            "Host": "hass.iacob.uk", "Content-Type": "application/json", "Authorization": "Bearer secret"})
+        self.assertEqual(connection.getresponse().status, 200)
+        connection.close()
+        connection = self.http.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=5)
+        connection.request("POST", "/api/presence", body=json.dumps({"person": "cristina", "state": "home"}),
+                           headers={"Host": "hass.example.org", "Content-Type": "application/json",
+                                    "Authorization": "Bearer secret"})
+        self.assertEqual(connection.getresponse().status, 200)
+        connection.close()
+        rows = self.server.recorder.store.presence_between(
+            recorder.utc_now() - timedelta(minutes=1), recorder.utc_now() + timedelta(minutes=1))
+        self.assertEqual([(r["person"], r["state"]) for r in rows], [("andrei", "home"), ("cristina", "home")])
+
+
+class ReviewFixTests(Fixture):
+    def setUp(self):
+        Fixture.setUp(self)
+        self.config.gemini_api_key = "k"
+        self.rec = self.make_recorder()
+        self.store = self.rec.store
+
+    def test_old_event_quick_failure_never_queues_full_pass(self):
+        self.add_event(self.store, "1", recorder.iso_utc(recorder.utc_now() - timedelta(days=5)))
+        clip = self.config.clips_dir / "front-door" / "1.mp4"
+        clip.parent.mkdir(parents=True, exist_ok=True)
+        clip.write_bytes(b"x")
+        self.store.mark_downloaded("1", "front-door/1.mp4", 1)
+        with patch.object(recorder, "extract_frame", side_effect=ValueError("no frame")):
+            self.rec.quick_event("1")
+        row = self.store.get_row("1")
+        self.assertEqual((row["quick_status"], row["analysis_status"]), ("failed", "failed"))
+        self.assertTrue(self.rec.analysis_queue.empty())
+
+    def test_all_models_cooling_raises_transient(self):
+        self.config.gemini_model = "a"
+        client = recorder.GeminiClient(self.config)
+        client._cooldown["a"] = recorder.time.monotonic() + 60
+        with self.assertRaises(recorder.GeminiError) as caught:
+            client._generate([], {})
+        self.assertTrue(caught.exception.transient)
+
+    def test_one_camera_failure_does_not_stop_the_others_or_downloads(self):
+        devices = [{"id": "a", "name": "A", "slug": "front-door", "kind": "d"},
+                   {"id": "b", "name": "B", "slug": "garden", "kind": "d"}]
+        seen = []
+
+        def history(device):
+            seen.append(device["slug"])
+            if device["slug"] == "front-door":
+                raise recorder.URLError("down")
+
+        with patch.object(self.rec.ring, "devices", return_value=devices), patch.object(
+                self.rec, "history_events", side_effect=history), patch.object(
+                self.rec, "process_pending_recordings") as pending:
+            with self.assertRaises(ValueError):
+                self.rec.poll_once()
+        self.assertEqual(seen, ["front-door", "garden"])
+        pending.assert_called_once()
+
+    def test_cached_devices_survive_a_failed_refresh(self):
+        devices = [{"id": "a", "name": "A", "slug": "front-door", "kind": "d"}]
+        with patch.object(self.rec, "history_events"), patch.object(self.rec, "process_pending_recordings"):
+            with patch.object(self.rec.ring, "devices", return_value=devices):
+                self.rec.poll_once()
+            self.rec._last_full_poll = 0
+            with patch.object(self.rec.ring, "devices", side_effect=recorder.URLError("down")):
+                self.rec.poll_once()
+        self.assertEqual(self.rec._devices, devices)
