@@ -723,6 +723,12 @@ class RingEventsCard extends HTMLElement {
       headers: { Authorization: `Bearer ${auth.data.access_token}` },
     });
     if (!response.ok) throw new Error(`session ${response.status}`);
+    // Thumbnails that failed while the session was gone (recorder restart) load again now.
+    for (const img of this.shadowRoot.querySelectorAll(".thumb img[data-retry]")) {
+      img.src = img.dataset.retry;
+      img.removeAttribute("data-retry");
+      img.hidden = false;
+    }
   }
 
   async _get(path, params) {
@@ -995,7 +1001,17 @@ class RingEventsCard extends HTMLElement {
       if (event.thumbUrl) {
         // Hero frame at the moment Ring saw someone: a small JPEG instead of a video per tile.
         const img = el("img", "", { alt: "", loading: "lazy", decoding: "async", src: event.thumbUrl });
-        img.addEventListener("error", () => img.remove(), { once: true });
+        img.addEventListener("load", () => { delete img.dataset.retried; });
+        img.addEventListener("error", () => {
+          if (img.dataset.retried) { img.remove(); return; }
+          img.dataset.retried = "1";
+          img.dataset.retry = img.src;
+          img.hidden = true;
+          // A 401 here means the session lapsed; one refresh logs in and retries them all.
+          if (!this._thumbRetry) {
+            this._thumbRetry = setTimeout(() => { this._thumbRetry = null; if (this.isConnected) this._refresh(); }, 800);
+          }
+        });
         thumb.append(img);
       } else if (event.clipUrl) {
         const video = el("video", "", { muted: "", playsinline: "", preload: "none", "aria-hidden": "true" });

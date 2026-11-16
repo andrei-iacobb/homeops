@@ -79,6 +79,9 @@ QUICK_FRAME_SPACING = 2.0
 DEFAULT_HERO_OFFSET = 3.0
 THUMB_LINK_SECONDS = 7 * 24 * 3600
 FFMPEG_TIMEOUT = 30
+# Each decode of a 2K Ring clip costs tens of MB; a timeline full of uncached thumbnails
+# must queue here instead of OOM-killing the pod.
+FFMPEG_SLOTS = threading.BoundedSemaphore(2)
 # A model that is out of quota or overloaded is skipped for a while instead of costing
 # every clip a failed request first.
 MODEL_COOLDOWN_SECONDS = 900
@@ -161,16 +164,18 @@ def ring_detection(event: dict[str, Any], created: datetime) -> tuple[str | None
 def extract_frame(ffmpeg: str, clip: Path, offset: float, width: int) -> bytes:
     """One JPEG frame; falls back to the first frame when the offset is past the end."""
     for start in (max(offset, 0.0), 0.0):
-        result = subprocess.run(
-            [
-                ffmpeg, "-nostdin", "-loglevel", "error", "-ss", f"{start:.2f}", "-i", str(clip),
-                "-frames:v", "1", "-vf", f"scale={width}:-2", "-q:v", "5",
-                "-f", "image2", "-c:v", "mjpeg", "-",
-            ],
-            capture_output=True,
-            timeout=FFMPEG_TIMEOUT,
-            check=False,
-        )
+        with FFMPEG_SLOTS:
+            result = subprocess.run(
+                [
+                    ffmpeg, "-nostdin", "-loglevel", "error", "-threads", "1",
+                    "-ss", f"{start:.2f}", "-i", str(clip),
+                    "-frames:v", "1", "-vf", f"scale={width}:-2", "-q:v", "5",
+                    "-f", "image2", "-c:v", "mjpeg", "-",
+                ],
+                capture_output=True,
+                timeout=FFMPEG_TIMEOUT,
+                check=False,
+            )
         if result.returncode == 0 and result.stdout:
             return result.stdout
     raise ValueError("ffmpeg could not extract a frame")
