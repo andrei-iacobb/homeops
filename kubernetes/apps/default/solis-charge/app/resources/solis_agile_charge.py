@@ -26,21 +26,46 @@ Up to 3 charge slots and 3 discharge slots, written straight to the\nSolisCloud 
 """
 
 import json
+import math
 import os
+import re
 import sys
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+
+try:
+    from zoneinfo import ZoneInfo
+
+    UK_TIMEZONE = ZoneInfo("Europe/London")
+except (ImportError, KeyError):
+    UK_TIMEZONE = None
 
 # === CONFIG ===
 HASS_URL = os.environ["HASS_URL"]
 HASS_TOKEN = os.environ["HASS_TOKEN"]
 
+
+def _optional_env_float(name, default):
+    try:
+        value = float(os.environ.get(name, default))
+        return value if math.isfinite(value) else None
+    except ValueError:
+        return None
+
 MAX_RATE = float(os.environ.get("MAX_RATE", "0.15"))   # £/kWh inc VAT cap (15p)
 MAX_SLOTS = 3
 CHARGE_CURRENT = 50        # Amps - max for this inverter
 DISCHARGE_CURRENT = 50     # Amps
+
+PROPOSAL_FLOOR_SOC = _optional_env_float("PROPOSAL_FLOOR_SOC", "20")
+BATTERY_CAPACITY_KWH = _optional_env_float("BATTERY_CAPACITY_KWH", "10.0")
+CHARGE_KW = _optional_env_float("CHARGE_KW", "2.6")
+PROPOSAL_ENTITY = "sensor.solis_charge_proposal"
+APPROVED_PLAN_ENTITY = "input_text.solis_charge_approved_plan"
+APPROVED_MAX_RATE = _optional_env_float("APPROVED_MAX_RATE", "0.40")
 
 # Grid-charge during cheap (<= MAX_RATE) slots. Default is 24h (start == end
 # => no time restriction), so every sub-15p slot is taken regardless of time
@@ -323,6 +348,11 @@ def get_rates():
     return []
 
 
+def _planning_cutoff(now):
+    return (now.astimezone(timezone.utc) + timedelta(hours=24)
+            - timedelta(seconds=INVERTER_CLOCK_ABORT_DRIFT_SECONDS))
+
+
 def get_planning_slots():
     """Slots we are allowed to plan against, in chronological order.
 
@@ -342,8 +372,7 @@ def get_planning_slots():
     # Shortened by the largest drift verify_inverter_clock() tolerates: an
     # inverter running 20 min slow reads 18:15 at 18:35, so tomorrow's
     # 18:00-18:30 (ending 23h55m out) would already be live on its clock.
-    cutoff = (now + timedelta(hours=24)
-              - timedelta(seconds=INVERTER_CLOCK_ABORT_DRIFT_SECONDS))
+    cutoff = _planning_cutoff(now)
 
     # A slot lives on the inverter as a bare HH:MM that recurs daily, so
     # writing one arms its NEXT occurrence - which is the slot we actually
@@ -512,10 +541,17 @@ def find_cheap_windows(rates):
     return windows[:MAX_SLOTS]
 
 
+def _bypasses_normal_rate_cap(window):
+    tag = window.get("tag") or ""
+    return "free" in tag or "approved" in tag
+
+
 def safety_check(windows, rates):
     """No rate above MAX_RATE may fall inside any charge window."""
     expensive = [r for r in rates if r["value_inc_vat"] > MAX_RATE]
     for w in windows:
+        if _bypasses_normal_rate_cap(w):
+            continue
         ws = datetime.fromisoformat(w["start"])
         we = datetime.fromisoformat(w["end"])
         for r in expensive:
@@ -554,6 +590,9 @@ def filter_safe_windows(windows, rates, label="window"):
     expensive = [r for r in rates if r["value_inc_vat"] > MAX_RATE]
     safe, dropped = [], []
     for w in windows:
+        if _bypasses_normal_rate_cap(w):
+            safe.append(w)
+            continue
         ws = datetime.fromisoformat(w["start"])
         we = datetime.fromisoformat(w["end"])
         bad = None
@@ -606,6 +645,332 @@ def merge_windows(windows):
         else:
             merged.append((s, e, w))
     return [m[2] for m in merged]
+
+
+# ---------- Charge proposal ----------
+
+PLAN_CODE_WINDOW = re.compile(r"^(\d{8}T\d{4}Z)-(\d{4}Z)$")
+
+
+def _as_utc(value):
+    dt = datetime.fromisoformat(value) if isinstance(value, str) else value
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _last_sunday(year, month):
+    if month == 12:
+        next_month = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        next_month = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+    last_day = next_month - timedelta(days=1)
+    return last_day - timedelta(days=(last_day.weekday() + 1) % 7)
+
+
+def _uk_local_datetime(value):
+    """Convert a UTC instant to UK local time, with no tzdata dependency."""
+    utc_dt = _as_utc(value)
+    if UK_TIMEZONE is not None:
+        return utc_dt.astimezone(UK_TIMEZONE)
+    dst_start = _last_sunday(utc_dt.year, 3).replace(hour=1)
+    dst_end = _last_sunday(utc_dt.year, 10).replace(hour=1)
+    return utc_dt + (timedelta(hours=1) if dst_start <= utc_dt < dst_end
+                     else timedelta())
+
+
+def format_plan_code(windows):
+    """Encode UTC windows into the compact Home Assistant input_text value."""
+    parts = []
+    for window in windows:
+        start = _as_utc(window["start"])
+        end = _as_utc(window["end"])
+        if end <= start or end - start > timedelta(days=1):
+            raise ValueError("plan windows must be between zero and 24 hours")
+        part = f"{start:%Y%m%dT%H%MZ}-{end:%H%MZ}"
+        parsed = parse_plan_code(part)[0]
+        if _as_utc(parsed["start"]) != start or _as_utc(parsed["end"]) != end:
+            raise ValueError("plan window cannot be represented compactly")
+        parts.append(part)
+    return ";".join(parts)
+
+
+def parse_plan_code(value):
+    """Parse a compact proposal or approval code into UTC ISO windows."""
+    if not isinstance(value, str) or not value or len(value) > 254:
+        raise ValueError("empty or oversized plan code")
+    windows = []
+    for part in value.split(";"):
+        match = PLAN_CODE_WINDOW.fullmatch(part)
+        if match is None:
+            raise ValueError("invalid plan code")
+        start = datetime.strptime(match.group(1), "%Y%m%dT%H%MZ").replace(
+            tzinfo=timezone.utc)
+        end_time = datetime.strptime(match.group(2), "%H%MZ").time()
+        end = datetime.combine(start.date(), end_time, tzinfo=timezone.utc)
+        if end <= start:
+            end += timedelta(days=1)
+        windows.append({"start": start.isoformat(), "end": end.isoformat()})
+    return windows
+
+
+def _slots_contiguous(left, right):
+    """True when right continues left inside one inverter slot.
+
+    The inverter runs on UK local time and split_at_inverter_midnight() cuts
+    any window crossing its midnight into two slots, so a boundary at UK
+    local midnight starts a new run. Counting 23:00-02:00 as one run let a
+    three-window plan grow to four slots and lose its last window.
+    """
+    boundary = _as_utc(left["end"])
+    if boundary != _as_utc(right["start"]):
+        return False
+    local = _uk_local_datetime(boundary)
+    return not (local.hour == 0 and local.minute == 0)
+
+
+def _store_cheaper(state, key, candidate):
+    current = state.get(key)
+    if current is None or (candidate[0], candidate[1]) < (current[0], current[1]):
+        state[key] = candidate
+
+
+def select_proposal_slots(pool, requested):
+    """Pick the cheapest requested slots using at most MAX_SLOTS runs.
+
+    The DP state is slots taken, runs used and whether the preceding pool
+    slot was taken. Paths are index tuples, so equal-cost plans prefer the
+    earlier slots. If the requested count is impossible, the largest feasible
+    count is returned.
+    """
+    ordered = sorted(pool, key=lambda slot: _as_utc(slot["start"]))
+    requested = min(max(int(requested), 0), len(ordered))
+    if requested == 0:
+        return []
+
+    states = {(0, 0, False): (Decimal("0"), ())}
+    for index, slot in enumerate(ordered):
+        next_states = {}
+        for (taken, runs, previous_taken), result in states.items():
+            _store_cheaper(next_states, (taken, runs, False), result)
+            if taken >= requested:
+                continue
+            continues_run = (
+                previous_taken and index > 0
+                and _slots_contiguous(ordered[index - 1], slot)
+            )
+            next_runs = runs + (0 if continues_run else 1)
+            if next_runs > MAX_SLOTS:
+                continue
+            candidate = (
+                result[0] + Decimal(str(slot["value_inc_vat"])),
+                result[1] + (index,),
+            )
+            _store_cheaper(
+                next_states, (taken + 1, next_runs, True), candidate)
+        states = next_states
+
+    for target in range(requested, 0, -1):
+        candidates = [
+            result for (taken, runs, _), result in states.items()
+            if taken == target and runs <= MAX_SLOTS
+        ]
+        if candidates:
+            _, indices = min(candidates, key=lambda result: (result[0], result[1]))
+            return [ordered[index] for index in indices]
+    return []
+
+
+def _proposal_windows(selected, kwh_per_slot):
+    if not selected:
+        return []
+    groups = []
+    for slot in selected:
+        if groups and _slots_contiguous(groups[-1][-1], slot):
+            groups[-1].append(slot)
+        else:
+            groups.append([slot])
+
+    windows = []
+    for group in groups:
+        rates = [float(slot["value_inc_vat"]) for slot in group]
+        slots = len(group)
+        windows.append({
+            "start": _as_utc(group[0]["start"]).isoformat(),
+            "end": _as_utc(group[-1]["end"]).isoformat(),
+            "local_start": _uk_local_datetime(group[0]["start"]).strftime("%H:%M"),
+            "local_end": _uk_local_datetime(group[-1]["end"]).strftime("%H:%M"),
+            "slots": slots,
+            "avg_rate_p": round(sum(rates) / slots * 100, 1),
+            "kwh": round(slots * kwh_per_slot, 2),
+            "cost_gbp": round(sum(rates) * kwh_per_slot, 2),
+        })
+    return windows
+
+
+def build_charge_proposal(planning_slots, now=None):
+    """Build the cheapest fill plan and its Home Assistant attributes."""
+    now = _as_utc(now or datetime.now(timezone.utc))
+    if PROPOSAL_FLOOR_SOC is None or not 0 <= PROPOSAL_FLOOR_SOC <= 100:
+        raise ValueError("PROPOSAL_FLOOR_SOC must be between 0 and 100")
+    if (BATTERY_CAPACITY_KWH is None or CHARGE_KW is None
+            or BATTERY_CAPACITY_KWH <= 0 or CHARGE_KW <= 0):
+        raise ValueError("battery capacity and charge power must be positive")
+
+    pool = sorted(
+        [slot for slot in planning_slots if _as_utc(slot["start"]) > now],
+        key=lambda slot: _as_utc(slot["start"]),
+    )
+    kwh_needed = (100 - PROPOSAL_FLOOR_SOC) / 100 * BATTERY_CAPACITY_KWH
+    kwh_per_slot = CHARGE_KW * 0.5
+    requested = min(math.ceil(kwh_needed / kwh_per_slot), len(pool))
+    selected = select_proposal_slots(pool, requested)
+    windows = _proposal_windows(selected, kwh_per_slot)
+    code = format_plan_code(windows) if windows else "none"
+
+    pool_rates = [float(slot["value_inc_vat"]) for slot in pool]
+    selected_rates = [float(slot["value_inc_vat"]) for slot in selected]
+    baseline = sum(pool_rates) / len(pool_rates) if pool_rates else None
+    peak_rates = [
+        float(slot["value_inc_vat"]) for slot in pool
+        if 16 <= _uk_local_datetime(slot["start"]).hour <= 18
+    ]
+    total_kwh = len(selected) * kwh_per_slot
+    estimated_cost = sum(selected_rates) * kwh_per_slot
+    soc_now, _ = _float_state(BATTERY_SOC_ENTITY)
+    attributes = {
+        "friendly_name": "Solis charge proposal",
+        "icon": "mdi:battery-clock",
+        "windows": windows,
+        "total_kwh": round(total_kwh, 2),
+        "est_cost_gbp": round(estimated_cost, 2),
+        "avg_rate_p": (round(sum(selected_rates) / len(selected_rates) * 100, 1)
+                       if selected_rates else None),
+        "baseline_rate_p": round(baseline * 100, 1) if baseline is not None else None,
+        "peak_rate_p": (round(sum(peak_rates) / len(peak_rates) * 100, 1)
+                        if peak_rates else None),
+        "est_saving_gbp": (round(total_kwh * baseline - estimated_cost, 2)
+                           if baseline is not None else None),
+        "kwh_needed": round(kwh_needed, 2),
+        "battery_capacity_kwh": BATTERY_CAPACITY_KWH,
+        "soc_now": round(soc_now, 1) if soc_now is not None else None,
+        "generated_at": now.isoformat(),
+        "horizon_end": (_as_utc(pool[-1]["end"]).isoformat() if pool else None),
+    }
+    return code, attributes
+
+
+def publish_charge_proposal(planning_slots, now=None):
+    code, attributes = build_charge_proposal(planning_slots, now=now)
+    _request("POST", f"{HASS_URL}/api/states/{PROPOSAL_ENTITY}", {
+        "state": code,
+        "attributes": attributes,
+    })
+    print(f"Charge proposal: {code}")
+    return code, attributes
+
+
+# ---------- Approved charge plan ----------
+
+def _known_agile_rates():
+    """Return every currently exposed current-day and next-day rate."""
+    return (
+        _fetch_rates(CURRENT_DAY_RATES, "Current-day approval check")
+        + _fetch_rates(NEXT_DAY_RATES, "Next-day approval check")
+    )
+
+
+def _approved_rate_violation(window, rates):
+    start = _as_utc(window["start"])
+    end = _as_utc(window["end"])
+    for rate_slot in rates:
+        try:
+            rate_start = _as_utc(rate_slot["start"])
+            rate_end = _as_utc(rate_slot["end"])
+            rate = float(rate_slot["value_inc_vat"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if rate_start < end and rate_end > start and rate > APPROVED_MAX_RATE:
+            return rate_slot
+    return None
+
+
+def get_approved_windows(rates=None, now=None):
+    """Return approved windows that are safe to arm on this run."""
+    now = _as_utc(now or datetime.now(timezone.utc))
+    try:
+        state = hass_get_optional(APPROVED_PLAN_ENTITY)
+    except Exception as error:
+        print(f"Approved plan: unavailable ({type(error).__name__})")
+        return []
+    raw = str(state.get("state") or "").strip() if state else ""
+    if not raw or raw.lower() in {"unknown", "unavailable"}:
+        print("Approved plan: none")
+        return []
+    try:
+        windows = parse_plan_code(raw)
+    except (TypeError, ValueError) as error:
+        print(f"Approved plan: invalid ({error})")
+        return []
+
+    print(f"Approved plan: {raw}")
+    remaining = [window for window in windows if _as_utc(window["end"]) > now]
+    if not remaining:
+        print("Approved plan finished, clearing")
+        try:
+            hass_service("input_text", "set_value", {
+                "entity_id": APPROVED_PLAN_ENTITY,
+                "value": "",
+            })
+        except Exception as error:
+            print(f"Approved plan clear failed ({type(error).__name__}): {error}")
+        return []
+    if APPROVED_MAX_RATE is None or APPROVED_MAX_RATE <= 0:
+        print("Approved plan: disabled because APPROVED_MAX_RATE is invalid")
+        return []
+
+    cutoff = _planning_cutoff(now)
+    known_rates = _known_agile_rates() if rates is None else rates
+    approved = []
+    for window in remaining:
+        end = _as_utc(window["end"])
+        if end > cutoff:
+            print(f"Approved window pending (ends past cutoff): "
+                  f"{window['start']} -> {window['end']}")
+            continue
+        bad_rate = _approved_rate_violation(window, known_rates)
+        if bad_rate is not None:
+            print(f"REFUSING approved window {window['start']} -> {window['end']}: "
+                  f"known rate {float(bad_rate['value_inc_vat'])*100:.1f}p exceeds "
+                  f"approved cap {APPROVED_MAX_RATE*100:.1f}p")
+            continue
+        approved.append({**window, "tag": "approved"})
+    return approved
+
+
+def _charge_window_priority(window):
+    tag = window.get("tag") or ""
+    if "free" in tag:
+        return 0
+    if "approved" in tag:
+        return 1
+    return 2
+
+
+def combine_charge_windows(free_windows, approved_windows, cheap_windows):
+    """Merge charge sources, then apply source priority to the slot cap."""
+    combined = merge_windows(free_windows + approved_windows + cheap_windows)
+    combined = split_at_inverter_midnight(combined)
+    if len(combined) > MAX_SLOTS:
+        combined = sorted(
+            combined,
+            key=lambda window: (
+                _charge_window_priority(window),
+                _as_utc(window["start"]),
+            ),
+        )[:MAX_SLOTS]
+        combined.sort(key=lambda window: _as_utc(window["start"]))
+    return combined
 
 
 # ---------- Sanity checks ----------
@@ -741,8 +1106,9 @@ def verify_written_slots_are_cheap(charge_windows, rates):
     rounding mistakes before they reach the inverter (zone handling is
     covered separately by verify_inverter_clock).
 
-    Free-electricity slots skip the rate check (their rates are irrelevant -
-    Octopus pays you to use power) but still get the re-derivation check.
+    Free-electricity and approved slots skip the normal MAX_RATE check but
+    still get the re-derivation check. Approved slots have their separate hard
+    cap checked before they reach this function.
 
     Returns (safe_windows, dropped_windows). A re-derivation mismatch is a
     conversion bug, not a market condition that applies to one window only,
@@ -751,7 +1117,7 @@ def verify_written_slots_are_cheap(charge_windows, rates):
     """
     safe, dropped = [], []
     for w in charge_windows:
-        is_free = "free" in (w.get("tag") or "")
+        bypasses_rate_cap = _bypasses_normal_rate_cap(w)
         start_dt = datetime.fromisoformat(w["start"]).astimezone(timezone.utc)
         end_dt = datetime.fromisoformat(w["end"]).astimezone(timezone.utc)
 
@@ -773,7 +1139,7 @@ def verify_written_slots_are_cheap(charge_windows, rates):
                   f"inverter-clock conversion is wrong.")
             return None, None
 
-        if is_free:
+        if bypasses_rate_cap:
             safe.append(w)
             continue
 
@@ -1392,6 +1758,11 @@ def run_optimizer():
     # HH:MM with no date, so a window that has already passed would simply
     # re-fire at the same clock time tomorrow at rates nobody checked.
     upcoming = get_planning_slots()
+    try:
+        publish_charge_proposal(upcoming, now=now_utc)
+    except Exception as error:
+        print(f"Charge proposal failed ({type(error).__name__}): {error}")
+    approved_windows = get_approved_windows(now=now_utc)
     if not upcoming:
         # Clear rather than just bail. Leaving yesterday's windows programmed
         # means the inverter keeps grid-charging at times nobody has priced;
@@ -1434,16 +1805,11 @@ def run_optimizer():
             print("  PASSED - every window is clean")
         print()
 
-    # Free Electricity always wins - tag and prepend, then merge.
+    # Free Electricity wins, then approved windows, then normal cheap windows.
+    # Merge first so overlaps consume one inverter slot.
     free_tagged = [{"start": s["start"], "end": s["end"], "tag": "free"} for s in free_sessions]
-    all_charge = split_at_inverter_midnight(merge_windows(free_tagged + cheap_windows))
-    # If merging produced > MAX_SLOTS, keep free-electricity ones plus the
-    # earliest (see find_cheap_windows for why earliest, not cheapest).
-    if len(all_charge) > MAX_SLOTS:
-        free_first = [w for w in all_charge if "free" in (w.get("tag") or "")]
-        rest = [w for w in all_charge if "free" not in (w.get("tag") or "")]
-        all_charge = (free_first + rest)[:MAX_SLOTS]
-        all_charge.sort(key=lambda w: datetime.fromisoformat(w["start"]))
+    all_charge = combine_charge_windows(
+        free_tagged, approved_windows, cheap_windows)
 
     # 5. Discharge windows = saving sessions only (for now).
     discharge_windows = [
