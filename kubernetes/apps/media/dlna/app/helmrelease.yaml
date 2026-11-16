@@ -1,0 +1,92 @@
+---
+# minidlna serving the TrueNAS music share to the Denon HEOS AVR (192.168.20.65).
+# HEOS only plays from DLNA servers and finds them by SSDP multicast, which does not
+# cross VLANs, so the pod gets a second leg on VLAN 20 via Multus (kube-system/vlan20).
+# The AVR discovers and streams over that leg; envoy only fronts the status page.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: dlna
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: dlna
+  interval: 1h
+  values:
+    controllers:
+      dlna:
+        # Static macvlan IP/MAC: two pods must never hold it at once.
+        strategy: Recreate
+        pod:
+          annotations:
+            k8s.v1.cni.cncf.io/networks: |
+              [{"name": "vlan20", "namespace": "kube-system",
+                "ips": ["192.168.20.5/24"], "mac": "02:42:c0:a8:14:05"}]
+        containers:
+          app:
+            image:
+              repository: vladgh/minidlna
+              tag: 1.3.13@sha256:cdfa0ed2bc9482b350c387d793ec6e2d41749cdafd9b69a4fe3579c0995469ef
+            env:
+              TZ: Europe/London
+              # The entrypoint starts as root, remaps its minidlna user to these ids,
+              # then drops privileges with su-exec.
+              PUID: "568"
+              PGID: "568"
+              MINIDLNA_MEDIA_DIR: A,/media/music
+              MINIDLNA_FRIENDLY_NAME: TrueNAS Music
+              MINIDLNA_PORT: &port 8200
+              MINIDLNA_INOTIFY: "yes"
+              MINIDLNA_NOTIFY_INTERVAL: "60"
+            probes:
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: *port
+                  periodSeconds: 30
+                  failureThreshold: 3
+              readiness: *probe
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETUID", "SETGID"]
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+    defaultPodOptions:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+    service:
+      app:
+        ports:
+          http:
+            port: *port
+    persistence:
+      music:
+        type: persistentVolumeClaim
+        existingClaim: dlna-music
+        globalMounts:
+          - path: /media/music
+            readOnly: true
+      cache:
+        type: emptyDir
+        globalMounts:
+          - path: /minidlna
+    route:
+      app:
+        hostnames: ["dlna.iacob.uk"]
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *port
