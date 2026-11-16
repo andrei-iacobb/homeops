@@ -1176,7 +1176,8 @@ class RingEventsCard extends HTMLElement {
     let summary = event.analysis.summary;
     if (!summary) {
       summary = event.status === "excluded" ? "Indoor camera: not sent for AI description."
-        : event.status === "pending" ? "Description on its way."
+        : event.status === "pending"
+          ? (Date.now() - event.date.getTime() < 15 * 60 * 1000 ? "Describing this clip..." : "Queued for a description.")
           : event.status === "failed" ? "No description for this clip." : "";
     }
     this._summary.textContent = summary;

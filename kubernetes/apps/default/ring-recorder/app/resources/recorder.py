@@ -1069,6 +1069,9 @@ class GeminiClient:
                     f"{GEMINI_API}/v1beta/models/{quote(model, safe='')}:generateContent",
                     method="POST",
                     payload=payload,
+                    # Only the last model gets the slow retry loop; a busy
+                    # earlier model falls through after one attempt.
+                    retries=index == len(models) - 1,
                 )
                 break
             except GeminiError as error:
@@ -1154,8 +1157,17 @@ class Recorder:
         self.store = EventStore(self.config)
         self.ring = RingClient(self.config, self.metrics)
         self.gemini = GeminiClient(self.config)
-        self.analysis_queue: queue.Queue[str] = queue.Queue()
+        # Newest first, so a backlog never delays today's clips.
+        self.analysis_queue: queue.PriorityQueue[tuple[float, str]] = queue.PriorityQueue()
         self.store.exclude_devices(self.config.gemini_exclude)
+
+    def enqueue_analysis(self, event_id: str) -> None:
+        row = self.store.get_row(event_id)
+        try:
+            when = datetime.fromisoformat(str(row["created_at"])).timestamp() if row else 0.0
+        except ValueError:
+            when = 0.0
+        self.analysis_queue.put((-when, event_id))
 
     def history_events(self, device: dict[str, str]) -> list[dict[str, Any]]:
         discovered: list[dict[str, Any]] = []
@@ -1255,7 +1267,7 @@ class Recorder:
             self.store.mark_downloaded(event_id, relative.as_posix(), size)
             self.metrics.archived()
             if self.config.gemini_api_key:
-                self.analysis_queue.put(event_id)
+                self.enqueue_analysis(event_id)
 
     def poll_once(self) -> None:
         devices = self.ring.devices()
@@ -1290,10 +1302,10 @@ class Recorder:
         while not stop.is_set():
             if time.monotonic() >= next_sweep:
                 for event_id in self.store.pending_analyses():
-                    self.analysis_queue.put(event_id)
+                    self.enqueue_analysis(event_id)
                 next_sweep = time.monotonic() + ANALYSIS_SWEEP_SECONDS
             try:
-                event_id = self.analysis_queue.get(timeout=1)
+                _, event_id = self.analysis_queue.get(timeout=1)
             except queue.Empty:
                 continue
             try:
@@ -1853,7 +1865,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         if not self.server.recorder.store.requeue_analysis(event_id):
             self._error(HTTPStatus.NOT_FOUND, "event or clip not found")
             return
-        self.server.recorder.analysis_queue.put(event_id)
+        self.server.recorder.enqueue_analysis(event_id)
         self._send_json(HTTPStatus.ACCEPTED, {"event_id": event_id, "status": "pending"})
 
     def log_message(self, fmt: str, *args: Any) -> None:
