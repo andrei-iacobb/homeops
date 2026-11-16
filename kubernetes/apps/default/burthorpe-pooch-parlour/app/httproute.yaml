@@ -9,8 +9,29 @@ spec:
       namespace: network
       sectionName: https
   hostnames:
-    - bpp.iacobapp.dev
+    - burthorpepoochparlour.com
   rules:
     - backendRefs:
         - name: burthorpe-pooch-parlour
           port: 3000
+---
+# Old preview hostname and www both 301 to the canonical apex, keeping the path.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: burthorpe-pooch-parlour-redirect
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - bpp.iacobapp.dev
+    - www.burthorpepoochparlour.com
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            hostname: burthorpepoochparlour.com
+            statusCode: 301
