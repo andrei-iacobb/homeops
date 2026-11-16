@@ -48,6 +48,9 @@ spec:
               envFrom:
                 - secretRef:
                     name: solis-charge-secret
+              env:
+                - name: BATTERY_CAPACITY_KWH
+                  value: "10.5" # Felicity FLA48200-P
               volumeMounts:
                 - name: script
                   mountPath: /scripts
