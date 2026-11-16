@@ -36,6 +36,8 @@ spec:
               MINIDLNA_MEDIA_DIR: A,/media/music
               MINIDLNA_FRIENDLY_NAME: TrueNAS Music
               MINIDLNA_PORT: &port 8200
+              # inotify only sees writes made through this NFS mount; lidarr and the
+              # SMB share write on other clients, hence the nightly rescan below.
               MINIDLNA_INOTIFY: "yes"
               MINIDLNA_NOTIFY_INTERVAL: "60"
             probes:
@@ -53,18 +55,63 @@ spec:
               readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
-                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETUID", "SETGID"]
+                # KILL: tini (root) must signal minidlnad after su-exec drops to 568.
+                add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "KILL", "SETUID", "SETGID"]
             resources:
               requests:
                 cpu: 10m
                 memory: 64Mi
               limits:
                 memory: 512Mi
+      rescan:
+        # minidlna has no periodic rescan and /minidlna is an emptyDir, so a restart
+        # rebuilds the library from the NFS share.
+        type: cronjob
+        cronjob:
+          schedule: "30 4 * * *"
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 1
+        serviceAccount:
+          identifier: rescan
+        pod:
+          automountServiceAccountToken: true
+        containers:
+          app:
+            image:
+              repository: registry.k8s.io/kubectl
+              tag: v1.36.6@sha256:0650805141538d13ccbb6bb9e0dd647bc415bc002898357970211c4d47224396
+            command: ["kubectl", "rollout", "restart", "deployment/dlna"]
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+              runAsNonRoot: true
+              runAsUser: 65534
+    serviceAccount:
+      rescan: {}
+    rbac:
+      roles:
+        rescan:
+          type: Role
+          rules:
+            - apiGroups: ["apps"]
+              resources: ["deployments"]
+              resourceNames: ["dlna"]
+              verbs: ["get", "patch"]
+      bindings:
+        rescan:
+          type: RoleBinding
+          roleRef:
+            identifier: rescan
+          subjects:
+            - identifier: rescan
     defaultPodOptions:
       securityContext:
         seccompProfile: { type: RuntimeDefault }
     service:
       app:
+        controller: dlna
         ports:
           http:
             port: *port
@@ -72,13 +119,17 @@ spec:
       music:
         type: persistentVolumeClaim
         existingClaim: dlna-music
-        globalMounts:
-          - path: /media/music
-            readOnly: true
+        advancedMounts:
+          dlna:
+            app:
+              - path: /media/music
+                readOnly: true
       cache:
         type: emptyDir
-        globalMounts:
-          - path: /minidlna
+        advancedMounts:
+          dlna:
+            app:
+              - path: /minidlna
     route:
       app:
         hostnames: ["dlna.iacob.uk"]
