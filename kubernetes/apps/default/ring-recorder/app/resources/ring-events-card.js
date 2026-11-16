@@ -17,7 +17,7 @@
  * Served by ring-recorder at /card.js. Vanilla ES2020, no dependencies.
  *
  *   type: custom:ring-events-card
- *   base_url: https://hass.iacob.uk/ring-events   # optional
+ *   base_url: https://hass.iacob.uk/ring-events   # optional; default picks same-origin or LAN
  *   mode: full | compact                          # compact = Home dashboard
  *   camera: front-door                            # starting camera, or "all"
  *   cameras: [front-door, driveway, garden]       # optional pill order/subset
@@ -25,7 +25,15 @@
  *   more_path: /lovelace/security                 # compact: "All cameras" link
  */
 
-const DEFAULT_BASE_URL = "https://hass.iacob.uk/ring-events";
+const LAN_BASE_URL = "https://hass.iacob.uk/ring-events";
+
+// Opened through the public HA hostname: use the same-origin route (HA login gated).
+// Opened on the LAN (IP or *.local): talk to the LAN route directly.
+function defaultBaseUrl() {
+  const host = location.hostname;
+  const lan = /^(\d+\.){3}\d+$/.test(host) || host.endsWith(".local") || host === "localhost" || host === "hass.iacob.uk";
+  return location.protocol === "https:" && !lan ? `${location.origin}/ring-events` : LAN_BASE_URL;
+}
 const REFRESH_SECONDS = 60;
 const PAGE_LIMIT = 100;
 const TIME_ZONE = "Europe/London";
@@ -504,7 +512,7 @@ class RingEventsCard extends HTMLElement {
     }
     if (config.cameras && !Array.isArray(config.cameras)) throw new Error("ring-events-card: cameras must be a list");
     this._config = {
-      baseUrl: String(config.base_url || DEFAULT_BASE_URL).replace(/\/+$/, ""),
+      baseUrl: String(config.base_url || defaultBaseUrl()).replace(/\/+$/, ""),
       mode: config.mode || "full",
       camera: slugify(config.camera || "front-door") || "front-door",
       cameras: Array.isArray(config.cameras) ? config.cameras.map(slugify).filter(Boolean) : null,
@@ -675,8 +683,35 @@ class RingEventsCard extends HTMLElement {
     return url.toString();
   }
 
+  _sameOrigin() {
+    return new URL(this._config.baseUrl).origin === location.origin;
+  }
+
+  // Same-origin route sits behind a session cookie; trade the HA login token for one.
+  async _login() {
+    const auth = this._hass && this._hass.auth;
+    if (!auth) throw new Error("login needs Home Assistant");
+    if (auth.expired && auth.refreshAccessToken) await auth.refreshAccessToken();
+    const response = await fetch(`${this._config.baseUrl}/api/session`, {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${auth.data.access_token}` },
+    });
+    if (!response.ok) throw new Error(`session ${response.status}`);
+  }
+
   async _get(path, params) {
-    const response = await fetch(this._url(path, params), { mode: "cors", cache: "no-store", credentials: "omit" });
+    const same = this._sameOrigin();
+    const go = () => fetch(this._url(path, params), {
+      mode: "cors", cache: "no-store", credentials: same ? "same-origin" : "omit",
+    });
+    let response = await go();
+    if (response.status === 401 && same) {
+      if (!this._loginPromise) this._loginPromise = this._login().finally(() => { this._loginPromise = null; });
+      await this._loginPromise;
+      response = await go();
+    }
     if (!response.ok) throw new Error(`${path} ${response.status}`);
     return response.json();
   }
@@ -688,6 +723,10 @@ class RingEventsCard extends HTMLElement {
     const payload = await this._get("/api/events", params);
     const rows = Array.isArray(payload) ? payload : (payload && payload.events) || [];
     let events = rows.map(normaliseEvent).filter(Boolean);
+    // Server builds clip URLs for the LAN host; serve them from whichever route we use.
+    for (const event of events) {
+      if (event.clipUrl) event.clipUrl = `${this._config.baseUrl}/clips/${encodeURIComponent(event.id)}.mp4`;
+    }
     if (this._camera === "all" && this._config.cameras) {
       events = events.filter((event) => this._config.cameras.includes(event.device));
     }
@@ -799,6 +838,7 @@ class RingEventsCard extends HTMLElement {
       const current = this._selectedEvent();
       if (current && !current.clipUrl && !page.events.some((event) => event.id === current.id)) {
         const one = normaliseEvent(await this._get(`/api/events/${encodeURIComponent(current.id)}`));
+        if (one && one.clipUrl) one.clipUrl = `${this._config.baseUrl}/clips/${encodeURIComponent(one.id)}.mp4`;
         if (one) page.events.push(one);
       }
       if (seq !== this._fetchSeq || refreshSeq !== this._refreshSeq || this._loading || !this.isConnected) return;

@@ -63,6 +63,10 @@ spec:
                   optional: true
             - name: PUBLIC_BASE_URL
               value: "https://hass.iacob.uk/ring-events"
+            - name: AUTH_HOSTS
+              value: "hass.${SECRET_DOMAIN}"
+            - name: HA_URL
+              value: "http://homeassistant.external-services.svc.cluster.local:8123"
             - name: STORAGE_DIR
               value: "/data"
             - name: INDEX_PATH

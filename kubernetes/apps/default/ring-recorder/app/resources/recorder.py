@@ -207,6 +207,12 @@ class Config:
         self.port = int(os.environ.get("PORT", "8080"))
         self.index_path = Path(os.environ.get("INDEX_PATH", "/app/index.html"))
         self.card_path = Path(os.environ.get("CARD_PATH", "/app/ring-events-card.js"))
+        # Hosts reachable from the internet. Every request on them needs a session
+        # obtained by proving a valid Home Assistant login (POST /api/session).
+        self.auth_hosts = {
+            host.strip().lower() for host in os.environ.get("AUTH_HOSTS", "").split(",") if host.strip()
+        }
+        self.ha_url = os.environ.get("HA_URL", "").rstrip("/")
 
     @property
     def database_path(self) -> Path:
@@ -1346,12 +1352,99 @@ class Recorder:
             stop.wait(3600)
 
 
+SESSION_COOKIE = "rr_session"
+# Short and renewable: the card trades a fresh HA token for a new session on any 401,
+# so an HA logout or token revocation stops clip access within the hour.
+SESSION_TTL_SECONDS = 3600
+MAX_SESSIONS = 500
+# Rejected HA token checks would look like brute force to Home Assistant (ip_ban) and come
+# from this pod, so cap them per client and overall.
+LOGIN_FAILURE_LIMIT = 5
+LOGIN_GLOBAL_FAILURE_LIMIT = 30
+LOGIN_FAILURE_WINDOW_SECONDS = 300
+
+
+class SessionStore:
+    """In-memory browser sessions for AUTH_HOSTS. A restart logs everyone out; the card re-auths."""
+
+    def __init__(self) -> None:
+        self._sessions: dict[str, float] = {}
+        self._failures: list[tuple[float, str]] = []
+        self._inflight: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    def reserve_login(self, client: str) -> bool:
+        """Atomically claim a login attempt; in-flight checks count as potential failures."""
+        cutoff = time.monotonic() - LOGIN_FAILURE_WINDOW_SECONDS
+        with self._lock:
+            self._failures = [entry for entry in self._failures if entry[0] > cutoff]
+            mine = sum(1 for _, who in self._failures if who == client) + self._inflight.get(client, 0)
+            total = len(self._failures) + sum(self._inflight.values())
+            if mine >= LOGIN_FAILURE_LIMIT or total >= LOGIN_GLOBAL_FAILURE_LIMIT:
+                return False
+            self._inflight[client] = self._inflight.get(client, 0) + 1
+            return True
+
+    def finish_login(self, client: str, *, rejected: bool) -> None:
+        with self._lock:
+            left = self._inflight.get(client, 1) - 1
+            if left > 0:
+                self._inflight[client] = left
+            else:
+                self._inflight.pop(client, None)
+            if rejected:
+                self._failures.append((time.monotonic(), client))
+
+    def revoke(self, token: str) -> None:
+        with self._lock:
+            self._sessions.pop(token, None)
+
+    def create(self) -> str:
+        token = base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip("=")
+        now = time.monotonic()
+        with self._lock:
+            self._sessions = {key: expiry for key, expiry in self._sessions.items() if expiry > now}
+            if len(self._sessions) >= MAX_SESSIONS:
+                oldest = min(self._sessions, key=self._sessions.__getitem__)
+                del self._sessions[oldest]
+            self._sessions[token] = now + SESSION_TTL_SECONDS
+        return token
+
+    def valid(self, token: str) -> bool:
+        if not token:
+            return False
+        with self._lock:
+            expiry = self._sessions.get(token)
+            if expiry is None:
+                return False
+            if expiry <= time.monotonic():
+                del self._sessions[token]
+                return False
+            return True
+
+
+def validate_ha_token(ha_url: str, token: str) -> str:
+    """'ok' when Home Assistant accepts the bearer token, 'rejected' on 401/403, else 'error'."""
+    if not ha_url or not token or len(token) > 4096:
+        return "rejected"
+    request = Request(f"{ha_url}/api/", headers={"Authorization": f"Bearer {token}"})
+    try:
+        with urlopen(request, timeout=10) as response:
+            return "ok" if response.status == 200 else "error"
+    except HTTPError as error:
+        return "rejected" if error.code in (401, 403) else "error"
+    except (URLError, OSError, TimeoutError) as error:
+        LOG.warning("Home Assistant token check failed: %s", type(error).__name__)
+        return "error"
+
+
 class RingHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, address: tuple[str, int], recorder: Recorder) -> None:
         super().__init__(address, RequestHandler)
         self.recorder = recorder
+        self.sessions = SessionStore()
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -1409,6 +1502,53 @@ class RequestHandler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def _on_auth_host(self) -> bool:
+        host = self.headers.get("Host", "").rsplit(":", 1)[0].strip().lower()
+        return host in self.server.recorder.config.auth_hosts
+
+    def _session_token(self) -> str:
+        for part in self.headers.get("Cookie", "").split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == SESSION_COOKIE:
+                return value
+        return ""
+
+    def _logged_in(self) -> bool:
+        """Gate for AUTH_HOSTS; LAN hosts stay open as before."""
+        if not self._on_auth_host() or self.server.sessions.valid(self._session_token()):
+            return True
+        self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "login required"})
+        return False
+
+    def _create_session(self) -> None:
+        header = self.headers.get("Authorization", "")
+        supplied = header[len("Bearer ") :] if header.startswith("Bearer ") else ""
+        sessions = self.server.sessions
+        if not supplied:
+            self._send_json(HTTPStatus.UNAUTHORIZED, {"error": "unauthorized"})
+            return
+        # Cloudflare sets CF-Connecting-IP; the public route is only reachable through its tunnel.
+        client = self.headers.get("CF-Connecting-IP", "").strip() or self.client_address[0]
+        if not sessions.reserve_login(client):
+            self._send_json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "too many failed logins, try later"})
+            return
+        result = "error"
+        try:
+            result = validate_ha_token(self.server.recorder.config.ha_url, supplied)
+        finally:
+            sessions.finish_login(client, rejected=result == "rejected")
+        if result != "ok":
+            status = HTTPStatus.UNAUTHORIZED if result == "rejected" else HTTPStatus.BAD_GATEWAY
+            self._send_json(status, {"error": "unauthorized" if result == "rejected" else "home assistant unavailable"})
+            return
+        sessions.revoke(self._session_token())
+        token = sessions.create()
+        cookie = (
+            f"{SESSION_COOKIE}={token}; Path=/ring-events; Max-Age={SESSION_TTL_SECONDS}; "
+            "HttpOnly; Secure; SameSite=Strict"
+        )
+        self._send(HTTPStatus.OK, json_bytes({"ok": True}), extra_headers={"Set-Cookie": cookie})
+
     def _read_json(self) -> dict[str, Any] | None:
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -1451,6 +1591,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
         query = parse_qs(parsed.query)
+        if path in {"/", "/index.html"} and not self._logged_in():
+            return
         if path in {"/", "/index.html"}:
             self._serve_asset(
                 self.server.recorder.config.index_path,
@@ -1478,6 +1620,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 HTTPStatus.OK if ready else HTTPStatus.SERVICE_UNAVAILABLE,
                 {"ready": ready},
             )
+        elif not self._logged_in():
+            return
         elif path == "/metrics":
             self._send(
                 HTTPStatus.OK,
@@ -1500,9 +1644,12 @@ class RequestHandler(BaseHTTPRequestHandler):
             self._error(HTTPStatus.NOT_FOUND, "not found")
 
     def do_POST(self) -> None:  # noqa: N802
-        if not self._authorized():
-            return
         path = unquote(urlparse(self.path).path)
+        if path == "/api/session":
+            self._create_session()
+            return
+        if not self._logged_in() or not self._authorized():
+            return
         if path == "/api/analyze":
             payload = self._read_json()
             if payload is not None:

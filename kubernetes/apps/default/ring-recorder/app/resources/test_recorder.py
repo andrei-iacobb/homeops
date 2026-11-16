@@ -498,3 +498,101 @@ class ExcludedDeviceTests(unittest.TestCase):
                 self.assertIsNone(rec.analyse_event("1"))
             analyse.assert_not_called()
             mark.assert_called_once_with("1", "excluded", None)
+
+
+class PublicHostAuthTests(RecorderTestCase):
+    def setUp(self):
+        super().setUp()
+        import http.client
+        import threading
+
+        self.http = http.client
+        self.config.auth_hosts = {"hass.example.org"}
+        self.config.ha_url = "http://ha.invalid:8123"
+        self.config.card_path.write_text("// card")
+        rec = self.make_recorder()
+        self.server = recorder.RingHTTPServer(("127.0.0.1", 0), rec)
+        thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+
+    def request(self, method, path, host, headers=None):
+        connection = self.http.HTTPConnection("127.0.0.1", self.server.server_address[1], timeout=5)
+        connection.request(method, path, headers={"Host": host, **(headers or {})})
+        response = connection.getresponse()
+        body = response.read()
+        connection.close()
+        return response, body
+
+    def test_lan_host_stays_open(self):
+        response, _ = self.request("GET", "/api/events", "hass.iacob.uk")
+        self.assertEqual(response.status, 200)
+
+    def test_public_host_requires_session_but_serves_card(self):
+        response, _ = self.request("GET", "/api/events", "hass.example.org")
+        self.assertEqual(response.status, 401)
+        response, _ = self.request("GET", "/clips/abc.mp4", "hass.example.org:443")
+        self.assertEqual(response.status, 401)
+        response, _ = self.request("GET", "/", "hass.example.org")
+        self.assertEqual(response.status, 401)
+        response, _ = self.request("GET", "/card.js", "hass.example.org")
+        self.assertEqual(response.status, 200)
+
+    def test_session_needs_valid_home_assistant_token(self):
+        with patch.object(recorder, "validate_ha_token", return_value="rejected") as check:
+            response, _ = self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer bad"})
+        self.assertEqual(response.status, 401)
+        check.assert_called_once_with("http://ha.invalid:8123", "bad")
+        self.assertIsNone(response.getheader("Set-Cookie"))
+
+    def test_session_cookie_unlocks_public_host(self):
+        with patch.object(recorder, "validate_ha_token", return_value="ok"):
+            response, _ = self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer good"})
+        self.assertEqual(response.status, 200)
+        cookie = response.getheader("Set-Cookie")
+        self.assertIn("HttpOnly", cookie)
+        self.assertIn("Secure", cookie)
+        self.assertIn("SameSite=Strict", cookie)
+        value = cookie.split(";", 1)[0]
+        response, _ = self.request("GET", "/api/events", "hass.example.org", {"Cookie": value})
+        self.assertEqual(response.status, 200)
+        response, _ = self.request("GET", "/api/events", "hass.example.org", {"Cookie": "rr_session=forged"})
+        self.assertEqual(response.status, 401)
+
+    def test_validate_ha_token_rejects_without_config_or_on_http_error(self):
+        self.assertEqual(recorder.validate_ha_token("", "token"), "rejected")
+        self.assertEqual(recorder.validate_ha_token("http://ha", ""), "rejected")
+        error = recorder.HTTPError("http://ha/api/", 401, "Unauthorized", {}, None)
+        with patch.object(recorder, "urlopen", side_effect=error):
+            self.assertEqual(recorder.validate_ha_token("http://ha", "token"), "rejected")
+        busy = recorder.HTTPError("http://ha/api/", 502, "Bad Gateway", {}, None)
+        with patch.object(recorder, "urlopen", side_effect=busy):
+            self.assertEqual(recorder.validate_ha_token("http://ha", "token"), "error")
+        with patch.object(recorder, "urlopen", return_value=FakeResponse(b"{}", status=200)):
+            self.assertEqual(recorder.validate_ha_token("http://ha", "token"), "ok")
+
+    def test_failed_logins_stop_reaching_home_assistant(self):
+        with patch.object(recorder, "validate_ha_token", return_value="rejected") as check:
+            for _ in range(recorder.LOGIN_FAILURE_LIMIT):
+                self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer bad"})
+            response, _ = self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer bad"})
+        self.assertEqual(response.status, 429)
+        self.assertEqual(check.call_count, recorder.LOGIN_FAILURE_LIMIT)
+
+    def test_login_limit_is_per_client_and_ignores_ha_outages(self):
+        with patch.object(recorder, "validate_ha_token", return_value="rejected"):
+            for _ in range(recorder.LOGIN_FAILURE_LIMIT):
+                self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer bad", "CF-Connecting-IP": "203.0.113.9"})
+        with patch.object(recorder, "validate_ha_token", return_value="ok"):
+            response, _ = self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer good", "CF-Connecting-IP": "198.51.100.4"})
+        self.assertEqual(response.status, 200)
+        with patch.object(recorder, "validate_ha_token", return_value="error"):
+            for _ in range(recorder.LOGIN_FAILURE_LIMIT + 1):
+                response, _ = self.request("POST", "/api/session", "hass.example.org", {"Authorization": "Bearer x", "CF-Connecting-IP": "198.51.100.5"})
+        self.assertEqual(response.status, 502)
+
+    def test_public_post_needs_session_even_with_api_token(self):
+        self.server.recorder.config.api_token = "secret"
+        response, _ = self.request("POST", "/api/analyze", "hass.example.org", {"Authorization": "Bearer secret", "Content-Type": "application/json"})
+        self.assertEqual(response.status, 401)
