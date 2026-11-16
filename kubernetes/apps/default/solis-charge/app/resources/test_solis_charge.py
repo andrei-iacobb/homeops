@@ -124,6 +124,27 @@ class ProposalTests(unittest.TestCase):
                 "01:00",
             )
 
+    def test_proposal_end_soc_when_pool_cannot_fill_battery(self):
+        now = solis.datetime(2026, 11, 16, 23, tzinfo=solis.timezone.utc)
+        pool = [
+            slot("2026-11-17T00:00:00+00:00",
+                 "2026-11-17T00:30:00+00:00", 0.10),
+            slot("2026-11-17T00:30:00+00:00",
+                 "2026-11-17T01:00:00+00:00", 0.12),
+            slot("2026-11-17T05:00:00+00:00",
+                 "2026-11-17T05:30:00+00:00", 0.11),
+        ]
+        with patch.object(solis, "PROPOSAL_FLOOR_SOC", 20), patch.object(
+                solis, "BATTERY_CAPACITY_KWH", 10.5), patch.object(
+                solis, "CHARGE_KW", 2.6), patch.object(
+                solis, "_float_state", return_value=(None, None)):
+            _, attributes = solis.build_charge_proposal(pool, now=now)
+
+        self.assertEqual([w["soc_after_pct"] for w in attributes["windows"]],
+                         [45, 57])
+        self.assertEqual(attributes["est_end_soc_pct"], 57)
+        self.assertEqual(attributes["est_kwh_stored"], 3.9)
+
     def test_proposal_publishes_costs_comparison_and_soc(self):
         now = solis.datetime(2026, 11, 17, tzinfo=solis.timezone.utc)
         pool = [
@@ -147,6 +168,9 @@ class ProposalTests(unittest.TestCase):
         self.assertEqual(attributes["baseline_rate_p"], 15.0)
         self.assertEqual(attributes["est_saving_gbp"], 0.07)
         self.assertEqual(attributes["soc_now"], 42.3)
+        self.assertEqual(attributes["start_soc_pct"], 50)
+        self.assertEqual(attributes["est_end_soc_pct"], 100)
+        self.assertEqual(attributes["windows"][0]["soc_after_pct"], 100)
         self.assertEqual(attributes["horizon_end"], "2026-11-17T01:30:00+00:00")
         request.assert_called_once_with(
             "POST", f"{solis.HASS_URL}/api/states/{solis.PROPOSAL_ENTITY}", {

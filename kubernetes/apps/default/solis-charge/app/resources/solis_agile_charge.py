@@ -827,6 +827,12 @@ def build_charge_proposal(planning_slots, now=None):
     selected = select_proposal_slots(pool, requested)
     windows = _proposal_windows(selected, kwh_per_slot)
     code = format_plan_code(windows) if windows else "none"
+    # Expected state of charge, assuming the battery sits at the floor when the
+    # first window opens (the winter norm) and stops taking charge at 100%.
+    soc = PROPOSAL_FLOOR_SOC
+    for window in windows:
+        soc = min(100.0, soc + window["slots"] * kwh_per_slot / BATTERY_CAPACITY_KWH * 100)
+        window["soc_after_pct"] = round(soc)
 
     pool_rates = [float(slot["value_inc_vat"]) for slot in pool]
     selected_rates = [float(slot["value_inc_vat"]) for slot in selected]
@@ -852,6 +858,9 @@ def build_charge_proposal(planning_slots, now=None):
         "est_saving_gbp": (round(total_kwh * baseline - estimated_cost, 2)
                            if baseline is not None else None),
         "kwh_needed": round(kwh_needed, 2),
+        "start_soc_pct": round(PROPOSAL_FLOOR_SOC),
+        "est_end_soc_pct": round(soc),
+        "est_kwh_stored": round(min(total_kwh, kwh_needed), 2),
         "battery_capacity_kwh": BATTERY_CAPACITY_KWH,
         "soc_now": round(soc_now, 1) if soc_now is not None else None,
         "generated_at": now.isoformat(),
