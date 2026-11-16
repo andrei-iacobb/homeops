@@ -253,6 +253,21 @@ class RecorderTestCase(unittest.TestCase):
         self.assertIsNone(store.clip_for_event("escape"))
         self.assertTrue(outside.exists())
 
+    def test_zero_retention_keeps_footage_forever(self):
+        self.config.retention_days = 0
+        store = recorder.EventStore(self.config)
+        now = datetime(2026, 11, 16, 12, tzinfo=timezone.utc)
+        self.add_event(store, "ancient", recorder.iso_utc(now - timedelta(days=4000)))
+        relative = Path("front-door/2015-11-16/ancient.mp4")
+        path = self.config.clips_dir / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"clip")
+        store.mark_downloaded("ancient", relative.as_posix(), 4)
+
+        self.assertEqual(store.prune(now), 0)
+        self.assertIsNotNone(store.get_row("ancient"))
+        self.assertTrue(path.exists())
+
     def test_retention_prunes_old_rows_and_files_only(self):
         self.config.retention_days = 10
         store = recorder.EventStore(self.config)

@@ -89,8 +89,9 @@ spec:
               value: "/tmp"
             - name: POLL_SECONDS
               value: "60"
+            # 0 = keep every clip forever on the NAS (Ring deletes its own copies).
             - name: RETENTION_DAYS
-              value: "180"
+              value: "0"
             - name: TIME_ZONE
               value: "Europe/London"
             # Outdoor cameras polled this often so a clip is picked up soon after it ends.

@@ -269,7 +269,10 @@ class Config:
         self.storage_dir = Path(os.environ.get("STORAGE_DIR", "/data"))
         self.public_base_url = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
         self.poll_seconds = max(10, int(os.environ.get("POLL_SECONDS", "60")))
-        self.retention_days = max(1, int(os.environ.get("RETENTION_DAYS", "180")))
+        # 0 keeps footage forever; Ring itself only keeps it for its plan's window.
+        self.retention_days = int(os.environ.get("RETENTION_DAYS", "180"))
+        if self.retention_days < 0:
+            raise ValueError("RETENTION_DAYS must be 0 (forever) or a positive number of days")
         # Device slugs whose footage must never be sent to Gemini (indoor cameras).
         self.gemini_exclude = {
             slug.strip() for slug in os.environ.get("GEMINI_EXCLUDE_DEVICES", "").split(",") if slug.strip()
@@ -869,6 +872,13 @@ class EventStore:
         return item
 
     def prune(self, now: datetime | None = None) -> int:
+        if not self.config.retention_days:
+            with self.connect() as connection:
+                connection.execute(
+                    "DELETE FROM presence WHERE at < ?",
+                    (iso_utc((now or utc_now()) - PRESENCE_RETENTION),),
+                )
+            return 0
         cutoff = iso_utc((now or utc_now()) - timedelta(days=self.config.retention_days))
         with self.connect() as connection:
             rows = connection.execute(
