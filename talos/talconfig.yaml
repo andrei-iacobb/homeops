@@ -47,6 +47,10 @@ nodes:
         addresses:
           - "10.10.20.12/24"
         mtu: 9000
+      # ens21: VLAN 20 (Trusted) leg for Multus macvlan pods (dlna). Link up, no host
+      # address on purpose; IPv6 is disabled on it in machine-sysctls.yaml.
+      - interface: "ens21"
+        dhcp: false
 # Global patches
 patches:
   - "@./patches/global/machine-files.yaml"
