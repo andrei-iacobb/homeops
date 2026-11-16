@@ -225,6 +225,9 @@ const CARD_STYLE = `
     object-fit: contain;
     background: #090909;
   }
+  .player-empty[hidden] {
+    display: none;
+  }
   .player-empty {
     position: absolute;
     inset: 0;
@@ -571,6 +574,10 @@ class RingEventsCard extends HTMLElement {
     this._dateInput.addEventListener("change", () => this._jumpToDate(this._dateInput.value));
     this._card.addEventListener("keydown", this._onKeyDown);
     this._timeline.addEventListener("scroll", this._onScroll, { passive: true });
+    const markUserScroll = () => { this._userScrolled = true; };
+    for (const type of ["wheel", "pointerdown", "touchstart", "keydown"]) {
+      this._timeline.addEventListener(type, markUserScroll, { passive: true });
+    }
     this._timeline.addEventListener("wheel", this._onWheel, { passive: false });
     this._renderAll();
   }
@@ -635,7 +642,9 @@ class RingEventsCard extends HTMLElement {
 
   _language() {
     const hass = this._hass;
-    return (hass && ((hass.locale && hass.locale.language) || hass.language)) || undefined;
+    const language = (hass && ((hass.locale && hass.locale.language) || hass.language)) || "en-GB";
+    // HA reports plain "en"; Intl then defaults to US 12-hour dates. This is a UK house.
+    return language === "en" ? "en-GB" : language;
   }
 
   _startTimer() {
@@ -717,6 +726,10 @@ class RingEventsCard extends HTMLElement {
       this._loaded = true;
       this._renderAll();
       this._setStatus(this._events.length ? `${this._events.length} events loaded` : "No events match these filters yet.");
+      // Older events load only after the person scrolls the strip themselves:
+      // programmatic scrolls (parking at the newest end, centring the selected
+      // tile) start from scrollLeft 0 and would otherwise page in history.
+      this._userScrolled = false;
       window.requestAnimationFrame(() => this._scrollToEnd(false));
     } catch (error) {
       if (error && error.name === "AbortError") return;
@@ -746,7 +759,7 @@ class RingEventsCard extends HTMLElement {
       this._renderTimeline();
       this._renderMain();
       window.requestAnimationFrame(() => {
-        this._timeline.scrollLeft = beforeLeft + (this._timeline.scrollWidth - beforeWidth);
+        this._timeline.scrollTo({ left: beforeLeft + (this._timeline.scrollWidth - beforeWidth), behavior: "instant" });
       });
       this._setStatus(events.length ? `${events.length} older events loaded` : "Start of retained archive");
     } catch (_error) {
@@ -1040,7 +1053,7 @@ class RingEventsCard extends HTMLElement {
         load(entry.target);
         this._observer.unobserve(entry.target);
       }
-    }, { root: this._timeline, rootMargin: "160px" });
+    }, { root: this._timeline, rootMargin: "0px 240px" });
     videos.forEach((video) => this._observer.observe(video));
   }
 
@@ -1056,7 +1069,8 @@ class RingEventsCard extends HTMLElement {
   _scrollToEnd(smooth) {
     this._timeline.scrollTo({
       left: this._timeline.scrollWidth,
-      behavior: smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "auto",
+      // "instant", not "auto": auto defers to the CSS scroll-behavior: smooth on the strip.
+      behavior: smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "instant",
     });
   }
 
@@ -1064,14 +1078,19 @@ class RingEventsCard extends HTMLElement {
     const tile = Array.from(this._timeline.querySelectorAll(".event-tile"))
       .find((candidate) => candidate.dataset.eventId === id);
     if (!tile) return;
-    tile.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-    });
+    // Scroll only the strip (scrollIntoView would also scroll the dashboard page),
+    // and jump instantly over long distances so lazy thumbnails we fly past stay unloaded.
+    const strip = this._timeline;
+    const stripRect = strip.getBoundingClientRect();
+    const tileRect = tile.getBoundingClientRect();
+    const left = strip.scrollLeft + (tileRect.left - stripRect.left) - (strip.clientWidth - tileRect.width) / 2;
+    const far = Math.abs(left - strip.scrollLeft) > strip.clientWidth * 2;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    strip.scrollTo({ left, behavior: far || reduce ? "instant" : "smooth" });
   }
 
   _onScroll() {
+    if (!this._userScrolled) return;
     if (this._timeline.scrollLeft <= NEAR_EDGE_PX) this._loadOlder();
   }
 
