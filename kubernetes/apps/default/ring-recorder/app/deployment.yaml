@@ -8,6 +8,9 @@ metadata:
     app: ring-recorder
 spec:
   replicas: 1
+  # One pod at a time: Ring rotates the refresh token, two pods would fight over it.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: ring-recorder
