@@ -9,3 +9,5 @@ configMapGenerator:
   - name: k4tech-site
     files:
       - site/index.html
+      - site/sitemap.xml
+      - site/robots.txt
