@@ -141,3 +141,8 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
+            # minidlna 400s any Host header that is not an IP (DNS rebinding guard).
+            filters:
+              - type: URLRewrite
+                urlRewrite:
+                  hostname: 192.168.20.5
