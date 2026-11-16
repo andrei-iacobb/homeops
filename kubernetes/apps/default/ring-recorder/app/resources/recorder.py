@@ -1348,10 +1348,10 @@ class GeminiClient:
             f"{len(frames)} stills in time order, {QUICK_FRAME_SPACING:.0f} s apart, from a Ring {kind} alert "
             f"on the {device} camera at {local_time} (UK). Ring's detector said: {detection}.\n"
             f"Camera layout: {self._scene(event)}\n"
-            "Work out movement by comparing the stills: someone growing larger or facing the camera is coming "
-            "towards it; use the layout to say where they are heading. "
-            "headline: max 12 words, present tense, who + what + where, e.g. 'Two men walking up the path to "
-            "the front door', 'Courier leaving a parcel on the step', 'Car pulling into the parking area'. "
+            "Say where people are, not which way they are going, unless the stills leave no doubt (stills "
+            "are a poor guide to direction). headline: max 12 words, present tense, who + what + where, e.g. "
+            "'Two men on the path by the front door', 'Courier at the door holding a parcel', 'Car in the "
+            "parking area'. "
             "label: 1 to 3 words for a timeline chip. people: one short visual description per person "
             "(clothing, what they carry). Never guess identity, and only say delivery when a parcel or courier "
             "uniform is visible. vehicles: moving or arriving vehicles only. nothing_there: true only if no "
@@ -1384,15 +1384,15 @@ class GeminiClient:
         device = event.get("device_name") or event.get("device")
         kind = event.get("kind") or "unknown"
         detection = event.get("detection") or "not classified"
-        quick = event.get("quick") if isinstance(event.get("quick"), dict) else {}
-        first_look = quick.get("headline") or "none"
+        # The quick look is not passed on: stills cannot show direction, and a wrong
+        # "walking towards the street" talked the full pass out of what the video showed.
         prompt = (
             f"You review Ring recordings for a family home in the UK. This clip is a {kind} event on the "
             f"{device} camera starting {local_time}. Ring's detector said: {detection}.\n"
             f"Camera layout (use it to work out where people go): {self._scene(event)}\n"
             f"Other camera triggers around this time (facts, no descriptions):\n"
             f"{context or '- nothing else recorded'}\n"
-            f"A quick look at a few stills said: {first_look}. Correct it if the video shows otherwise.\n\n"
+            "\n"
             "Watch the whole clip and track each person from entry to exit. Decide where they came from and "
             "where they went using the layout, especially whether they went into or came out of the house. "
             "Anyone who opens the door and walks in, comes out of the house, or comes home through the back "
