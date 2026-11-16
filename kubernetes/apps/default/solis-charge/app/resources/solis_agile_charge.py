@@ -57,7 +57,7 @@ def _optional_env_float(name, default):
 
 MAX_RATE = float(os.environ.get("MAX_RATE", "0.15"))   # £/kWh inc VAT cap (15p)
 MAX_SLOTS = 3
-CHARGE_CURRENT = 50        # Amps - max for this inverter
+CHARGE_CURRENT = 80        # Amps. S5-EH1P4.6K-L accepts 80 (probed 2026-11-16, read back 80); ~4.1 kW into the battery
 DISCHARGE_CURRENT = 50     # Amps
 
 PROPOSAL_FLOOR_SOC = _optional_env_float("PROPOSAL_FLOOR_SOC", "20")

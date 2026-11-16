@@ -51,6 +51,8 @@ spec:
               env:
                 - name: BATTERY_CAPACITY_KWH
                   value: "10.5" # Felicity FLA48200-P
+                - name: CHARGE_KW
+                  value: "4.0" # 80 A timed charge, measured ~4.1 kW at the battery
               volumeMounts:
                 - name: script
                   mountPath: /scripts
