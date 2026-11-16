@@ -1,59 +1,84 @@
 /*
- * ring-events-card
+ * ring-events-card: Ring-style live + history for Home Assistant.
  *
- * A Lovelace custom card for the Ring archive. The footage is the visual
- * anchor, with quiet utility controls and amber reserved for notable events.
+ * THESIS: one rail of time. The right end is now (LIVE); everything left of it
+ * is the past. A fixed playhead in the middle picks what the stage plays.
+ * Refuses the clip gallery plus a separate live view.
+ * OWN-WORLD: the dashboard house style (#151515 cards, hairline borders, warm
+ * white text). Footage edge to edge, a warm-white playhead with a time bubble,
+ * 16:9 thumbnail tiles labelled in words. Red only means LIVE, amber only
+ * means notable.
+ * STORY: open the card, see the camera now (latest snapshot, tap for live);
+ * swipe right-to-left through labelled events; swipe back to the end for LIVE.
+ * FIRST VIEWPORT: camera pills, the 16:9 stage, one line of what happened,
+ * then the rail with the playhead. On wide cards the details sit beside the stage.
+ * FORM: Ring app camera timeline, played straight (pinned by Andrei).
+ *
  * Served by ring-recorder at /card.js. Vanilla ES2020, no dependencies.
  *
- * Example:
  *   type: custom:ring-events-card
- *   base_url: https://hass.iacob.uk/ring-events
- *   device: front-door
- *   height: 420
+ *   base_url: https://hass.iacob.uk/ring-events   # optional
+ *   mode: full | compact                          # compact = Home dashboard
+ *   camera: front-door                            # starting camera, or "all"
+ *   cameras: [front-door, driveway, garden]       # optional pill order/subset
+ *   entities: { downstairs: camera.dining_room_live_view }  # live entity overrides
+ *   more_path: /lovelace/security                 # compact: "All cameras" link
  */
 
 const DEFAULT_BASE_URL = "https://hass.iacob.uk/ring-events";
-const DEFAULT_REFRESH_SECONDS = 60;
+const REFRESH_SECONDS = 60;
 const PAGE_LIMIT = 100;
 const TIME_ZONE = "Europe/London";
-const NEAR_EDGE_PX = 72;
+const NEAR_EDGE_PX = 240;
+const SETTLE_MS = 140;
+const LIVE_ID = "__live__";
 
-const TEXT = "#f2f0ec";
-const TEXT_SECONDARY = "rgba(242,240,236,0.64)";
+const DEFAULT_ENTITIES = {
+  "front-door": "camera.front_door_live_view",
+  driveway: "camera.driveway_live_view",
+  garden: "camera.garden_live_view",
+  hallway: "camera.hallway_live_view",
+  downstairs: "camera.dining_room_live_view",
+  living: "camera.living_live_view",
+  "meli-s": "camera.meli_s_live_view",
+};
 
-const FALLBACK_DEVICES = [
+const FALLBACK_CAMERAS = [
   { slug: "front-door", name: "Front Door" },
-  { slug: "hallway", name: "Hallway" },
+  { slug: "driveway", name: "Driveway" },
+  { slug: "garden", name: "Garden" },
 ];
+
+const TAG_LABELS = [
+  ["delivery", "Delivery"],
+  ["unknown person", "Person"],
+  ["visitor", "Visitor"],
+  ["family", "Family"],
+  ["passer-by", "Passer-by"],
+  ["car", "Car"],
+  ["vehicle", "Car"],
+  ["cat", "Cat"],
+  ["dog", "Dog"],
+  ["fox", "Fox"],
+  ["nothing", "No one visible"],
+];
+
+/* ---------- small helpers ---------- */
 
 function el(tag, className, attrs) {
   const node = document.createElement(tag);
   if (className) node.className = className;
-  if (attrs) {
-    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
-  }
+  if (attrs) for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
   return node;
 }
 
 function slugify(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function titleFromSlug(value) {
-  return String(value || "")
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function cleanBaseUrl(value) {
-  const base = typeof value === "string" && value.trim() ? value.trim() : DEFAULT_BASE_URL;
-  return base.replace(/\/+$/, "");
+  return String(value || "").split("-").filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 }
 
 function parseDate(value) {
@@ -62,1071 +87,1237 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function londonParts(date) {
-  if (!date) return null;
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return { year: values.year, month: values.month, day: values.day };
+function londonKey(date) {
+  if (!date) return "unknown";
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-function londonDateKey(value) {
-  const date = value instanceof Date ? value : parseDate(value);
-  const parts = londonParts(date);
-  return parts ? `${parts.year}-${parts.month}-${parts.day}` : "unknown";
+function shiftKey(key, days) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
-function displayTime(value, language) {
-  const date = parseDate(value);
-  if (!date) return "Unknown time";
-  return new Intl.DateTimeFormat(language || undefined, {
-    timeZone: TIME_ZONE,
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+function formatTime(date, language) {
+  return new Intl.DateTimeFormat(language, { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
-function displayDateTime(value, language) {
-  const date = parseDate(value);
-  if (!date) return "Unknown time";
-  return new Intl.DateTimeFormat(language || undefined, {
-    timeZone: TIME_ZONE,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-function dayLabel(value, language) {
-  const date = parseDate(value);
-  if (!date) return "Undated";
-  const key = londonDateKey(date);
-  const todayParts = londonParts(new Date());
-  const today = `${todayParts.year}-${todayParts.month}-${todayParts.day}`;
-  const yesterday = new Date(Date.UTC(
-    Number(todayParts.year),
-    Number(todayParts.month) - 1,
-    Number(todayParts.day) - 1,
-  )).toISOString().slice(0, 10);
+function dayName(date, language) {
+  const key = londonKey(date);
+  const today = londonKey(new Date());
   if (key === today) return "Today";
-  if (key === yesterday) return "Yesterday";
-  const parts = new Intl.DateTimeFormat(language || undefined, {
-    timeZone: TIME_ZONE,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${values.weekday} ${values.day} ${values.month}`;
+  if (key === shiftKey(today, -1)) return "Yesterday";
+  return new Intl.DateTimeFormat(language, {
+    timeZone: TIME_ZONE, weekday: "short", day: "numeric", month: "short",
+  }).format(date);
 }
 
-function kindLabel(kind) {
-  const labels = { ding: "Ding", motion: "Motion", on_demand: "On demand" };
-  return labels[kind] || titleFromSlug(String(kind || "event").replace(/_/g, "-"));
+function relativeWhen(date, language) {
+  return `${dayName(date, language)} ${formatTime(date, language)}`;
 }
 
-function normaliseAnalysis(raw) {
-  const analysis = raw && typeof raw.analysis === "object" && raw.analysis ? raw.analysis : raw || {};
-  const tags = Array.isArray(analysis.activity_tags)
-    ? analysis.activity_tags
-    : Array.isArray(analysis.tags)
-      ? analysis.tags
-      : [];
-  return {
-    summary: typeof analysis.summary === "string" ? analysis.summary : "",
-    detail: typeof analysis.detail === "string" ? analysis.detail : "",
-    people: Number.isFinite(Number(analysis.people)) ? Number(analysis.people) : 0,
-    vehicles: Number.isFinite(Number(analysis.vehicles)) ? Number(analysis.vehicles) : 0,
-    animals: Array.isArray(analysis.animals) ? analysis.animals.map(String) : [],
-    packages: analysis.packages === true,
-    tags: tags.map(String).filter(Boolean),
-    notable: analysis.notable === true || (raw && (raw.notable === true || raw.notable === 1)),
-    confidence: Number.isFinite(Number(analysis.confidence)) ? Number(analysis.confidence) : null,
-  };
+function eventLabel(event) {
+  if (event.analysis.label) return event.analysis.label;
+  const tags = event.analysis.tags.map((tag) => tag.toLowerCase());
+  for (const [tag, label] of TAG_LABELS) if (tags.includes(tag)) return label;
+  if (event.kind === "ding") return "Doorbell";
+  if (event.kind === "on_demand") return "Live view";
+  return "Motion";
 }
 
 function normaliseEvent(raw) {
   if (!raw || typeof raw !== "object" || raw.id === undefined || !raw.created_at) return null;
-  const deviceObject = raw.device && typeof raw.device === "object" ? raw.device : null;
-  const deviceValue = deviceObject ? deviceObject.slug || deviceObject.id : raw.device_slug || raw.device;
-  const deviceName = raw.device_name || raw.device_label || (deviceObject && deviceObject.name) || titleFromSlug(deviceValue);
-  const device = slugify(deviceValue || deviceName) || "camera";
-  const id = String(raw.id);
-  const analysis = normaliseAnalysis(raw);
-  const clipUrl = typeof raw.clip_url === "string" && raw.clip_url ? raw.clip_url : null;
+  const date = parseDate(String(raw.created_at));
+  if (!date) return null;
+  const a = raw.analysis && typeof raw.analysis === "object" ? raw.analysis : {};
+  const tags = Array.isArray(a.activity_tags) ? a.activity_tags : Array.isArray(a.tags) ? a.tags : [];
+  const device = slugify(raw.device || raw.device_slug || raw.device_name);
   return {
-    id,
+    id: String(raw.id),
     device,
-    deviceName: String(deviceName || titleFromSlug(device)),
-    kind: String(raw.kind || "event"),
-    createdAt: String(raw.created_at),
-    clipUrl,
-    analysis,
-    status: String(raw.status || raw.analysis_status || "pending"),
-    recordingStatus: String(raw.recording_status || (clipUrl ? "ready" : "pending")),
+    deviceName: String(raw.device_name || titleFromSlug(device)),
+    kind: String(raw.kind || "motion"),
+    date,
+    clipUrl: typeof raw.clip_url === "string" && raw.clip_url ? raw.clip_url : null,
+    duration: Number(raw.duration) || null,
+    status: String(raw.status || "pending"),
+    analysis: {
+      label: typeof a.label === "string" ? a.label.trim() : "",
+      summary: typeof a.summary === "string" ? a.summary : "",
+      detail: typeof a.detail === "string" ? a.detail : "",
+      tags: tags.map(String).filter(Boolean),
+      notable: a.notable === true,
+    },
   };
 }
 
-function normaliseDevice(raw) {
-  if (typeof raw === "string") return { slug: slugify(raw), name: titleFromSlug(slugify(raw)) };
-  if (!raw || typeof raw !== "object") return null;
-  const value = raw.slug || raw.device_slug || raw.device || raw.name || raw.id;
-  const slug = slugify(value);
-  if (!slug) return null;
-  return { slug, name: String(raw.name || raw.label || raw.device_name || titleFromSlug(slug)) };
+function sortEvents(events) {
+  const byId = new Map();
+  for (const event of events) byId.set(event.id, event);
+  return [...byId.values()].sort((left, right) => left.date - right.date);
 }
 
-function nextDateKey(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return "";
-  const next = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1));
-  return next.toISOString().slice(0, 10);
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- styles ---------- */
+
+const STYLE = `
+:host {
+  display: block;
+  --rc-bg: var(--ha-card-background, var(--card-background-color, #151515));
+  --rc-text: var(--primary-text-color, #f2f0ec);
+  --rc-muted: rgba(242, 240, 236, 0.62);
+  --rc-faint: rgba(242, 240, 236, 0.38);
+  --rc-line: rgba(255, 255, 255, 0.08);
+  --rc-raised: rgba(255, 255, 255, 0.05);
+  --rc-hover: rgba(255, 255, 255, 0.09);
+  --rc-live: #ff5147;
+  --rc-notable: #f2b04a;
+  --rc-playhead: #f6efe4;
+  --rc-radius: var(--ha-card-border-radius, 16px);
+  --rc-tile-w: 132px;
+  --rc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+ha-card, .card {
+  display: block;
+  overflow: hidden;
+  background: var(--rc-bg);
+  color: var(--rc-text);
+  border: 1px solid var(--rc-line);
+  border-radius: var(--rc-radius);
+  box-shadow: none;
+  container-type: inline-size;
+  outline: none;
+}
+.card:focus-visible { box-shadow: 0 0 0 2px var(--rc-playhead); }
+
+/* header: camera pills */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.pills {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent);
+  padding-right: 24px;
+}
+.pills::-webkit-scrollbar { display: none; }
+.pill, .action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--rc-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rc-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 160ms var(--rc-ease), color 160ms var(--rc-ease), border-color 160ms var(--rc-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.pill:hover, .action:hover { background: var(--rc-hover); color: var(--rc-text); }
+.pill[aria-pressed="true"] { background: var(--rc-text); color: #111; border-color: var(--rc-text); }
+.pill:focus-visible, .action:focus-visible, .tile:focus-visible, .stage-btn:focus-visible, .more:focus-visible {
+  outline: 2px solid var(--rc-playhead);
+  outline-offset: 2px;
+}
+.action { color: var(--rc-text); }
+.action svg { width: 16px; height: 16px; }
+.action.live-jump[hidden] { display: none; }
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rc-live);
+  box-shadow: 0 0 0 0 rgba(255, 81, 71, 0.5);
+}
+.is-live .live-dot, .tile.live[aria-current="true"] .live-dot { animation: pulse 1.8s var(--rc-ease) infinite; }
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 81, 71, 0.55); }
+  100% { box-shadow: 0 0 0 7px rgba(255, 81, 71, 0); }
 }
 
-const CARD_STYLE = `
-  :host {
-    display: block;
-    color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
-  .card {
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    background: #151515;
-    color: ${TEXT};
-    font: inherit;
-    outline: none;
-  }
-  .card:focus-visible {
-    box-shadow: 0 0 0 2px #151515, 0 0 0 4px ${TEXT};
-  }
-  .card.notable {
-    border-color: rgba(214,163,74,0.58);
-  }
-  .player-shell {
-    position: relative;
-    width: 100%;
-    max-width: var(--ring-player-max-width, none);
-    margin: 0 auto;
-    aspect-ratio: 16 / 9;
-    background: #090909;
-  }
-  .player {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #090909;
-  }
-  .player-empty[hidden] {
-    display: none;
-  }
-  .player-empty {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.9rem;
-    text-align: center;
-  }
-  .event-copy {
-    padding: 13px 16px 14px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-  .headline {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-  }
-  .camera {
-    overflow: hidden;
-    min-width: 0;
-    color: ${TEXT};
-    font-size: 0.96rem;
-    font-weight: 680;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .event-time {
-    color: ${TEXT_SECONDARY};
-    font-size: 0.84rem;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .kind {
-    flex: 0 0 auto;
-    margin-left: auto;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.07);
-    color: ${TEXT_SECONDARY};
-    font-size: 0.68rem;
-    font-weight: 720;
-    letter-spacing: 0.035em;
-    text-transform: uppercase;
-  }
-  .notable .kind {
-    background: rgba(214,163,74,0.14);
-    color: #edc779;
-  }
-  .summary {
-    margin: 8px 0 0;
-    color: ${TEXT};
-    font-size: 0.9rem;
-    line-height: 1.45;
-  }
-  .analysis-state {
-    margin: 8px 0 0;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.82rem;
-  }
-  details {
-    margin-top: 7px;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.84rem;
-    line-height: 1.45;
-  }
-  details[hidden] { display: none; }
-  details summary {
-    width: max-content;
-    color: ${TEXT_SECONDARY};
-    cursor: pointer;
-    user-select: none;
-  }
-  details p { max-width: 72ch; margin: 7px 0 0; }
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px 12px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    overflow-x: auto;
-    scrollbar-width: thin;
-  }
-  .device-filters {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  button, input { font: inherit; }
-  .filter, .notable-filter {
-    flex: 0 0 auto;
-    min-height: 34px;
-    padding: 0 11px;
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 999px;
-    background: #1d1d1d;
-    color: ${TEXT_SECONDARY};
-    cursor: pointer;
-  }
-  .filter[aria-pressed="true"] {
-    border-color: rgba(242,240,236,0.32);
-    background: #292929;
-    color: ${TEXT};
-  }
-  .notable-filter[aria-pressed="true"] {
-    border-color: rgba(214,163,74,0.52);
-    background: rgba(214,163,74,0.13);
-    color: #edc779;
-  }
-  .date-label {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 7px;
-    margin-left: auto;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.78rem;
-    white-space: nowrap;
-  }
-  .date-jump {
-    min-height: 34px;
-    padding: 0 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 9px;
-    background: #1d1d1d;
-    color: ${TEXT};
-    color-scheme: dark;
-  }
-  @media (hover: hover) {
-    button:hover, .date-jump:hover {
-      border-color: rgba(242,240,236,0.3);
-      background: #292929;
-    }
-  }
-  button:active { transform: scale(0.97); }
-  button:focus-visible, input:focus-visible, summary:focus-visible {
-    outline: 2px solid ${TEXT};
-    outline-offset: 2px;
-  }
-  .load-state {
-    min-height: 28px;
-    padding: 8px 13px 0;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.76rem;
-  }
-  .load-state.error { color: #ef9991; }
-  .timeline {
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    min-height: 132px;
-    padding: 8px 12px 12px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-behavior: smooth;
-    scroll-snap-type: x proximity;
-    scrollbar-gutter: stable;
-    -webkit-overflow-scrolling: touch;
-  }
-  .day-marker {
-    display: flex;
-    flex: 0 0 54px;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0 4px 7px;
-    border-right: 1px solid rgba(255,255,255,0.09);
-    color: rgba(242,240,236,0.46);
-    font-size: 0.68rem;
-    line-height: 1.25;
-    text-align: center;
-  }
-  .event-tile {
-    position: relative;
-    flex: 0 0 154px;
-    width: 154px;
-    min-height: 112px;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.09);
-    border-radius: 12px;
-    background: #1c1c1c;
-    color: ${TEXT};
-    cursor: pointer;
-    scroll-snap-align: start;
-    text-align: left;
-  }
-  .event-tile[aria-current="true"] {
-    border-color: rgba(242,240,236,0.62);
-    box-shadow: inset 0 0 0 1px rgba(242,240,236,0.22);
-  }
-  .event-tile.notable-tile {
-    border-color: rgba(214,163,74,0.46);
-  }
-  .tile-video {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    border: 0;
-    background: #0b0b0b;
-    object-fit: cover;
-    pointer-events: none;
-  }
-  .tile-copy { display: block; padding: 7px 8px 8px; }
-  .tile-top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 6px;
-  }
-  .tile-time {
-    font-size: 0.78rem;
-    font-weight: 680;
-    font-variant-numeric: tabular-nums;
-  }
-  .tile-camera {
-    overflow: hidden;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.68rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tags {
-    display: flex;
-    gap: 4px;
-    min-height: 18px;
-    margin-top: 5px;
-    overflow: hidden;
-  }
-  .tag {
-    overflow: hidden;
-    max-width: 78px;
-    padding: 2px 5px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.07);
-    color: ${TEXT_SECONDARY};
-    font-size: 0.58rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .empty-strip {
-    display: grid;
-    flex: 1 0 100%;
-    min-height: 110px;
-    place-items: center;
-    color: ${TEXT_SECONDARY};
-    font-size: 0.84rem;
-    text-align: center;
-  }
-  @media (max-width: 560px) {
-    .event-copy { padding: 11px 12px 12px; }
-    .toolbar { align-items: flex-start; flex-wrap: wrap; }
-    .date-label { width: 100%; margin-left: 0; }
-    .date-jump { flex: 1 1 auto; }
-    .event-tile { flex-basis: 136px; width: 136px; }
-    .day-marker { flex-basis: 46px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      scroll-behavior: auto !important;
-      transition: none !important;
-    }
-  }
+/* body: stage + details */
+.body { display: grid; grid-template-columns: 1fr; }
+.stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #050505;
+  overflow: hidden;
+}
+.stage > video, .stage > img, .stage > ha-camera-stream, .stage > .live-host {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; display: block; background: #050505;
+}
+.live-host ha-camera-stream, .live-host > * { width: 100%; height: 100%; display: block; }
+.stage img.snapshot { object-fit: cover; filter: saturate(0.9) brightness(0.72); transition: filter 240ms var(--rc-ease); }
+.overlay {
+  position: absolute; left: 0; right: 0; top: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px 28px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.62), transparent);
+  pointer-events: none;
+  font-size: 13px;
+}
+.overlay .cam { font-weight: 600; }
+.overlay .when { color: var(--rc-muted); font-variant-numeric: tabular-nums; }
+.badge {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.55);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.badge.live { background: var(--rc-live); color: #fff; }
+.badge.live .live-dot { background: #fff; }
+.stage-cta {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+}
+.stage-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 48px; padding: 0 20px 0 16px;
+  border: 0; border-radius: 999px;
+  background: rgba(10,10,10,0.72);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  color: #fff; font: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  transition: transform 160ms var(--rc-ease), background 160ms var(--rc-ease);
+}
+.stage-btn:hover { background: rgba(10,10,10,0.86); transform: translateY(-1px); }
+.stage-btn:active { transform: translateY(0) scale(0.98); }
+.stage-btn .live-dot { width: 9px; height: 9px; }
+.stage-note {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 6px 10px; border-radius: 8px;
+  background: rgba(0,0,0,0.6); color: var(--rc-muted);
+  font-size: 12px; text-align: center;
+}
+.stage-empty {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+  color: var(--rc-muted); font-size: 14px; text-align: center;
+}
+
+.details { padding: 12px 14px 10px; min-width: 0; }
+.headline { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.label {
+  font-size: 17px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.label .flag { color: var(--rc-notable); }
+.meta { color: var(--rc-muted); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.summary { margin: 4px 0 0; color: var(--rc-muted); font-size: 14px; line-height: 1.45; max-width: 68ch; }
+.more {
+  margin-top: 6px; padding: 0; border: 0; background: none;
+  color: var(--rc-text); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--rc-faint); text-underline-offset: 3px;
+}
+.more[hidden], .summary[hidden] { display: none; }
+.detail { margin: 6px 0 0; color: var(--rc-muted); font-size: 13px; line-height: 1.5; max-width: 68ch; }
+.detail[hidden] { display: none; }
+.notable .label { color: var(--rc-notable); }
+
+/* rail */
+.rail-wrap { position: relative; border-top: 1px solid var(--rc-line); }
+.rail {
+  display: flex; align-items: stretch; gap: 8px;
+  overflow-x: auto; overflow-y: hidden;
+  padding: 26px calc(50% - var(--rc-tile-w) / 2) 14px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
+.rail::-webkit-scrollbar { display: none; }
+.playhead {
+  position: absolute; top: 0; left: 50%;
+  height: calc(30px + var(--rc-tile-w) * 9 / 16);
+  width: 2px; margin-left: -1px;
+  background: var(--rc-playhead);
+  border-radius: 2px;
+  pointer-events: none;
+  opacity: 0.9;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+}
+.bubble {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  height: 18px; padding: 0 8px; border-radius: 5px;
+  background: var(--rc-playhead); color: #141414;
+  font-size: 11px; font-weight: 700; line-height: 18px; white-space: nowrap;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+  pointer-events: none;
+}
+.bubble.live { background: var(--rc-live); color: #fff; letter-spacing: 0.08em; }
+.edge {
+  position: absolute; top: 0; bottom: 0; width: 44px; pointer-events: none;
+}
+.edge.left { left: 0; background: linear-gradient(90deg, var(--rc-bg), transparent); }
+.edge.right { right: 0; background: linear-gradient(270deg, var(--rc-bg), transparent); }
+
+.tile {
+  position: relative;
+  flex: none;
+  width: var(--rc-tile-w);
+  scroll-snap-align: center;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.thumb {
+  position: relative; display: block;
+  aspect-ratio: 16 / 9; border-radius: 9px; overflow: hidden;
+  background: #0b0b0b;
+  outline: 1px solid var(--rc-line); outline-offset: -1px;
+  transition: outline-color 160ms var(--rc-ease), transform 200ms var(--rc-ease);
+}
+.thumb video, .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.tile:hover .thumb { outline-color: rgba(255,255,255,0.22); }
+.tile[aria-current="true"] .thumb { outline: 2px solid var(--rc-playhead); outline-offset: -2px; }
+.tile.notable .thumb::after {
+  content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--rc-notable); box-shadow: 0 0 0 2px rgba(0,0,0,0.5);
+}
+.tile .kind-ding {
+  position: absolute; left: 6px; top: 6px; height: 16px; padding: 0 5px; border-radius: 4px;
+  background: rgba(0,0,0,0.6); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.tile-copy { display: block; padding: 6px 2px 0; }
+.tile-time { display: block; color: var(--rc-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tile-label {
+  display: block; margin-top: 1px; font-size: 13px; font-weight: 600; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile.notable .tile-label { color: var(--rc-notable); }
+.tile .tile-cam { color: var(--rc-faint); font-weight: 500; }
+
+.tile.live .thumb {
+  display: grid; place-items: center;
+  background: radial-gradient(120% 120% at 50% 40%, #2a1210, #0b0b0b 70%);
+}
+.tile.live .thumb img { position: absolute; inset: 0; opacity: 0.45; }
+.live-word {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 800; letter-spacing: 0.14em; color: #fff;
+}
+
+.day {
+  flex: none; align-self: stretch;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  width: 1px; margin: 0 6px; position: relative;
+  background: var(--rc-line);
+}
+.day span {
+  position: absolute; top: -20px; left: 6px; white-space: nowrap;
+  color: var(--rc-faint); font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+}
+.loader { flex: none; width: 40px; display: grid; place-items: center; color: var(--rc-faint); font-size: 11px; }
+
+.foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px 12px; color: var(--rc-faint); font-size: 12px; min-height: 18px;
+}
+.foot .status.error { color: #ff8a80; }
+.foot .spacer { flex: 1; }
+.foot input[type="date"] {
+  height: 28px; padding: 0 8px; border-radius: 8px;
+  border: 1px solid var(--rc-line); background: transparent; color: var(--rc-muted);
+  font: inherit; font-size: 12px; color-scheme: dark;
+}
+.foot a { color: var(--rc-text); text-decoration: none; font-weight: 500; font-size: 13px; }
+.foot a:hover { text-decoration: underline; }
+
+.compact { --rc-tile-w: 116px; }
+.compact .details { padding: 10px 12px 8px; }
+.compact .label { font-size: 15px; }
+
+@container (min-width: 760px) {
+  .full .body { grid-template-columns: minmax(0, 1fr) minmax(240px, 32%); }
+  .full .details { padding: 18px 18px 16px; border-left: 1px solid var(--rc-line); }
+  .full .headline { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .full .label { font-size: 20px; white-space: normal; }
+  .full .summary { font-size: 14px; margin-top: 10px; }
+  .full { --rc-tile-w: 156px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
 `;
+
+const ICONS = {
+  forward: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 6.5 18.5 12 13 17.5l-1.4-1.4 3.1-3.1H5v-2h9.7l-3.1-3.1z"/></svg>',
+};
+
+/* ---------- the card ---------- */
 
 class RingEventsCard extends HTMLElement {
   static getStubConfig() {
-    return { base_url: DEFAULT_BASE_URL };
+    return { mode: "full", camera: "front-door" };
+  }
+
+  static getConfigElement() {
+    return undefined;
   }
 
   constructor() {
     super();
-    this._config = null;
-    this._hass = null;
+    this.attachShadow({ mode: "open" });
     this._events = [];
-    this._devices = FALLBACK_DEVICES.slice();
-    this._selectedId = null;
-    this._device = "all";
-    this._notableOnly = false;
-    this._loading = false;
+    this._cameras = FALLBACK_CAMERAS;
+    this._selected = LIVE_ID;
+    this._liveActive = false;
     this._hasMore = true;
-    this._loaded = false;
+    this._loading = false;
+    this._userScrolled = false;
+    this._settleTimer = null;
     this._refreshTimer = null;
-    this._abort = null;
     this._fetchSeq = 0;
-    this._observer = null;
-
-    const root = this.attachShadow({ mode: "open" });
-    const style = el("style");
-    style.textContent = CARD_STYLE;
-
-    this._card = el("section", "card", { tabindex: "0", "aria-label": "Ring event timeline" });
-    const playerShell = el("div", "player-shell");
-    this._player = el("video", "player", { controls: "", playsinline: "", preload: "metadata" });
-    this._playerEmpty = el("div", "player-empty");
-    this._playerEmpty.textContent = "Loading Ring events...";
-    playerShell.append(this._player, this._playerEmpty);
-
-    const headline = el("div", "headline");
-    this._camera = el("span", "camera");
-    this._eventTime = el("time", "event-time");
-    this._kind = el("span", "kind");
-    headline.append(this._camera, this._eventTime, this._kind);
-    this._summary = el("p", "summary");
-    this._analysisState = el("p", "analysis-state");
-    this._details = el("details");
-    const detailToggle = el("summary");
-    detailToggle.textContent = "Show detail";
-    this._detail = el("p");
-    this._details.append(detailToggle, this._detail);
-    const copy = el("div", "event-copy");
-    copy.append(headline, this._summary, this._analysisState, this._details);
-
-    this._deviceFilters = el("div", "device-filters", { role: "group", "aria-label": "Camera filter" });
-    this._notableButton = el("button", "notable-filter", {
-      type: "button",
-      "aria-pressed": "false",
-    });
-    this._notableButton.textContent = "Notable only";
-    const dateLabel = el("label", "date-label");
-    const dateText = el("span");
-    dateText.textContent = "Jump to date";
-    this._dateInput = el("input", "date-jump", { type: "date", "aria-label": "Jump to date" });
-    dateLabel.append(dateText, this._dateInput);
-    const toolbar = el("nav", "toolbar", { "aria-label": "Ring event filters" });
-    toolbar.append(this._deviceFilters, this._notableButton, dateLabel);
-
-    this._loadState = el("div", "load-state", { "aria-live": "polite" });
-    this._timeline = el("div", "timeline", {
-      tabindex: "0",
-      role: "region",
-      "aria-label": "Ring events, oldest to newest",
-    });
-    this._card.append(playerShell, copy, toolbar, this._loadState, this._timeline);
-    root.append(style, this._card);
-
-    this._onVisibility = this._onVisibility.bind(this);
-    this._onKeyDown = this._onKeyDown.bind(this);
-    this._onScroll = this._onScroll.bind(this);
-    this._onWheel = this._onWheel.bind(this);
-    this._notableButton.addEventListener("click", () => this._setNotable(!this._notableOnly));
-    this._dateInput.addEventListener("change", () => this._jumpToDate(this._dateInput.value));
-    this._card.addEventListener("keydown", this._onKeyDown);
-    this._timeline.addEventListener("scroll", this._onScroll, { passive: true });
-    const markUserScroll = () => { this._userScrolled = true; };
-    for (const type of ["wheel", "pointerdown", "touchstart", "keydown"]) {
-      this._timeline.addEventListener(type, markUserScroll, { passive: true });
-    }
-    this._timeline.addEventListener("wheel", this._onWheel, { passive: false });
-    this._renderAll();
+    this._refreshSeq = 0;
+    this._jumpSeq = 0;
+    this._detailOpen = false;
+    this._built = false;
   }
 
   setConfig(config) {
-    if (!config || typeof config !== "object") {
-      throw new Error("ring-events-card: config must be an object");
+    if (!config || typeof config !== "object") throw new Error("ring-events-card: config must be an object");
+    if (config.mode && !["full", "compact"].includes(config.mode)) {
+      throw new Error("ring-events-card: mode must be 'full' or 'compact'");
     }
-    const refresh = Number(config.refresh);
-    const height = Number(config.height);
-    if (this._abort) this._abort.abort();
-    this._fetchSeq += 1;
-    this._loading = false;
+    if (config.cameras && !Array.isArray(config.cameras)) throw new Error("ring-events-card: cameras must be a list");
     this._config = {
-      baseUrl: cleanBaseUrl(config.base_url),
-      device: typeof config.device === "string" && config.device.trim() ? slugify(config.device) : "all",
-      refresh: Number.isFinite(refresh) && refresh >= 10 ? refresh : DEFAULT_REFRESH_SECONDS,
-      height: Number.isFinite(height) && height >= 180 ? Math.min(height, 900) : null,
+      baseUrl: String(config.base_url || DEFAULT_BASE_URL).replace(/\/+$/, ""),
+      mode: config.mode || "full",
+      camera: slugify(config.camera || "front-door") || "front-door",
+      cameras: Array.isArray(config.cameras) ? config.cameras.map(slugify).filter(Boolean) : null,
+      entities: { ...DEFAULT_ENTITIES, ...(config.entities || {}) },
+      morePath: config.more_path || "/lovelace/security",
     };
-    this._device = this._config.device;
-    this._events = [];
-    this._selectedId = null;
-    this._loaded = false;
-    this._hasMore = true;
-    if (this._config.height) this.style.setProperty("--ring-player-max-width", `${this._config.height * 16 / 9}px`);
-    else this.style.removeProperty("--ring-player-max-width");
-    this._renderAll();
-    if (this.isConnected) {
-      this._startTimer();
-      this._loadDevices();
-      this._loadInitial();
+    this._camera = this._config.camera;
+    this._cameras = FALLBACK_CAMERAS;
+    this._camerasLoaded = false;
+    if (this._built) {
+      this._stopLive();
+      this._build();
+      if (this.isConnected) this._reload();
+    } else if (this.isConnected) {
+      this.connectedCallback();
     }
   }
 
   set hass(hass) {
     this._hass = hass;
-  }
-
-  get hass() {
-    return this._hass;
+    if (this._liveStream) {
+      this._liveStream.hass = hass;
+      const stateObj = hass.states[this._liveEntity()];
+      if (stateObj) this._liveStream.stateObj = stateObj;
+    }
+    const snap = this._snapshotUrl();
+    if (snap === this._lastSnap || !this._built) return;
+    this._lastSnap = snap;
+    // Snapshot URLs carry a rotating token; swap sources in place instead of re-rendering.
+    const liveThumb = this._rail.querySelector(".tile.live .thumb");
+    if (liveThumb && snap) {
+      let liveImg = liveThumb.querySelector("img");
+      if (!liveImg) {
+        liveImg = el("img", "", { alt: "" });
+        liveThumb.prepend(liveImg);
+      }
+      liveImg.src = snap;
+    }
+    const stageImg = this._stage.querySelector("img.snapshot");
+    if (stageImg && snap) stageImg.src = snap;
+    else if (this._selected === LIVE_ID && !this._liveActive) this._renderStage();
   }
 
   getCardSize() {
-    return 8;
+    return this._config && this._config.mode === "compact" ? 6 : 9;
+  }
+
+  getGridOptions() {
+    return { columns: 12, min_columns: 6, rows: "auto" };
   }
 
   connectedCallback() {
+    if (!this._config) return;
+    if (!this._built) this._build();
+    this._onVisibility = () => {
+      if (document.hidden) {
+        this._stopTimer();
+        this._suspendMedia();
+      } else {
+        this._startTimer();
+        this._renderStage();
+        this._refresh();
+      }
+    };
     document.addEventListener("visibilitychange", this._onVisibility);
-    if (this._config) {
-      this._startTimer();
-      this._loadDevices();
-      this._loadInitial();
+    this._startTimer();
+    if (!this._events.length) {
+      this._reload();
+    } else {
+      this._observeThumbs([...this._rail.querySelectorAll(".thumb video:not([src])")]);
+      this._renderStage(true);
     }
   }
 
   disconnectedCallback() {
-    document.removeEventListener("visibilitychange", this._onVisibility);
     this._stopTimer();
-    if (this._abort) this._abort.abort();
+    if (this._onVisibility) document.removeEventListener("visibilitychange", this._onVisibility);
+    this._fetchSeq += 1;
+    this._loading = false;
+    this._suspendMedia();
     if (this._observer) this._observer.disconnect();
   }
 
-  _language() {
-    const hass = this._hass;
-    const language = (hass && ((hass.locale && hass.locale.language) || hass.language)) || "en-GB";
-    // HA reports plain "en"; Intl then defaults to US 12-hour dates. This is a UK house.
-    return language === "en" ? "en-GB" : language;
+  _suspendMedia() {
+    this._stopLive();
+    if (this._stage) this._clearStage();
+    if (this._selected === LIVE_ID && this._stage && this.isConnected) this._renderStage(true);
   }
 
-  _startTimer() {
-    this._stopTimer();
-    this._refreshTimer = window.setInterval(() => this._refresh(), this._config.refresh * 1000);
+  /* ----- structure ----- */
+
+  _build() {
+    this._built = true;
+    const root = this.shadowRoot;
+    root.innerHTML = "";
+    const style = el("style");
+    style.textContent = STYLE;
+    root.append(style);
+
+    this._card = el("div", `card ${this._config.mode}`, { tabindex: "0", role: "region", "aria-label": "Ring cameras" });
+
+    const top = el("div", "top");
+    this._pills = el("div", "pills", { role: "toolbar", "aria-label": "Camera" });
+    this._liveJump = el("button", "action live-jump", { type: "button" });
+    this._liveJump.innerHTML = '<span class="live-dot"></span>Live';
+    this._liveJump.addEventListener("click", () => this._goLive(true));
+    top.append(this._pills, this._liveJump);
+
+    const body = el("div", "body");
+    this._stage = el("div", "stage");
+    const details = el("div", "details");
+    const headline = el("div", "headline");
+    this._label = el("div", "label");
+    this._meta = el("div", "meta");
+    headline.append(this._label, this._meta);
+    this._summary = el("p", "summary");
+    this._more = el("button", "more", { type: "button", "aria-expanded": "false" });
+    this._more.textContent = "More detail";
+    this._more.addEventListener("click", () => {
+      this._detailOpen = !this._detailOpen;
+      this._renderDetails();
+    });
+    this._detail = el("p", "detail");
+    details.append(headline, this._summary, this._more, this._detail);
+    body.append(this._stage, details);
+
+    const railWrap = el("div", "rail-wrap");
+    this._rail = el("div", "rail", { role: "listbox", "aria-label": "Timeline, newest on the right" });
+    this._bubble = el("div", "bubble");
+    railWrap.append(this._rail, el("div", "edge left"), el("div", "edge right"), el("div", "playhead"), this._bubble);
+
+    const foot = el("div", "foot");
+    this._status = el("span", "status", { role: "status", "aria-live": "polite" });
+    foot.append(this._status, el("span", "spacer"));
+    if (this._config.mode === "full") {
+      this._date = el("input", "", { type: "date", "aria-label": "Jump to date" });
+      this._date.addEventListener("change", () => this._jumpToDate(this._date.value));
+      foot.append(this._date);
+    } else {
+      const link = el("a", "", { href: this._config.morePath });
+      link.textContent = "All cameras";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        history.pushState(null, "", this._config.morePath);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+      });
+      foot.append(link);
+    }
+
+    this._card.append(top, body, railWrap, foot);
+    root.append(this._card);
+
+    this._rail.addEventListener("scroll", () => this._onRailScroll(), { passive: true });
+    for (const type of ["wheel", "pointerdown", "touchstart", "keydown"]) {
+      this._rail.addEventListener(type, () => { this._userScrolled = true; }, { passive: true });
+    }
+    this._card.addEventListener("keydown", (event) => this._onKey(event));
+    this._renderPills();
   }
 
-  _stopTimer() {
-    if (this._refreshTimer !== null) window.clearInterval(this._refreshTimer);
-    this._refreshTimer = null;
-  }
-
-  _onVisibility() {
-    if (document.visibilityState === "visible") this._refresh();
-  }
+  /* ----- data ----- */
 
   _url(path, params) {
     const url = new URL(`${this._config.baseUrl}${path}`);
     for (const [key, value] of Object.entries(params || {})) {
-      if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+      if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, value);
     }
     return url.toString();
   }
 
-  _filterParams(extra) {
-    const params = { limit: PAGE_LIMIT, ...(extra || {}) };
-    if (this._device !== "all") params.device = this._device;
-    if (this._notableOnly) params.notable = 1;
-    return params;
-  }
-
-  async _fetchJson(path, params, signal) {
-    const response = await fetch(this._url(path, params), {
-      mode: "cors",
-      cache: "no-store",
-      credentials: "omit",
-      signal,
-    });
-    if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+  async _get(path, params) {
+    const response = await fetch(this._url(path, params), { mode: "cors", cache: "no-store", credentials: "omit" });
+    if (!response.ok) throw new Error(`${path} ${response.status}`);
     return response.json();
   }
 
-  async _fetchEvents(extra, signal) {
-    const payload = await this._fetchJson("/api/events", this._filterParams(extra), signal);
-    const rows = Array.isArray(payload) ? payload : payload && Array.isArray(payload.events) ? payload.events : [];
-    return rows.map(normaliseEvent).filter(Boolean);
+  // Returns events plus whether the server page was full, judged before any client-side camera filter.
+  async _fetchEvents(extra) {
+    const params = { limit: PAGE_LIMIT, ...extra };
+    if (this._camera !== "all") params.device = this._camera;
+    const payload = await this._get("/api/events", params);
+    const rows = Array.isArray(payload) ? payload : (payload && payload.events) || [];
+    let events = rows.map(normaliseEvent).filter(Boolean);
+    if (this._camera === "all" && this._config.cameras) {
+      events = events.filter((event) => this._config.cameras.includes(event.device));
+    }
+    const oldestRaw = rows.length ? parseDate(String(rows[rows.length - 1].created_at)) : null;
+    return { events, full: rows.length >= PAGE_LIMIT, oldestRaw };
   }
 
-  async _loadDevices() {
+  async _loadCameras() {
     try {
-      const payload = await this._fetchJson("/api/devices");
-      const rows = Array.isArray(payload) ? payload : payload && Array.isArray(payload.devices) ? payload.devices : [];
-      const found = rows.map(normaliseDevice).filter(Boolean);
-      const merged = new Map(FALLBACK_DEVICES.map((device) => [device.slug, device]));
-      for (const device of found) merged.set(device.slug, device);
-      this._devices = Array.from(merged.values());
-      this._renderControls();
+      const payload = await this._get("/api/devices");
+      const rows = Array.isArray(payload) ? payload : (payload && payload.devices) || [];
+      let cameras = rows.map((row) => ({ slug: slugify(row.slug || row.name), name: String(row.name || row.slug) }))
+        .filter((cam) => cam.slug);
+      const order = this._config.cameras || ["front-door", "driveway", "garden", "hallway", "downstairs", "living", "meli-s"];
+      cameras = cameras.filter((cam) => !this._config.cameras || this._config.cameras.includes(cam.slug))
+        .sort((a, b) => (order.indexOf(a.slug) + 99) % 99 - (order.indexOf(b.slug) + 99) % 99);
+      if (cameras.length) this._cameras = cameras;
     } catch (_error) {
-      this._devices = FALLBACK_DEVICES.slice();
-      this._renderControls();
+      /* keep fallback list */
+    }
+    this._renderPills();
+  }
+
+  async _reload() {
+    const seq = ++this._fetchSeq;
+    this._loading = false;
+    this._setStatus("Loading events...");
+    this._stopLive();
+    this._events = [];
+    this._selected = LIVE_ID;
+    this._userScrolled = false;
+    this._renderRail();
+    this._renderStage();
+    if (!this._camerasLoaded) {
+      this._camerasLoaded = true;
+      this._loadCameras();
+    }
+    try {
+      const page = await this._fetchEvents({});
+      if (seq !== this._fetchSeq || !this.isConnected) return;
+      this._events = sortEvents(page.events);
+      this._hasMore = page.full;
+      this._cursor = page.oldestRaw;
+      this._renderRail();
+      this._parkAtLive();
+      this._setStatus(this._events.length ? "" : "No recordings yet for this camera.");
+    } catch (_error) {
+      if (seq !== this._fetchSeq) return;
+      this._setStatus("Can't reach the Ring archive. Retrying in a minute.", true);
     }
   }
 
-  async _loadInitial() {
-    if (!this._config || this._loading) return;
-    this._loading = true;
-    this._loaded = false;
-    this._setStatus("Loading events...");
-    if (this._abort) this._abort.abort();
-    const controller = typeof AbortController === "function" ? new AbortController() : null;
-    this._abort = controller;
-    const seq = ++this._fetchSeq;
-    try {
-      const events = await this._fetchEvents({}, controller ? controller.signal : undefined);
-      if (seq !== this._fetchSeq || !this.isConnected) return;
-      this._events = this._sortAndDedupe(events);
-      this._hasMore = events.length >= PAGE_LIMIT;
-      this._selectedId = this._events.length ? this._events[this._events.length - 1].id : null;
-      this._loaded = true;
-      this._renderAll();
-      this._setStatus(this._events.length ? `${this._events.length} events loaded` : "No events match these filters yet.");
-      // Older events load only after the person scrolls the strip themselves:
-      // programmatic scrolls (parking at the newest end, centring the selected
-      // tile) start from scrollLeft 0 and would otherwise page in history.
-      this._userScrolled = false;
-      window.requestAnimationFrame(() => this._scrollToEnd(false));
-    } catch (error) {
-      if (error && error.name === "AbortError") return;
-      this._events = [];
-      this._selectedId = null;
-      this._loaded = false;
-      this._renderAll();
-      this._setStatus("The Ring archive is unavailable. It will retry automatically.", true);
-    } finally {
-      if (seq === this._fetchSeq) this._loading = false;
-      if (this._abort === controller) this._abort = null;
-    }
+  // Where the selected tile sits in the viewport, so a re-render can put it back.
+  _anchor() {
+    const tile = this._tileFor(this._selected);
+    if (!tile) return null;
+    return { id: this._selected, offset: tile.getBoundingClientRect().left - this._rail.getBoundingClientRect().left };
+  }
+
+  _restoreAnchor(anchor) {
+    const tile = anchor && this._tileFor(anchor.id);
+    if (!tile) return;
+    this._quietUntil = Date.now() + 400;
+    const now = tile.getBoundingClientRect().left - this._rail.getBoundingClientRect().left;
+    this._rail.scrollTo({ left: this._rail.scrollLeft + now - anchor.offset, behavior: "instant" });
   }
 
   async _loadOlder() {
-    if (this._loading || !this._hasMore || !this._events.length) return;
+    if (this._loading || !this._hasMore || !this._events.length) return false;
     this._loading = true;
     const seq = this._fetchSeq;
-    const beforeWidth = this._timeline.scrollWidth;
-    const beforeLeft = this._timeline.scrollLeft;
     this._setStatus("Loading older events...");
     try {
-      const events = await this._fetchEvents({ until: this._events[0].createdAt });
-      if (seq !== this._fetchSeq) return;
-      this._hasMore = events.length >= PAGE_LIMIT;
-      this._events = this._sortAndDedupe([...events, ...this._events]);
-      this._renderTimeline();
-      this._renderMain();
-      window.requestAnimationFrame(() => {
-        this._timeline.scrollTo({ left: beforeLeft + (this._timeline.scrollWidth - beforeWidth), behavior: "instant" });
-      });
-      this._setStatus(events.length ? `${events.length} older events loaded` : "Start of retained archive");
+      const before = this._events.length;
+      let merged = this._events;
+      // Pages are cut on raw rows (camera filter applies after), so walk raw pages until one adds something.
+      for (let hop = 0; hop < 5 && this._hasMore && merged.length === before; hop += 1) {
+        // Ring timestamps are per second; overlap by one second and dedupe so ties on a page edge are kept.
+        const cursor = this._cursor || this._events[0].date;
+        const page = await this._fetchEvents({ until: new Date(cursor.getTime() + 1000).toISOString() });
+        if (seq !== this._fetchSeq || !this.isConnected) return false;
+        merged = sortEvents([...page.events, ...merged]);
+        const moved = page.oldestRaw && page.oldestRaw < cursor;
+        this._cursor = page.oldestRaw || cursor;
+        this._hasMore = page.full && Boolean(moved);
+      }
+      const anchor = this._anchor();
+      this._events = merged;
+      this._renderRail();
+      this._restoreAnchor(anchor);
+      this._setStatus(this._hasMore ? "" : "Start of the archive");
+      return true;
     } catch (_error) {
-      if (seq !== this._fetchSeq) return;
-      this._setStatus("Older events could not be loaded. Scroll left to retry.", true);
+      if (seq === this._fetchSeq) this._setStatus("Older events didn't load. Scroll left to retry.", true);
+      return false;
     } finally {
       if (seq === this._fetchSeq) this._loading = false;
     }
   }
 
   async _refresh() {
-    if (!this._config || this._loading || document.visibilityState === "hidden") return;
-    if (!this._events.length) {
-      this._loadInitial();
-      return;
-    }
-    const atRight = this._atRightEdge();
-    const knownIds = new Set(this._events.map((event) => event.id));
+    if (!this.isConnected || this._loading) return;
+    if (!this._events.length && this._status.classList.contains("error")) return this._reload();
     const seq = this._fetchSeq;
-    this._loading = true;
+    const refreshSeq = ++this._refreshSeq;
     try {
-      const events = await this._fetchEvents({ since: this._events[this._events.length - 1].createdAt });
-      if (seq !== this._fetchSeq) return;
-      const newCount = events.filter((event) => !knownIds.has(event.id)).length;
-      const before = JSON.stringify(this._events);
-      const merged = this._sortAndDedupe([...this._events, ...events]);
-      const changed = before !== JSON.stringify(merged);
-      this._events = merged;
-      if (newCount && atRight) this._selectedId = this._events[this._events.length - 1].id;
-      if (changed) this._renderAll();
-      if (newCount) this._setStatus(`${newCount} new ${newCount === 1 ? "event" : "events"}`);
-      if (atRight) window.requestAnimationFrame(() => this._scrollToEnd(true));
+      // Latest page, not just newer rows: descriptions land on recent clips after they appear.
+      const page = await this._fetchEvents({});
+      const current = this._selectedEvent();
+      if (current && !current.clipUrl && !page.events.some((event) => event.id === current.id)) {
+        const one = normaliseEvent(await this._get(`/api/events/${encodeURIComponent(current.id)}`));
+        if (one) page.events.push(one);
+      }
+      if (seq !== this._fetchSeq || refreshSeq !== this._refreshSeq || this._loading || !this.isConnected) return;
+      const byId = new Map(this._events.map((event) => [event.id, event]));
+      const stamp = (event) => JSON.stringify([event.clipUrl, event.status, event.analysis]);
+      const added = page.events.some((event) => !byId.has(event.id));
+      const updated = page.events.filter((event) => byId.has(event.id) && stamp(byId.get(event.id)) !== stamp(event));
+      if (!added && !updated.length) return;
+      const selected = updated.find((event) => event.id === this._selected);
+      const clipArrived = selected && selected.clipUrl !== byId.get(selected.id).clipUrl;
+      const atLive = this._selected === LIVE_ID;
+      const anchor = this._anchor();
+      this._events = sortEvents([...this._events, ...page.events]);
+      this._renderRail();
+      if (atLive) this._parkAtLive();
+      else this._restoreAnchor(anchor);
+      if (clipArrived) this._renderStage(true);
+      else this._renderDetails();
+      this._setStatus("");
     } catch (_error) {
-      if (seq !== this._fetchSeq) return;
-      this._setStatus("Refresh failed. The current timeline is still available.", true);
-    } finally {
-      if (seq === this._fetchSeq) this._loading = false;
+      /* transient; next tick retries */
     }
   }
 
   async _jumpToDate(value) {
-    if (!value) return;
-    const loaded = this._events.find((event) => londonDateKey(event.createdAt) === value);
-    if (loaded) {
-      this._scrollToEvent(loaded.id);
-      return;
-    }
-    const next = nextDateKey(value);
-    if (!next) return;
-    this._setStatus(`Loading ${value}...`);
+    const token = ++this._jumpSeq;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
     const seq = this._fetchSeq;
-    this._loading = true;
-    try {
-      const events = await this._fetchEvents({
-        since: `${value}T00:00:00`,
-        until: `${next}T00:00:00`,
-        limit: 500,
-      });
-      if (seq !== this._fetchSeq) return;
-      this._events = this._sortAndDedupe([...events, ...this._events]);
-      this._renderAll();
-      const target = this._events.find((event) => londonDateKey(event.createdAt) === value);
-      if (target) {
-        this._setStatus(`${events.length} events loaded for ${value}`);
-        window.requestAnimationFrame(() => this._scrollToEvent(target.id));
-      } else {
-        this._setStatus(`No events match ${value}.`);
-      }
-    } catch (_error) {
-      if (seq !== this._fetchSeq) return;
-      this._setStatus(`Events for ${value} could not be loaded.`, true);
-    } finally {
-      if (seq === this._fetchSeq) this._loading = false;
+    this._userScrolled = true;
+    while (this._loading) {
+      await new Promise((resolve) => window.setTimeout(resolve, 100));
+      if (token !== this._jumpSeq) return;
     }
-  }
-
-  _sortAndDedupe(events) {
-    const byId = new Map();
-    for (const event of events) byId.set(event.id, event);
-    return Array.from(byId.values()).sort((left, right) => {
-      const leftTime = parseDate(left.createdAt);
-      const rightTime = parseDate(right.createdAt);
-      return (leftTime ? leftTime.getTime() : 0) - (rightTime ? rightTime.getTime() : 0);
-    });
-  }
-
-  _setDevice(slug) {
-    if (slug === this._device) return;
-    if (this._abort) this._abort.abort();
-    this._fetchSeq += 1;
-    this._loading = false;
-    this._device = slug;
-    this._dateInput.value = "";
-    this._events = [];
-    this._selectedId = null;
-    this._hasMore = true;
-    this._renderAll();
-    this._loadInitial();
-  }
-
-  _setNotable(value) {
-    if (Boolean(value) === this._notableOnly) return;
-    if (this._abort) this._abort.abort();
-    this._fetchSeq += 1;
-    this._loading = false;
-    this._notableOnly = Boolean(value);
-    this._dateInput.value = "";
-    this._events = [];
-    this._selectedId = null;
-    this._hasMore = true;
-    this._renderAll();
-    this._loadInitial();
-  }
-
-  _select(id, options) {
-    if (!this._events.some((event) => event.id === id)) return;
-    this._selectedId = id;
-    this._renderMain();
-    for (const tile of this._timeline.querySelectorAll(".event-tile")) {
-      tile.setAttribute("aria-current", String(tile.dataset.eventId === id));
+    while (this._events.length && londonKey(this._events[0].date) > value && this._hasMore) {
+      if (seq !== this._fetchSeq || token !== this._jumpSeq) return;
+      if (!(await this._loadOlder())) return;
     }
-    if (!options || options.scroll !== false) this._scrollToEvent(id);
-    if (options && options.play) {
-      const playResult = this._player.play();
-      if (playResult && typeof playResult.catch === "function") playResult.catch(() => {});
-    }
-  }
-
-  _moveSelection(offset) {
-    if (!this._events.length) return;
-    const current = this._events.findIndex((event) => event.id === this._selectedId);
-    const next = Math.max(0, Math.min(this._events.length - 1, (current < 0 ? this._events.length - 1 : current) + offset));
-    this._select(this._events[next].id);
-    const button = Array.from(this._timeline.querySelectorAll(".event-tile"))
-      .find((tile) => tile.dataset.eventId === this._events[next].id);
-    if (button) button.focus({ preventScroll: true });
-  }
-
-  _selectedEvent() {
-    return this._events.find((event) => event.id === this._selectedId) || null;
-  }
-
-  _renderAll() {
-    this._renderControls();
-    this._renderMain();
-    this._renderTimeline();
-  }
-
-  _renderControls() {
-    this._deviceFilters.replaceChildren();
-    const options = [{ slug: "all", name: "All" }, ...this._devices];
-    for (const device of options) {
-      const button = el("button", "filter", {
-        type: "button",
-        "aria-pressed": String(device.slug === this._device),
-      });
-      button.textContent = device.name;
-      button.addEventListener("click", () => this._setDevice(device.slug));
-      this._deviceFilters.append(button);
-    }
-    this._notableButton.setAttribute("aria-pressed", String(this._notableOnly));
-  }
-
-  _renderMain() {
-    const event = this._selectedEvent();
-    this._card.classList.toggle("notable", Boolean(event && event.analysis.notable));
-    if (!event) {
-      this._player.pause();
-      this._player.removeAttribute("src");
-      this._player.load();
-      this._player.hidden = true;
-      this._playerEmpty.hidden = false;
-      this._playerEmpty.textContent = this._loaded ? "No events match these filters." : "Loading Ring events...";
-      this._camera.textContent = "Ring events";
-      this._eventTime.textContent = "";
-      this._eventTime.removeAttribute("datetime");
-      this._kind.textContent = "";
-      this._kind.hidden = true;
-      this._summary.textContent = "";
-      this._summary.hidden = true;
-      this._analysisState.textContent = "";
-      this._analysisState.hidden = true;
-      this._details.hidden = true;
+    if (seq !== this._fetchSeq || token !== this._jumpSeq) return;
+    const hit = this._events.find((event) => londonKey(event.date) >= value);
+    if (!hit) {
+      this._setStatus("Nothing recorded on or after that day.");
       return;
     }
-    if (event.clipUrl) {
-      this._player.hidden = false;
-      this._playerEmpty.hidden = true;
-      if (this._player.getAttribute("src") !== event.clipUrl) {
-        this._player.src = event.clipUrl;
-        this._player.load();
-      }
-    } else {
-      this._player.pause();
-      this._player.removeAttribute("src");
-      this._player.load();
-      this._player.hidden = true;
-      this._playerEmpty.hidden = false;
-      this._playerEmpty.textContent = event.recordingStatus === "expired"
-        ? "No recording became available for this event."
-        : "Ring is still preparing this recording.";
-    }
-    this._player.setAttribute("aria-label", `${event.deviceName}, ${kindLabel(event.kind)}, ${displayDateTime(event.createdAt, this._language())}`);
-    this._camera.textContent = event.deviceName;
-    this._eventTime.textContent = displayDateTime(event.createdAt, this._language());
-    this._eventTime.dateTime = event.createdAt;
-    this._kind.textContent = kindLabel(event.kind);
-    this._kind.hidden = false;
-    this._summary.textContent = event.analysis.summary;
-    this._summary.hidden = !event.analysis.summary;
-    const stateCopy = {
-      pending: "Analysis queued",
-      processing: "Analysis in progress",
-      failed: "Analysis failed",
-      disabled: "Analysis disabled",
-    }[event.status] || "";
-    this._analysisState.textContent = stateCopy;
-    this._analysisState.hidden = Boolean(event.analysis.summary) || !stateCopy;
-    this._detail.textContent = event.analysis.detail;
-    this._details.hidden = !event.analysis.detail;
+    if (londonKey(hit.date) !== value) this._setStatus(`Nothing on that day. Showing ${dayName(hit.date, this._language())}.`);
+    this._centerTile(hit.id, false);
   }
 
-  _renderTimeline() {
+  /* ----- timers ----- */
+
+  _startTimer() {
+    this._stopTimer();
+    this._refreshTimer = window.setInterval(() => this._refresh(), REFRESH_SECONDS * 1000);
+  }
+
+  _stopTimer() {
+    if (this._refreshTimer) window.clearInterval(this._refreshTimer);
+    this._refreshTimer = null;
+  }
+
+  /* ----- rendering ----- */
+
+  _language() {
+    const hass = this._hass;
+    const language = (hass && ((hass.locale && hass.locale.language) || hass.language)) || "en-GB";
+    return language === "en" ? "en-GB" : language;
+  }
+
+  _cameraName(slug) {
+    const cam = this._cameras.find((item) => item.slug === slug);
+    return cam ? cam.name : titleFromSlug(slug);
+  }
+
+  _liveCamera() {
+    return this._camera === "all" ? this._config.camera === "all" ? "front-door" : this._config.camera : this._camera;
+  }
+
+  _liveEntity() {
+    return this._config.entities[this._liveCamera()] || `camera.${this._liveCamera().replace(/-/g, "_")}_live_view`;
+  }
+
+  _renderPills() {
+    if (!this._pills) return;
+    this._pills.innerHTML = "";
+    const entries = [{ slug: "all", name: "All" }, ...this._cameras];
+    for (const cam of entries) {
+      const pill = el("button", "pill", { type: "button", "aria-pressed": String(cam.slug === this._camera) });
+      pill.textContent = cam.name;
+      pill.addEventListener("click", () => {
+        if (this._camera === cam.slug) return;
+        this._camera = cam.slug;
+        this._renderPills();
+        this._reload();
+      });
+      this._pills.append(pill);
+    }
+  }
+
+  _renderRail() {
+    const active = this.shadowRoot.activeElement;
+    const hadFocus = Boolean(active && active.classList && active.classList.contains("tile"));
     if (this._observer) this._observer.disconnect();
-    this._timeline.replaceChildren();
-    if (!this._events.length) {
-      const empty = el("div", "empty-strip");
-      empty.textContent = this._loaded ? "No events match these filters." : "Loading timeline...";
-      this._timeline.append(empty);
-      return;
+    this._rail.innerHTML = "";
+    const language = this._language();
+    const lazy = [];
+    if (this._hasMore && this._events.length) {
+      const loader = el("div", "loader", { "aria-hidden": "true" });
+      loader.textContent = "...";
+      this._rail.append(loader);
     }
-    let currentDay = null;
-    const lazyVideos = [];
+    let lastDay = null;
     for (const event of this._events) {
-      const dateKey = londonDateKey(event.createdAt);
-      if (dateKey !== currentDay) {
-        currentDay = dateKey;
-        const marker = el("div", "day-marker", { role: "presentation" });
-        marker.textContent = dayLabel(event.createdAt, this._language());
-        this._timeline.append(marker);
+      const key = londonKey(event.date);
+      if (key !== lastDay) {
+        const day = el("div", "day", { "aria-hidden": "true" });
+        const span = el("span");
+        span.textContent = dayName(event.date, language);
+        day.append(span);
+        this._rail.append(day);
+        lastDay = key;
       }
-      const selected = event.id === this._selectedId;
-      const tile = el("button", `event-tile${event.analysis.notable ? " notable-tile" : ""}`, {
+      const label = eventLabel(event);
+      const tile = el("button", `tile${event.analysis.notable ? " notable" : ""}`, {
         type: "button",
-        "aria-current": String(selected),
-        "aria-label": `${event.deviceName}, ${kindLabel(event.kind)}, ${displayDateTime(event.createdAt, this._language())}`,
+        role: "option",
+        "data-id": event.id,
+        "aria-current": String(this._selected === event.id),
+        "aria-selected": String(this._selected === event.id),
+        tabindex: this._selected === event.id ? "0" : "-1",
+        "aria-label": `${event.deviceName}, ${label}, ${relativeWhen(event.date, language)}`,
       });
-      tile.dataset.eventId = event.id;
-      tile.dataset.date = dateKey;
-      const video = event.clipUrl
-        ? el("video", "tile-video", { muted: "", playsinline: "", preload: "none", tabindex: "-1" })
-        : el("span", "tile-video", { "aria-hidden": "true" });
-      if (event.clipUrl) video.dataset.src = `${event.clipUrl}#t=0.5`;
-      const tileCopy = el("span", "tile-copy");
-      const top = el("span", "tile-top");
-      const time = el("span", "tile-time");
-      time.textContent = displayTime(event.createdAt, this._language());
-      const camera = el("span", "tile-camera");
-      camera.textContent = event.deviceName;
-      top.append(time, camera);
-      const tags = el("span", "tags");
-      const tagValues = event.analysis.tags.length ? event.analysis.tags.slice(0, 3) : [kindLabel(event.kind)];
-      for (const value of tagValues) {
-        const tag = el("span", "tag");
-        tag.textContent = value;
-        tags.append(tag);
+      const thumb = el("span", "thumb");
+      if (event.clipUrl) {
+        const video = el("video", "", { muted: "", playsinline: "", preload: "none", "aria-hidden": "true" });
+        video.muted = true;
+        video.dataset.src = `${event.clipUrl}#t=0.6`;
+        thumb.append(video);
+        lazy.push(video);
       }
-      tileCopy.append(top, tags);
-      tile.append(video, tileCopy);
-      tile.addEventListener("click", () => this._select(event.id, { play: true, scroll: false }));
-      this._timeline.append(tile);
-      if (event.clipUrl) lazyVideos.push(video);
+      if (event.kind === "ding") {
+        const ding = el("span", "kind-ding");
+        ding.textContent = "Ding";
+        thumb.append(ding);
+      }
+      const copy = el("span", "tile-copy");
+      const time = el("span", "tile-time");
+      time.textContent = formatTime(event.date, language);
+      if (this._camera === "all") {
+        const cam = el("span", "tile-cam");
+        cam.textContent = ` · ${event.deviceName}`;
+        time.append(cam);
+      }
+      const text = el("span", "tile-label");
+      text.textContent = label;
+      copy.append(time, text);
+      tile.append(thumb, copy);
+      tile.addEventListener("click", () => {
+        this._userScrolled = true;
+        this._centerTile(event.id, true);
+      });
+      this._rail.append(tile);
     }
-    this._observeVideos(lazyVideos);
+
+    const live = el("button", "tile live", {
+      type: "button", role: "option", "data-id": LIVE_ID,
+      "aria-current": String(this._selected === LIVE_ID),
+      "aria-selected": String(this._selected === LIVE_ID),
+      tabindex: this._selected === LIVE_ID ? "0" : "-1",
+      "aria-label": `Live view, ${this._cameraName(this._liveCamera())}`,
+    });
+    const liveThumb = el("span", "thumb");
+    const snap = this._snapshotUrl();
+    if (snap) {
+      const img = el("img", "", { alt: "", loading: "lazy" });
+      img.src = snap;
+      liveThumb.append(img);
+    }
+    const word = el("span", "live-word");
+    word.innerHTML = '<span class="live-dot"></span>LIVE';
+    liveThumb.append(word);
+    const liveCopy = el("span", "tile-copy");
+    const liveTime = el("span", "tile-time");
+    liveTime.textContent = "Now";
+    const liveLabel = el("span", "tile-label");
+    liveLabel.textContent = this._cameraName(this._liveCamera());
+    liveCopy.append(liveTime, liveLabel);
+    live.append(liveThumb, liveCopy);
+    live.addEventListener("click", () => {
+      this._userScrolled = true;
+      if (this._selected === LIVE_ID) this._startLive();
+      else this._goLive(true);
+    });
+    this._rail.append(live);
+    this._observeThumbs(lazy);
+    if (hadFocus) {
+      const tile = this._tileFor(this._selected);
+      if (tile) tile.focus({ preventScroll: true });
+    }
   }
 
-  _observeVideos(videos) {
+  _observeThumbs(videos) {
     const load = (video) => {
-      if (!video.dataset.src || video.src) return;
+      if (video.getAttribute("src") || !video.dataset.src) return;
       video.preload = "metadata";
       video.src = video.dataset.src;
-      video.load();
     };
-    if (typeof IntersectionObserver !== "function") {
-      videos.forEach(load);
-      return;
-    }
+    if (typeof IntersectionObserver !== "function") return videos.forEach(load);
     this._observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         load(entry.target);
         this._observer.unobserve(entry.target);
       }
-    }, { root: this._timeline, rootMargin: "0px 240px" });
+    }, { root: this._rail, rootMargin: "0px 200px" });
     videos.forEach((video) => this._observer.observe(video));
   }
 
-  _setStatus(message, isError) {
-    this._loadState.textContent = message;
-    this._loadState.classList.toggle("error", Boolean(isError));
+  _selectedEvent() {
+    return this._events.find((event) => event.id === this._selected) || null;
   }
 
-  _atRightEdge() {
-    return this._timeline.scrollWidth - this._timeline.clientWidth - this._timeline.scrollLeft <= NEAR_EDGE_PX;
+  _snapshotUrl() {
+    const hass = this._hass;
+    const state = hass && hass.states[this._liveEntity()];
+    const picture = state && state.attributes && state.attributes.entity_picture;
+    if (!picture) return null;
+    return hass.hassUrl ? hass.hassUrl(picture) : picture;
   }
 
-  _scrollToEnd(smooth) {
-    this._timeline.scrollTo({
-      left: this._timeline.scrollWidth,
-      // "instant", not "auto": auto defers to the CSS scroll-behavior: smooth on the strip.
-      behavior: smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "instant",
-    });
-  }
+  _renderStage() {
+    if (!this._stage) return;
+    const language = this._language();
+    const event = this._selectedEvent();
+    const isLive = this._selected === LIVE_ID;
+    this._card.classList.toggle("is-live", isLive && this._liveActive);
+    this._card.classList.toggle("notable", Boolean(event && event.analysis.notable));
+    this._liveJump.hidden = isLive;
 
-  _scrollToEvent(id) {
-    const tile = Array.from(this._timeline.querySelectorAll(".event-tile"))
-      .find((candidate) => candidate.dataset.eventId === id);
-    if (!tile) return;
-    // Scroll only the strip (scrollIntoView would also scroll the dashboard page),
-    // and jump instantly over long distances so lazy thumbnails we fly past stay unloaded.
-    const strip = this._timeline;
-    const stripRect = strip.getBoundingClientRect();
-    const tileRect = tile.getBoundingClientRect();
-    const left = strip.scrollLeft + (tileRect.left - stripRect.left) - (strip.clientWidth - tileRect.width) / 2;
-    const far = Math.abs(left - strip.scrollLeft) > strip.clientWidth * 2;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    strip.scrollTo({ left, behavior: far || reduce ? "instant" : "smooth" });
-  }
-
-  _onScroll() {
-    if (!this._userScrolled) return;
-    if (this._timeline.scrollLeft <= NEAR_EDGE_PX) this._loadOlder();
-  }
-
-  _onWheel(event) {
-    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || this._timeline.scrollWidth <= this._timeline.clientWidth) return;
-    event.preventDefault();
-    this._timeline.scrollLeft += event.deltaY;
-  }
-
-  _onKeyDown(event) {
-    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
-    const tile = event.target && event.target.closest
-      ? event.target.closest(".event-tile")
-      : null;
-    if (event.target !== this._card && event.target !== this._timeline && !tile) return;
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      this._moveSelection(-1);
-    } else if (event.key === "ArrowRight") {
-      event.preventDefault();
-      this._moveSelection(1);
+    for (const tile of this._rail.querySelectorAll(".tile")) {
+      const on = tile.dataset.id === this._selected;
+      tile.setAttribute("aria-current", String(on));
+      tile.setAttribute("aria-selected", String(on));
+      tile.tabIndex = on ? 0 : -1;
     }
+
+    if (isLive) {
+      this._bubble.className = "bubble live";
+      this._bubble.textContent = "LIVE";
+      if (!this._liveActive) {
+        this._clearStage();
+        const snap = this._snapshotUrl();
+        if (snap) {
+          const img = el("img", "snapshot", { alt: `Latest snapshot from ${this._cameraName(this._liveCamera())}` });
+          img.src = snap;
+          this._stage.append(img);
+        }
+        const cta = el("div", "stage-cta");
+        const btn = el("button", "stage-btn", { type: "button" });
+        btn.innerHTML = '<span class="live-dot"></span>';
+        btn.append(document.createTextNode(`Watch ${this._cameraName(this._liveCamera())} live`));
+        btn.addEventListener("click", () => this._startLive());
+        cta.append(btn);
+        this._stage.append(cta);
+        if (!this._hass) {
+          const note = el("div", "stage-note");
+          note.textContent = "Live view opens inside Home Assistant.";
+          this._stage.append(note);
+        }
+        this._stage.append(this._overlay(this._cameraName(this._liveCamera()), "Latest snapshot", null));
+      }
+    } else if (event) {
+      this._bubble.className = "bubble";
+      this._bubble.textContent = relativeWhen(event.date, language);
+      this._stopLive();
+      this._clearStage();
+      if (event.clipUrl) {
+        const video = el("video", "", { controls: "", playsinline: "", preload: "auto" });
+        video.muted = true;
+        video.autoplay = !reducedMotion();
+        video.src = event.clipUrl;
+        video.setAttribute("aria-label", `${event.deviceName} recording, ${relativeWhen(event.date, language)}`);
+        this._stage.append(video);
+      } else {
+        const empty = el("div", "stage-empty");
+        empty.textContent = "This clip is still downloading from Ring.";
+        this._stage.append(empty);
+      }
+      this._stage.append(this._overlay(event.deviceName, relativeWhen(event.date, language), event.kind === "ding" ? "Ding" : null));
+    } else {
+      this._bubble.className = "bubble";
+      this._bubble.textContent = "";
+    }
+    this._renderDetails();
+  }
+
+  _overlay(camera, when, badgeText, live) {
+    const overlay = el("div", "overlay");
+    const cam = el("span", "cam");
+    cam.textContent = camera;
+    const time = el("span", "when");
+    time.textContent = when;
+    overlay.append(cam, time);
+    if (badgeText || live) {
+      const badge = el("span", `badge${live ? " live" : ""}`);
+      if (live) badge.innerHTML = '<span class="live-dot"></span>';
+      badge.append(document.createTextNode(badgeText || "Live"));
+      overlay.append(badge);
+    }
+    return overlay;
+  }
+
+  _renderDetails() {
+    if (!this._label) return;
+    const language = this._language();
+    const event = this._selectedEvent();
+    this._label.textContent = "";
+    if (this._selected === LIVE_ID || !event) {
+      const name = this._cameraName(this._liveCamera());
+      this._label.textContent = this._liveActive ? `${name} · Live` : name;
+      const last = this._events[this._events.length - 1];
+      this._meta.textContent = last ? `Last event ${relativeWhen(last.date, language)}` : "";
+      this._summary.textContent = last && last.analysis.summary ? `Last: ${last.analysis.summary}` : "Swipe the timeline left to go back in time.";
+      this._summary.hidden = false;
+      this._more.hidden = true;
+      this._detail.hidden = true;
+      return;
+    }
+    const label = eventLabel(event);
+    if (event.analysis.notable) {
+      const flag = el("span", "flag");
+      flag.textContent = "Notable · ";
+      this._label.append(flag);
+    }
+    this._label.append(document.createTextNode(label));
+    this._meta.textContent = `${event.deviceName} · ${relativeWhen(event.date, language)}`;
+    let summary = event.analysis.summary;
+    if (!summary) {
+      summary = event.status === "excluded" ? "Indoor camera: not sent for AI description."
+        : event.status === "pending" ? "Description on its way."
+          : event.status === "failed" ? "No description for this clip." : "";
+    }
+    this._summary.textContent = summary;
+    this._summary.hidden = !summary;
+    const hasDetail = Boolean(event.analysis.detail && event.analysis.detail !== event.analysis.summary);
+    this._more.hidden = !hasDetail;
+    this._more.textContent = this._detailOpen ? "Less detail" : "More detail";
+    this._more.setAttribute("aria-expanded", String(this._detailOpen));
+    this._detail.textContent = event.analysis.detail;
+    this._detail.hidden = !(hasDetail && this._detailOpen);
+  }
+
+  _clearStage() {
+    this._stage.querySelectorAll("video").forEach((video) => { video.pause(); video.removeAttribute("src"); video.load(); });
+    this._stage.innerHTML = "";
+  }
+
+  /* ----- live ----- */
+
+  async _streamElement() {
+    if (customElements.get("ha-camera-stream")) return true;
+    try {
+      if (window.loadCardHelpers) {
+        const helpers = await window.loadCardHelpers();
+        const probe = await helpers.createCardElement({ type: "picture-entity", entity: this._liveEntity(), camera_view: "live" });
+        if (this._hass) probe.hass = this._hass;
+      }
+    } catch (_error) {
+      /* fall through to the timeout */
+    }
+    await Promise.race([
+      customElements.whenDefined("ha-camera-stream"),
+      new Promise((resolve) => window.setTimeout(resolve, 5000)),
+    ]);
+    return Boolean(customElements.get("ha-camera-stream"));
+  }
+
+  async _startLive() {
+    if (!this._hass || this._liveActive) return;
+    const entity = this._liveEntity();
+    const stateObj = this._hass.states[entity];
+    if (!stateObj) {
+      this._setStatus(`No live entity ${entity} in Home Assistant.`, true);
+      return;
+    }
+    this._liveActive = true;
+    this._clearStage();
+    const waiting = el("div", "stage-empty");
+    waiting.textContent = `Connecting to ${this._cameraName(this._liveCamera())}...`;
+    this._stage.append(waiting);
+    this._renderDetails();
+    const ok = await this._streamElement();
+    if (!this._liveActive || this._selected !== LIVE_ID) return;
+    this._clearStage();
+    if (!ok) {
+      this._liveActive = false;
+      this._renderStage();
+      this._setStatus("Live player didn't load. Open the camera from its entity instead.", true);
+      return;
+    }
+    const host = el("div", "live-host");
+    const stream = document.createElement("ha-camera-stream");
+    stream.hass = this._hass;
+    stream.stateObj = stateObj;
+    stream.controls = true;
+    stream.muted = true;
+    stream.allowExoPlayer = true;
+    host.append(stream);
+    this._liveStream = stream;
+    this._stage.append(host, this._overlay(this._cameraName(this._liveCamera()), "Now", "Live", true));
+    this._card.classList.add("is-live");
+    this._renderDetails();
+  }
+
+  _stopLive() {
+    if (this._liveStream) {
+      this._liveStream.remove();
+      this._liveStream = null;
+    }
+    this._liveActive = false;
+    if (this._card) this._card.classList.remove("is-live");
+  }
+
+  /* ----- rail behaviour ----- */
+
+  _tileFor(id) {
+    return this._rail.querySelector(`.tile[data-id="${CSS.escape(id)}"]`);
+  }
+
+  _centerTile(id, smooth) {
+    const tile = this._tileFor(id);
+    if (!tile) return;
+    const rail = this._rail.getBoundingClientRect();
+    const rect = tile.getBoundingClientRect();
+    const left = this._rail.scrollLeft + (rect.left - rail.left) - (this._rail.clientWidth - rect.width) / 2;
+    const far = Math.abs(left - this._rail.scrollLeft) > this._rail.clientWidth * 2;
+    this._rail.scrollTo({ left, behavior: smooth && !far && !reducedMotion() ? "smooth" : "instant" });
+    this._select(id);
+  }
+
+  _parkAtLive() {
+    this._quietUntil = Date.now() + 400;
+    this._rail.scrollTo({ left: this._rail.scrollWidth, behavior: "instant" });
+    this._select(LIVE_ID, true);
+  }
+
+  _goLive(start) {
+    this._centerTile(LIVE_ID, true);
+    if (start) this._startLive();
+  }
+
+  _select(id, force) {
+    if (!force && id === this._selected) return;
+    const leavingLive = this._selected === LIVE_ID && id !== LIVE_ID;
+    this._selected = id;
+    this._detailOpen = false;
+    if (leavingLive) this._stopLive();
+    this._renderStage();
+  }
+
+  _onRailScroll() {
+    window.clearTimeout(this._settleTimer);
+    this._settleTimer = window.setTimeout(() => this._settle(), SETTLE_MS);
+    if (this._userScrolled && this._rail.scrollLeft <= NEAR_EDGE_PX) this._loadOlder();
+  }
+
+  _settle() {
+    const center = this._rail.getBoundingClientRect().left + this._rail.clientWidth / 2;
+    let best = null;
+    let bestDistance = Infinity;
+    for (const tile of this._rail.querySelectorAll(".tile")) {
+      const rect = tile.getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - center);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = tile;
+      }
+    }
+    if (!best || !this._userScrolled || Date.now() < (this._quietUntil || 0)) return;
+    this._select(best.dataset.id);
+    // Like Ring: landing on the right end means "show me now".
+    if (best.dataset.id === LIVE_ID && !this._liveActive) this._startLive();
+  }
+
+  _onKey(event) {
+    const origin = event.composedPath()[0];
+    const fromTimeline = origin === this._card || origin === this._rail
+      || (origin instanceof Element && origin.classList.contains("tile"));
+    if (!fromTimeline) return;
+    const ids = [...this._rail.querySelectorAll(".tile")].map((tile) => tile.dataset.id);
+    const index = ids.indexOf(this._selected);
+    let next = null;
+    if (event.key === "ArrowLeft") next = ids[Math.max(0, index - 1)];
+    else if (event.key === "ArrowRight") next = ids[Math.min(ids.length - 1, index + 1)];
+    else if (event.key === "End") next = LIVE_ID;
+    else if (event.key === "Home") next = ids[0];
+    if (!next) return;
+    event.preventDefault();
+    this._userScrolled = true;
+    this._centerTile(next, true);
+    const tile = this._tileFor(next);
+    if (tile) tile.focus({ preventScroll: true });
+    if (next === LIVE_ID && !this._liveActive) this._startLive();
+  }
+
+  _setStatus(message, isError) {
+    if (!this._status) return;
+    this._status.textContent = message || "";
+    this._status.classList.toggle("error", Boolean(isError));
   }
 }
 
-if (!customElements.get("ring-events-card")) {
-  customElements.define("ring-events-card", RingEventsCard);
-}
+if (!customElements.get("ring-events-card")) customElements.define("ring-events-card", RingEventsCard);
 
 window.customCards = window.customCards || [];
 if (!window.customCards.some((card) => card.type === "ring-events-card")) {
   window.customCards.push({
     type: "ring-events-card",
-    name: "Ring Events Card",
-    description: "Ring recordings with a camera timeline and Gemini summaries.",
+    name: "Ring timeline",
+    description: "Ring-style live view and recorded history on one timeline, labelled by Gemini.",
     preview: false,
-    documentationURL: `${DEFAULT_BASE_URL}/`,
+    documentationURL: "https://hass.iacob.uk/ring-events/",
   });
 }
