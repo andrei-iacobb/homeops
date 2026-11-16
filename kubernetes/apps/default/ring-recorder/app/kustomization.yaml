@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./secret.sops.yaml
+  - ./pvc.yaml
+  - ./deployment.yaml
+  - ./service.yaml
+  - ./httproute.yaml
+  - ./servicemonitor.yaml
+configMapGenerator:
+  - name: ring-recorder-code
+    files:
+      - recorder.py=resources/recorder.py
+      - index.html=resources/index.html
+      - ring-events-card.js=resources/ring-events-card.js
+    options:
+      annotations:
+        # The card uses JS template literals. Keep Flux envsubst away from this ConfigMap.
+        kustomize.toolkit.fluxcd.io/substitute: disabled

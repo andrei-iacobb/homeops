@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Ring event archive</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --text: #f2f0ec;
+      --secondary: rgba(242, 240, 236, .64);
+      --line: rgba(255, 255, 255, .08);
+      --canvas: #0d0d0d;
+      --panel: #151515;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; }
+    body {
+      background: var(--canvas);
+      color: var(--text);
+      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1100px, 100%); margin: 0 auto; padding: 24px 18px 32px; }
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 720;
+      letter-spacing: -.025em;
+      line-height: 1.08;
+    }
+    .lede { max-width: 56ch; margin: 6px 0 0; color: var(--secondary); }
+    .state {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--secondary);
+      font-size: 12px;
+    }
+    ring-events-card { display: block; }
+    .load-error {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      color: #ef9991;
+    }
+    :focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+    @media (max-width: 640px) {
+      main { padding: 17px 10px 24px; }
+      header { align-items: start; flex-direction: column; gap: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Ring event archive</h1>
+        <p class="lede">Browse saved doorbell and indoor camera recordings, with Gemini summaries when analysis is enabled.</p>
+      </div>
+      <div class="state" id="state">Loading event browser...</div>
+    </header>
+    <ring-events-card id="browser"></ring-events-card>
+  </main>
+  <script>
+    const state = document.getElementById("state");
+    const browser = document.getElementById("browser");
+    let path = location.pathname.replace(/\/+$/, "");
+    if (path.endsWith("/index.html")) path = path.slice(0, -"/index.html".length);
+    const baseUrl = location.origin + path;
+    const script = document.createElement("script");
+    script.src = `${baseUrl}/card.js`;
+    script.onload = () => {
+      if (typeof browser.setConfig !== "function") {
+        state.textContent = "Card failed to register";
+        browser.replaceWith(Object.assign(document.createElement("p"), {
+          className: "load-error",
+          textContent: "The event browser could not start. Refresh the page to retry.",
+        }));
+        return;
+      }
+      browser.setConfig({ base_url: baseUrl });
+      state.textContent = "Archive online";
+    };
+    script.onerror = () => {
+      state.textContent = "Archive unavailable";
+      browser.replaceWith(Object.assign(document.createElement("p"), {
+        className: "load-error",
+        textContent: "The event browser could not be loaded. Refresh the page to retry.",
+      }));
+    };
+    document.head.append(script);
+  </script>
+</body>
+</html>

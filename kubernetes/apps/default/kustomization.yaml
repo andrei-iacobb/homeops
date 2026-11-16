@@ -24,6 +24,7 @@ resources:
   - ./solis-charge/ks.yaml
   - ./fanwatch/ks.yaml
   - ./petkit-snapshotter/ks.yaml
+  - ./ring-recorder/ks.yaml
   - ./slate/ks.yaml
   - ./spill/ks.yaml
   - ./forgejo-runner/ks.yaml

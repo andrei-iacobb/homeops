@@ -1,0 +1,122 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ring-recorder
+  namespace: default
+  labels:
+    app: ring-recorder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ring-recorder
+  template:
+    metadata:
+      labels:
+        app: ring-recorder
+      annotations:
+        # OpenTelemetry SDK injected by the operator (monitoring/otel-operator).
+        instrumentation.opentelemetry.io/inject-python: "default"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ring-recorder
+          image: python:3.15.2-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
+          command: ["python3", "/app/recorder.py"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: RING_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ring-recorder-secret
+                  key: RING_REFRESH_TOKEN
+            - name: RING_HARDWARE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ring-recorder-secret
+                  key: RING_HARDWARE_ID
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ring-recorder-secret
+                  key: GEMINI_API_KEY
+                  optional: true
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ring-recorder-secret
+                  key: API_TOKEN
+                  optional: true
+            - name: PUBLIC_BASE_URL
+              value: "https://hass.iacob.uk/ring-events"
+            - name: STORAGE_DIR
+              value: "/data"
+            - name: INDEX_PATH
+              value: "/app/index.html"
+            - name: CARD_PATH
+              value: "/app/ring-events-card.js"
+            - name: PORT
+              value: "8080"
+            - name: TMPDIR
+              value: "/tmp"
+            - name: POLL_SECONDS
+              value: "60"
+            - name: RETENTION_DAYS
+              value: "180"
+            - name: TIME_ZONE
+              value: "Europe/London"
+            - name: GEMINI_MODEL
+              value: "gemini-3.5-flash,gemini-flash-latest,gemini-3.1-flash-lite"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: app
+          configMap:
+            name: ring-recorder-code
+        - name: data
+          persistentVolumeClaim:
+            claimName: ring-recorder-data
+        - name: tmp
+          emptyDir: {}

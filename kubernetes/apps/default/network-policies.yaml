@@ -47,3 +47,21 @@ spec:
             - key: k8s:io.kubernetes.pod.namespace
               operator: In
               values: [default, media, monitoring]
+---
+# Ring recorder exposes unauthenticated read APIs. Only the internal gateway,
+# Prometheus, and kubelet health probes may reach it.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ring-recorder-internal-only
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: ring-recorder
+  ingressDeny:
+    - fromEndpoints:
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: [default, media]

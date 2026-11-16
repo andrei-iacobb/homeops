@@ -20,5 +20,8 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: petkit-snapshotter
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: ring-recorder
   authorization:
     defaultAction: Allow
