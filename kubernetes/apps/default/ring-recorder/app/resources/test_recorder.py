@@ -469,7 +469,7 @@ class GeminiFallbackTests(RecorderTestCase):
 
     def test_transient_error_keeps_clip_pending(self):
         rec = recorder.Recorder(self.config)
-        row = {"analysis_status": "pending"}
+        row = {"analysis_status": "pending", "device_slug": "driveway"}
         with patch.object(rec.store, "get_row", return_value=row), patch.object(
                 rec.store, "clip_for_event", return_value=self.config.clips_dir / "x.mp4"), patch.object(
                 rec.store, "row_to_api", return_value={}), patch.object(
@@ -479,3 +479,22 @@ class GeminiFallbackTests(RecorderTestCase):
             self.config.gemini_api_key = "k"
             self.assertEqual(rec.analyse_event("1"), "backoff")
         mark.assert_not_called()
+
+
+class ExcludedDeviceTests(unittest.TestCase):
+    def test_excluded_device_never_analysed(self):
+        with TemporaryDirectory() as tmp:
+            config = recorder.Config()
+            config.storage_dir = Path(tmp)
+            config.gemini_api_key = "k"
+            config.gemini_model = "m"
+            config.gemini_exclude = {"hallway"}
+            rec = recorder.Recorder(config)
+            row = {"analysis_status": "pending", "device_slug": "hallway"}
+            with patch.object(rec.store, "get_row", return_value=row), patch.object(
+                    rec.store, "clip_for_event", return_value=Path(tmp) / "x.mp4"), patch.object(
+                    rec.gemini, "analyse_clip") as analyse, patch.object(
+                    rec.store, "mark_analysis") as mark:
+                self.assertIsNone(rec.analyse_event("1"))
+            analyse.assert_not_called()
+            mark.assert_called_once_with("1", "excluded", None)

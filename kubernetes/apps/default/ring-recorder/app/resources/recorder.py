@@ -192,6 +192,10 @@ class Config:
         self.public_base_url = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
         self.poll_seconds = max(10, int(os.environ.get("POLL_SECONDS", "60")))
         self.retention_days = max(1, int(os.environ.get("RETENTION_DAYS", "180")))
+        # Device slugs whose footage must never be sent to Gemini (indoor cameras).
+        self.gemini_exclude = {
+            slug.strip() for slug in os.environ.get("GEMINI_EXCLUDE_DEVICES", "").split(",") if slug.strip()
+        }
         self.time_zone = ZoneInfo(os.environ.get("TIME_ZONE", "Europe/London"))
         self.gemini_model = os.environ.get("GEMINI_MODEL", "").strip()
         # Questions asked through /api/analyze use a stronger (slower) model list.
@@ -509,6 +513,18 @@ class EventStore:
                 WHERE event_id = ?
                 """,
                 (status, json.dumps(analysis) if analysis is not None else None, iso_utc(), event_id),
+            )
+
+    def exclude_devices(self, slugs: set[str]) -> None:
+        """Stop queued analysis for excluded devices; nothing of theirs is sent again."""
+        if not slugs:
+            return
+        marks = ",".join("?" for _ in slugs)
+        with self.connect() as connection:
+            connection.execute(
+                f"UPDATE events SET analysis_status = 'excluded' "
+                f"WHERE analysis_status = 'pending' AND device_slug IN ({marks})",
+                tuple(sorted(slugs)),
             )
 
     def requeue_analysis(self, event_id: str) -> bool:
@@ -1127,6 +1143,7 @@ class Recorder:
         self.ring = RingClient(self.config, self.metrics)
         self.gemini = GeminiClient(self.config)
         self.analysis_queue: queue.Queue[str] = queue.Queue()
+        self.store.exclude_devices(self.config.gemini_exclude)
 
     def history_events(self, device: dict[str, str]) -> list[dict[str, Any]]:
         discovered: list[dict[str, Any]] = []
@@ -1153,7 +1170,10 @@ class Recorder:
                     backfilling = False
                     continue
                 if self.store.add_discovered_event(
-                    event, device, disabled=not bool(self.config.gemini_api_key)
+                    event,
+                    device,
+                    disabled=not bool(self.config.gemini_api_key)
+                    or device["slug"] in self.config.gemini_exclude,
                 ):
                     discovered.append(event)
             if not backfilling:
@@ -1282,6 +1302,9 @@ class Recorder:
         row = self.store.get_row(event_id)
         path = self.store.clip_for_event(event_id)
         if row is None or path is None or row["analysis_status"] != "pending":
+            return None
+        if row["device_slug"] in self.config.gemini_exclude:
+            self.store.mark_analysis(event_id, "excluded", None)
             return None
         if not self.config.gemini_api_key:
             self.store.mark_analysis(event_id, "disabled", None)
@@ -1629,6 +1652,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             limit=MAX_ANALYZE_CLIPS,
         )
 
+    def _without_excluded(self, rows: list[sqlite3.Row]) -> list[sqlite3.Row]:
+        excluded = self.server.recorder.config.gemini_exclude
+        return [row for row in rows if row["device_slug"] not in excluded]
+
     def _analyze(self, payload: dict[str, Any]) -> None:
         question = payload.get("question")
         if not isinstance(question, str) or not question.strip():
@@ -1639,6 +1666,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
         rows = self._select_analyze_rows(payload)
         if rows is None:
+            return
+        rows = self._without_excluded(rows)
+        if not rows:
+            self._error(HTTPStatus.BAD_REQUEST, "no outdoor clips matched (indoor cameras are never sent to Gemini)")
             return
         clips: list[tuple[Path, dict[str, Any]]] = []
         for row in rows:
