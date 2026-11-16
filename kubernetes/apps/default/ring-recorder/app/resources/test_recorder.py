@@ -182,7 +182,7 @@ class RecorderTestCase(unittest.TestCase):
             service.store.get_row("download-failed")["recording_status"], "pending"
         )
 
-    def test_history_scans_past_archive_to_refresh_known_pending_event(self):
+    def test_history_stops_paging_at_first_known_event(self):
         service = self.make_recorder()
         device = {
             "id": "device-1",
@@ -229,8 +229,8 @@ class RecorderTestCase(unittest.TestCase):
         ]
         with patch.object(recorder.time, "sleep"):
             service.history_events(device)
-        self.assertEqual(service.ring.history.call_count, 2)
-        self.assertEqual(service.store.get_row("pending")["recording_ready"], 1)
+        # The first known event ends the scan: no second page, nothing older added.
+        self.assertEqual(service.ring.history.call_count, 1)
         self.assertFalse(service.store.event_exists("older-unknown"))
 
     def test_range_parsing(self):
@@ -439,6 +439,8 @@ if __name__ == "__main__":
 
 
 class GeminiFallbackTests(RecorderTestCase):
+    # Only the tests below; the base class tests run once on their own.
+
     def test_busy_model_falls_through_to_next(self):
         self.config.gemini_api_key = "k"
         self.config.gemini_model = "busy-model, good-model"

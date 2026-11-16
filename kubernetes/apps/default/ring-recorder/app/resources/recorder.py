@@ -55,6 +55,8 @@ INLINE_CLIP_BYTES = 18 * 1024 * 1024
 DOWNLOAD_CHUNK = 1024 * 1024
 HISTORY_LIMIT = 50
 ANALYSIS_SWEEP_SECONDS = 600
+# Backlog drains a few clips per poll so new events are never stuck behind it.
+DOWNLOADS_PER_POLL = 10
 ANALYSIS_BACKOFF_SECONDS = 300
 MAX_ANALYZE_CLIPS = 8
 MAX_QUESTION_CHARS = 2000
@@ -192,6 +194,8 @@ class Config:
         self.retention_days = max(1, int(os.environ.get("RETENTION_DAYS", "180")))
         self.time_zone = ZoneInfo(os.environ.get("TIME_ZONE", "Europe/London"))
         self.gemini_model = os.environ.get("GEMINI_MODEL", "").strip()
+        # Questions asked through /api/analyze use a stronger (slower) model list.
+        self.gemini_ask_model = os.environ.get("GEMINI_ASK_MODEL", "").strip() or self.gemini_model
         self.gemini_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         self.api_token = os.environ.get("API_TOKEN", "")
         self.ring_refresh_token = os.environ.get("RING_REFRESH_TOKEN", "").strip()
@@ -892,7 +896,7 @@ class GeminiClient:
         for attempt in range(attempts):
             request = Request(url, data=body, headers=request_headers, method=method)
             try:
-                with urlopen(request, timeout=120) as response:
+                with urlopen(request, timeout=300) as response:
                     raw = read_limited(response)
                     return (json.loads(raw) if raw else None), response.headers
             except HTTPError as error:
@@ -1019,15 +1023,21 @@ class GeminiClient:
             raise
         return parts, uploaded
 
-    def _generate(self, contents: list[dict[str, Any]], generation_config: dict[str, Any]) -> str:
+    def _generate(
+        self,
+        contents: list[dict[str, Any]],
+        generation_config: dict[str, Any],
+        model_list: str | None = None,
+    ) -> str:
+        model_list = model_list if model_list is not None else self.config.gemini_model
         if not self.config.gemini_api_key:
             raise GeminiError("GEMINI_API_KEY is empty")
-        if not self.config.gemini_model:
+        if not model_list:
             raise GeminiError("GEMINI_MODEL is empty")
         payload = {"contents": contents, "generationConfig": generation_config}
         # GEMINI_MODEL is a comma-separated preference list; fall through to the
         # next model only when the current one is busy or out of quota.
-        models = [m.strip() for m in self.config.gemini_model.split(",") if m.strip()]
+        models = [m.strip() for m in model_list.split(",") if m.strip()]
         response = None
         for index, model in enumerate(models):
             try:
@@ -1100,7 +1110,9 @@ class GeminiClient:
         )
         try:
             return self._generate(
-                [{"role": "user", "parts": [{"text": prompt}, *parts]}], {}
+                [{"role": "user", "parts": [{"text": prompt}, *parts]}],
+                {},
+                self.config.gemini_ask_model,
             ).strip()
         finally:
             for name in uploaded:
@@ -1134,17 +1146,17 @@ class Recorder:
                     pending_ids.discard(event_id)
                 if not backfilling:
                     continue
-                if self.store.event_archived(event_id):
-                    backfilling = False
-                    continue
                 if self.store.event_exists(event_id):
+                    # Ring history is newest first: the first known event means
+                    # everything older is already in the DB.
                     self.store.update_recording_readiness(event_id, event)
+                    backfilling = False
                     continue
                 if self.store.add_discovered_event(
                     event, device, disabled=not bool(self.config.gemini_api_key)
                 ):
                     discovered.append(event)
-            if not backfilling and not pending_ids:
+            if not backfilling:
                 break
             last_id = str(page[-1].get("id", ""))
             if not last_id or last_id == older_than:
@@ -1193,7 +1205,7 @@ class Recorder:
         expired = self.store.mark_recording_expired()
         if expired:
             LOG.warning("Gave up on %d Ring recordings that stayed unready for 24 hours", expired)
-        for row in self.store.pending_recordings():
+        for row in self.store.pending_recordings()[:DOWNLOADS_PER_POLL]:
             event_id = str(row["event_id"])
             created = parse_datetime(row["created_at"])
             day = created.astimezone(self.config.time_zone).date().isoformat() if created else "unknown"
