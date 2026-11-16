@@ -449,9 +449,6 @@ class RecorderTestCase(unittest.TestCase):
         self.assertEqual(body["event_ids"][0], "event-9")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class GeminiFallbackTests(RecorderTestCase):
     # Only the tests below; the base class tests run once on their own.
@@ -485,7 +482,8 @@ class GeminiFallbackTests(RecorderTestCase):
     def test_transient_error_keeps_clip_pending(self):
         rec = recorder.Recorder(self.config)
         row = {"analysis_status": "pending", "device_slug": "driveway", "event_id": "1",
-               "created_at": "2026-11-16T19:00:00+00:00", "alerted": 0}
+               "created_at": "2026-11-16T19:00:00+00:00", "alerted": 0,
+               "duration": 10, "detection": None, "kind": "motion"}
         with patch.object(rec.store, "get_row", return_value=row), patch.object(
                 rec.store, "clip_for_event", return_value=self.config.clips_dir / "x.mp4"), patch.object(
                 rec.store, "row_to_api", return_value={}), patch.object(
@@ -881,3 +879,84 @@ class ReviewFixTests(Fixture):
             with patch.object(self.rec.ring, "devices", side_effect=recorder.URLError("down")):
                 self.rec.poll_once()
         self.assertEqual(self.rec._devices, devices)
+
+
+class DirectionTests(Fixture):
+    def setUp(self):
+        Fixture.setUp(self)
+        self.config.gemini_api_key = "k"
+        self.config.door_sides = {"front-door": "right"}
+        self.rec = self.make_recorder()
+        self.store = self.rec.store
+        self.add_event(self.store, "1", recorder.iso_utc(recorder.utc_now()))
+        with self.store.connect() as connection:
+            connection.execute("UPDATE events SET detection = 'human' WHERE event_id = '1'")
+        clip = self.config.clips_dir / "front-door" / "1.mp4"
+        clip.parent.mkdir(parents=True, exist_ok=True)
+        clip.write_bytes(b"mp4")
+        self.store.mark_downloaded("1", "front-door/1.mp4", 3)
+        with self.store.connect() as connection:
+            connection.execute("UPDATE events SET quick_status = 'ok' WHERE event_id = '1'")
+
+    def test_direction_rules(self):
+        track = recorder.direction_from_track
+        self.assertEqual(track([[], ["middle"], ["right"], ["right"], []], "right"), "arriving")
+        self.assertEqual(track([[], ["right"], ["middle", "right"], ["left"], []], "right"), "leaving")
+        self.assertIsNone(track([["middle"], ["middle"]], "right"))
+        self.assertIsNone(track([[], []], "right"))
+        self.assertIsNone(track([[], ["middle"], ["right"]], "right"))  # never vanished
+        self.assertIsNone(track([["right"], ["left"], []], "right"))  # was already there
+        self.assertIsNone(track([[], ["middle", "right"], ["left"], []], "right"))
+        apply = recorder.apply_direction
+        self.assertEqual(apply({"label": "Resident departs"}, "arriving")["label"], "Arriving home")
+        self.assertEqual(apply({"label": "Leaves parcel"}, "arriving")["label"], "Leaves parcel")
+        self.assertEqual(apply({"label": "Arrived home"}, "leaving")["label"], "Leaving home")
+        self.assertEqual(recorder.parse_door_sides("front-door:right, x:up,y:left"),
+                         {"front-door": "right", "y": "left"})
+
+    def analyse(self, track, label):
+        with patch.object(recorder, "extract_frame", return_value=b"jpg"), patch.object(
+                self.rec.gemini, "track_people", return_value=track) as tracked, patch.object(
+                self.rec.gemini, "analyse_clip", return_value={"label": label, "summary": "s"}) as analyse:
+            self.rec.analyse_event("1")
+        return tracked, analyse, json.loads(self.store.get_row("1")["analysis"])
+
+    def test_measured_arrival_corrects_label_and_reaches_prompt(self):
+        tracked, analyse, stored = self.analyse([[], ["middle"], ["right"], []], "Leaving home")
+        self.assertEqual(len(tracked.call_args.args[0]), recorder.TRACK_FRAMES)
+        self.assertEqual(stored["summary"], "s")
+        self.assertIn("INTO the house", analyse.call_args.args[2])
+        self.assertEqual((stored["label"], stored["direction"]), ("Arriving home", "arriving"))
+
+    def test_unclear_track_leaves_model_label(self):
+        _, analyse, stored = self.analyse([["middle"], ["middle"]], "Visitor at door")
+        self.assertNotIn("Measured", analyse.call_args.args[2])
+        self.assertEqual(stored["label"], "Visitor at door")
+        self.assertNotIn("direction", stored)
+
+    def test_tracking_failure_still_analyses(self):
+        with patch.object(recorder, "extract_frame", side_effect=ValueError("no frame")), patch.object(
+                self.rec.gemini, "analyse_clip", return_value={"label": "Passer-by"}) as analyse:
+            self.rec.analyse_event("1")
+        analyse.assert_called_once()
+        self.assertEqual(self.store.get_row("1")["analysis_status"], "ok")
+
+    def test_track_with_wrong_timestamps_is_rejected(self):
+        self.config.gemini_quick_model = "m"
+        frames = [(0.0, b"a"), (5.0, b"b")]
+        bad = json.dumps({"frames": [{"t": 5.0, "people": ["right"]}, {"t": 0.0, "people": []}]})
+        with patch.object(self.rec.gemini, "_generate", return_value=bad):
+            with self.assertRaises(recorder.GeminiError):
+                self.rec.gemini.track_people(frames)
+        good = json.dumps({"frames": [{"t": 0, "people": []}, {"t": 5, "people": ["right"]}]})
+        with patch.object(self.rec.gemini, "_generate", return_value=good):
+            self.assertEqual(self.rec.gemini.track_people(frames), [[], ["right"]])
+
+    def test_other_cameras_are_not_tracked(self):
+        self.config.door_sides = {}
+        tracked, _, _ = self.analyse([], "Passer-by")
+        tracked.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

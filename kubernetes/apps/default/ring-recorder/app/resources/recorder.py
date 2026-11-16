@@ -76,6 +76,10 @@ PRESENCE_RETENTION = timedelta(days=30)
 THUMB_WIDTH = 640
 QUICK_FRAME_WIDTH = 512
 QUICK_FRAME_SPACING = 2.0
+# Direction is worked out in code from where people are in evenly spaced stills: the lite
+# models describe positions reliably but keep getting "into" vs "out of" the house wrong.
+TRACK_FRAMES = 10
+TRACK_FRAME_WIDTH = 384
 DEFAULT_HERO_OFFSET = 3.0
 THUMB_LINK_SECONDS = 7 * 24 * 3600
 FFMPEG_TIMEOUT = 30
@@ -181,6 +185,31 @@ def extract_frame(ffmpeg: str, clip: Path, offset: float, width: int) -> bytes:
     raise ValueError("ffmpeg could not extract a frame")
 
 
+def direction_from_track(track: list[list[str]], door_side: str) -> str | None:
+    """'arriving' when people come from elsewhere and vanish at the door edge; 'leaving' when
+    they appear at the door edge after an empty frame and end up away from it."""
+    seen = [index for index, frame in enumerate(track) if frame]
+    if not seen:
+        return None
+    first, last = set(track[seen[0]]), set(track[seen[-1]])
+    vanished = seen[-1] < len(track) - 1
+    appeared = seen[0] > 0
+    if door_side not in first and last == {door_side} and vanished:
+        return "arriving"
+    if first == {door_side} and door_side not in last and appeared:
+        return "leaving"
+    return None
+
+
+def parse_door_sides(raw: str) -> dict[str, str]:
+    sides: dict[str, str] = {}
+    for item in raw.split(","):
+        slug, _, side = item.partition(":")
+        if slug.strip() and side.strip() in {"left", "right"}:
+            sides[slug.strip()] = side.strip()
+    return sides
+
+
 def load_scenes(path: Path) -> dict[str, str]:
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
@@ -270,6 +299,8 @@ class Config:
         self.public_base_url = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
         self.poll_seconds = max(10, int(os.environ.get("POLL_SECONDS", "60")))
         # 0 keeps footage forever; Ring itself only keeps it for its plan's window.
+        # "slug:side" pairs for cameras that look out from beside the front door.
+        self.door_sides = parse_door_sides(os.environ.get("DOOR_SIDES", ""))
         self.retention_days = int(os.environ.get("RETENTION_DAYS", "180"))
         if self.retention_days < 0:
             raise ValueError("RETENTION_DAYS must be 0 (forever) or a positive number of days")
@@ -1389,6 +1420,57 @@ class GeminiClient:
             raise GeminiError("Gemini quick look was not an object")
         return result
 
+    TRACK_SCHEMA = {
+        "type": "OBJECT",
+        "properties": {
+            "frames": {
+                "type": "ARRAY",
+                "items": {
+                    "type": "OBJECT",
+                    "properties": {
+                        "t": {"type": "NUMBER"},
+                        "people": {
+                            "type": "ARRAY",
+                            "items": {"type": "STRING", "enum": ["left", "middle", "right"]},
+                        },
+                    },
+                    "required": ["t", "people"],
+                },
+            }
+        },
+        "required": ["frames"],
+    }
+
+    def track_people(self, frames: list[tuple[float, bytes]]) -> list[list[str]]:
+        """Where each person is (left/middle/right third) in each still, in time order."""
+        parts: list[dict[str, Any]] = [{
+            "text": "Stills in time order from a doorbell camera. For each still list the horizontal position "
+            "(left, middle or right third of the image) of every person visible; empty list if none. Ignore "
+            "reflections, statues and plants."
+        }]
+        for offset, frame in frames:
+            parts.append({"text": f"t={offset:.1f}"})
+            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(frame).decode()}})
+        text = self._generate(
+            [{"role": "user", "parts": parts}],
+            {
+                "responseMimeType": "application/json",
+                "responseSchema": self.TRACK_SCHEMA,
+                "mediaResolution": "MEDIA_RESOLUTION_LOW",
+            },
+            self.config.gemini_quick_model,
+        )
+        try:
+            result = json.loads(text)
+            items = result["frames"]
+            if len(items) != len(frames) or any(
+                abs(float(item["t"]) - offset) > 0.5 for item, (offset, _) in zip(items, frames)
+            ):
+                raise GeminiError("Gemini track did not match the stills")
+            return [[str(where) for where in item.get("people") or []] for item in items]
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError, ValueError) as error:
+            raise GeminiError("Gemini track was malformed") from error
+
     def analyse_clip(self, path: Path, event: dict[str, Any], context: str = "") -> dict[str, Any]:
         local_time = event.get("local_time") or event.get("created_at")
         device = event.get("device_name") or event.get("device")
@@ -1642,6 +1724,26 @@ class Recorder:
             return "backlog"
         self.enqueue_analysis(event_id)
         return "backlog" if age > BACKLOG_AGE else None
+
+    def measure_direction(self, row: sqlite3.Row, path: Path) -> str | None:
+        """Best effort: a failed measurement only loses the hint, never the analysis."""
+        side = self.config.door_sides.get(str(row["device_slug"]))
+        duration = float(row["duration"] or 0)
+        if not side or duration <= 0 or (row["detection"] != "human" and row["kind"] != "ding"):
+            return None
+        try:
+            frames = []
+            for index in range(TRACK_FRAMES):
+                offset = duration * index / TRACK_FRAMES
+                frames.append((offset, extract_frame(self.config.ffmpeg, path, offset, TRACK_FRAME_WIDTH)))
+            return direction_from_track(self.gemini.track_people(frames), side)
+        except GeminiError as error:
+            if error.transient:
+                raise
+            LOG.warning("Direction tracking failed for %s: %s", row["event_id"], error)
+        except (HTTPError, URLError, OSError, ValueError, subprocess.TimeoutExpired) as error:
+            LOG.warning("Direction tracking failed for %s: %s", row["event_id"], type(error).__name__)
+        return None
 
     def deep_context(self, row: sqlite3.Row) -> str:
         lines: list[str] = []
@@ -1897,7 +1999,13 @@ class Recorder:
         created = parse_datetime(row["created_at"])
         paced = "backlog" if created is None or utc_now() - created > BACKLOG_AGE else None
         try:
-            analysis = self.gemini.analyse_clip(path, event, self.deep_context(row))
+            direction = self.measure_direction(row, path)
+            context = self.deep_context(row)
+            if direction:
+                context = DIRECTION_FACTS[direction] + ("\n" + context if context else "")
+            analysis = self.gemini.analyse_clip(path, event, context)
+            if direction:
+                analysis = apply_direction(analysis, direction)
         except GeminiError as error:
             if error.transient:
                 LOG.warning("Gemini busy or out of quota (%s); backing off", error)
@@ -1930,6 +2038,28 @@ class Recorder:
             except (OSError, sqlite3.Error) as error:
                 LOG.warning("Retention prune failed: %s", type(error).__name__)
             stop.wait(3600)
+
+
+DIRECTION_FACTS = {
+    "arriving": "- Measured from the frames: the person walked to the front door edge of the picture and "
+    "disappeared there, so they went INTO the house.",
+    "leaving": "- Measured from the frames: the person first appeared at the front door edge of the picture and "
+    "walked away from it, so they came OUT of the house.",
+}
+
+
+CONTRADICTS = {
+    "arriving": re.compile(r"\b(leaving|departing|departs|left home|going out|heading out)\b", re.I),
+    "leaving": re.compile(r"\b(arriving|arrives|arrived|coming home|returning|returns)\b", re.I),
+}
+
+
+def apply_direction(analysis: dict[str, Any], direction: str) -> dict[str, Any]:
+    """Keep the measured direction even when the model's label still says the opposite."""
+    if CONTRADICTS[direction].search(str(analysis.get("label") or "")):
+        analysis["label"] = "Arriving home" if direction == "arriving" else "Leaving home"
+    analysis["direction"] = direction
+    return analysis
 
 
 SESSION_COOKIE = "rr_session"
