@@ -1,0 +1,29 @@
+---
+# VLAN 20 (Trusted, 192.168.20.0/24). ens21 on home-cluster is a tag=20 virtio NIC
+# with no host address, so the node itself stays off this VLAN (a host IP here would
+# answer VLAN 20 clients directly and break the gateway's stateful firewall).
+# Pods pick a static IP outside the gateway's DHCP pool (.6-.254), i.e. .2-.5.
+# No default route: pods keep egress via Cilium on eth0.
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: vlan20
+spec:
+  config: |-
+    {
+      "cniVersion": "0.3.1",
+      "name": "vlan20",
+      "plugins": [
+        {
+          "type": "macvlan",
+          "master": "ens21",
+          "mode": "bridge",
+          "capabilities": { "ips": true },
+          "ipam": { "type": "static" }
+        },
+        {
+          "type": "tuning",
+          "capabilities": { "mac": true }
+        }
+      ]
+    }
