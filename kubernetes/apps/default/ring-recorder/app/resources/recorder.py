@@ -447,7 +447,7 @@ class EventStore:
                 SELECT * FROM events
                 WHERE recording_status = 'pending' AND recording_ready = 1
                     AND recording_first_seen >= ?
-                ORDER BY created_at ASC
+                ORDER BY created_at DESC
                 """,
                 (cutoff,),
             ).fetchall()
@@ -1215,6 +1215,9 @@ class Recorder:
 
     def poll_once(self) -> None:
         devices = self.ring.devices()
+        # Auth works and the API answers: serve the archive while the (possibly
+        # hours-long) first backfill is still downloading.
+        self.metrics.set_ready(True)
         for device in devices:
             self.store.upsert_device(device)
             self.history_events(device)
@@ -1232,7 +1235,8 @@ class Recorder:
                 delay = AUTH_BACKOFF_SECONDS
             except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError) as error:
                 self.metrics.set_ready(False)
-                LOG.warning("Ring poll failed: %s", type(error).__name__)
+                detail = f" {error.code} {urlparse(error.url or '').path}" if isinstance(error, HTTPError) else ""
+                LOG.warning("Ring poll failed: %s%s", type(error).__name__, detail)
             stop.wait(delay)
 
     def analysis_loop(self, stop: threading.Event) -> None:
