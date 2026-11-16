@@ -63,6 +63,8 @@ spec:
                   name: k4tech-site
               - configMap:
                   name: k4tech-image
+              - configMap:
+                  name: k4tech-image-fallback
         - name: tmp
           emptyDir:
             sizeLimit: 32Mi
