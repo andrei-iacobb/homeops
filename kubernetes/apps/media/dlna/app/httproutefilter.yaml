@@ -1,0 +1,13 @@
+---
+# Rewrites Host to a constant IP: any path matches, the substitution is the whole host.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: dlna-host-ip
+spec:
+  urlRewrite:
+    hostname:
+      type: PathRegex
+      pathRegex:
+        pattern: "^.*$"
+        substitution: "192.168.20.5"

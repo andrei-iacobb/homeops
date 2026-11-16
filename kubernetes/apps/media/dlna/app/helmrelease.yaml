@@ -141,8 +141,11 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *port
-            # minidlna 400s any Host header that is not an IP (DNS rebinding guard).
+            # minidlna 400s any Host header that is not an IP (DNS rebinding guard), and
+            # the standard URLRewrite rejects IP hostnames, so use the EG filter.
             filters:
-              - type: URLRewrite
-                urlRewrite:
-                  hostname: 192.168.20.5
+              - type: ExtensionRef
+                extensionRef:
+                  group: gateway.envoyproxy.io
+                  kind: HTTPRouteFilter
+                  name: dlna-host-ip
