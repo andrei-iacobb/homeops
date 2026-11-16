@@ -134,7 +134,9 @@ spec:
               cpu: 10m
               memory: 128Mi
             limits:
-              memory: 512Mi
+              # An inline clip is held as bytes, base64 and the JSON request body
+              # at once (~115Mi for an 18Mi clip), alongside ffmpeg frame grabs.
+              memory: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
