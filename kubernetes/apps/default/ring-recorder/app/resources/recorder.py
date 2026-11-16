@@ -710,6 +710,10 @@ class RingClient:
                 "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
                 "Authorization": f"Basic {basic}",
+                # Ring sits behind Cloudflare, which rejects the default
+                # Python-urllib agent with error 1010 (HTTP 403).
+                "User-Agent": RING_USER_AGENT,
+                "hardware_id": self.config.ring_hardware_id,
             },
             method="POST",
         )
