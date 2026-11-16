@@ -736,7 +736,8 @@ class QuickLookTests(Fixture):
                        {"id": "d2", "name": "Hallway", "slug": "hallway", "kind": "cam"})
         self.store.add_presence("andrei", "home", base - timedelta(minutes=5))
         context = self.rec.deep_context(self.store.get_row("1"))
-        self.assertIn("Hallway: motion (indoor camera, not analysed)", context)
+        self.assertIn("Hallway: motion (indoor camera)", context)
+        self.assertNotIn("summary", context)
         self.assertIn("andrei's phone reported home", context)
 
     def test_poll_checks_indoor_cameras_only_on_the_slow_cadence(self):

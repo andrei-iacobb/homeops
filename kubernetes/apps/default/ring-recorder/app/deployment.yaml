@@ -98,12 +98,13 @@ spec:
               value: "15"
             # Quick look: three stills around Ring's detection moment, answered in ~2 s.
             - name: GEMINI_QUICK_MODEL
-              value: "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite"
+              value: "gemini-flash-lite-latest,gemini-3.1-flash-lite,gemini-3.5-flash-lite"
             # Full pass: whole clip at low media resolution (~3k tokens). 3.5 Flash-Lite
-            # reads these cameras as well as 3.5 Flash with the scene notes, and Flash's
-            # free tier is only 20 requests a day.
+            # reads these cameras as well as 3.5 Flash with the scene notes (Flash's free
+            # tier is 20 requests a day; 2.5 Flash misreads them). Each pass leads with a
+            # different model so they do not share a per-minute quota.
             - name: GEMINI_MODEL
-              value: "gemini-3.5-flash-lite,gemini-2.5-flash,gemini-flash-lite-latest,gemini-3.1-flash-lite"
+              value: "gemini-3.5-flash-lite,gemini-flash-lite-latest,gemini-3.1-flash-lite"
             - name: FFMPEG
               value: "/opt/ffmpeg/ffmpeg"
             - name: SCENES_PATH

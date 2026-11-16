@@ -84,7 +84,7 @@ FFMPEG_TIMEOUT = 30
 MODEL_COOLDOWN_SECONDS = 900
 # Old clips are paced so the free tier's per-minute limit stays free for new ones.
 BACKLOG_AGE = timedelta(hours=1)
-BACKLOG_PACE_SECONDS = 5
+BACKLOG_PACE_SECONDS = 12
 SAFE_SLUG = re.compile(r"[^a-z0-9_-]+")
 SAFE_EVENT_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
@@ -1385,7 +1385,8 @@ class GeminiClient:
             f"You review Ring recordings for a family home in the UK. This clip is a {kind} event on the "
             f"{device} camera starting {local_time}. Ring's detector said: {detection}.\n"
             f"Camera layout (use it to work out where people go): {self._scene(event)}\n"
-            f"What else happened around this time:\n{context or '- nothing else recorded'}\n"
+            f"Other camera triggers around this time (facts, no descriptions):\n"
+            f"{context or '- nothing else recorded'}\n"
             f"A quick look at a few stills said: {first_look}. Correct it if the video shows otherwise.\n\n"
             "Watch the whole clip and track each person from entry to exit. Decide where they came from and "
             "where they went using the layout, especially whether they went into or came out of the house. "
@@ -1630,15 +1631,16 @@ class Recorder:
     def deep_context(self, row: sqlite3.Row) -> str:
         lines: list[str] = []
         zone = self.config.time_zone
+        # Facts only. Other clips' AI descriptions are left out so one wrong description
+        # cannot talk the next one into the same mistake.
         for other in self.store.nearby_events(row, CONTEXT_WINDOW):
             when = parse_datetime(other["created_at"])
             stamp = when.astimezone(zone).strftime("%H:%M:%S") if when else "?"
+            what = str(other["kind"])
+            if other["detection"] == "human":
+                what += ", Ring saw a person"
             if other["device_slug"] in self.config.gemini_exclude:
-                what = f"{other['kind']} (indoor camera, not analysed)"
-            else:
-                api = self.store.row_to_api(other)
-                quick = api.get("quick") or {}
-                what = api.get("summary") or quick.get("headline") or other["kind"]
+                what += " (indoor camera)"
             lines.append(f"- {stamp} {other['device_name']}: {what}")
         created = parse_datetime(row["created_at"])
         if created:
