@@ -867,6 +867,7 @@ class GeminiClient:
     RESPONSE_SCHEMA = {
         "type": "OBJECT",
         "properties": {
+            "label": {"type": "STRING"},
             "summary": {"type": "STRING"},
             "detail": {"type": "STRING"},
             "people": {"type": "INTEGER"},
@@ -878,6 +879,7 @@ class GeminiClient:
             "confidence": {"type": "NUMBER"},
         },
         "required": [
+            "label",
             "summary",
             "detail",
             "people",
@@ -1078,9 +1080,13 @@ class GeminiClient:
         kind = event.get("kind") or "unknown"
         context = (
             "Analyse this Ring recording from a UK house. Front Door is an outdoor "
-            "doorbell facing the drive and street. Hallway is an indoor camera inside "
-            "the house. A ding means someone pressed the bell. Describe only visible "
-            "evidence. Summary must be one plain sentence and detail must be 2 to 4 "
+            "doorbell facing the drive and street; Driveway and Garden are outdoor "
+            "cameras over the drive and garden. A ding means someone pressed the bell. "
+            "Describe only visible evidence. Label is 1 to 3 words in sentence case for "
+            "a timeline chip, naming what happened, e.g. 'Parcel delivered', 'Person at "
+            "door', 'Car arrives', 'Cat', 'Passer-by', 'Family leaving'; use 'No one "
+            "visible' when nothing is there. "
+            "Summary must be one plain sentence and detail must be 2 to 4 "
             "sentences. Activity tags should be short, such as delivery, visitor, "
             "passer-by, car, cat, family, unknown person, or nothing. Notable is true "
             "for an unknown person lingering, someone trying doors, a package dropped "
