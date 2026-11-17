@@ -11,3 +11,18 @@ spec:
   resources:
     requests:
       storage: 100Gi
+---
+# The SQLite index lives on local disk: its locking stalls for tens of seconds over NFS.
+# The recorder copies it to the NFS volume (events-backup.db) every hour.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ring-recorder-db
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: openebs-hostpath
+  resources:
+    requests:
+      storage: 2Gi

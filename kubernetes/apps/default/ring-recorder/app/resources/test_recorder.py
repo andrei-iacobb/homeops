@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import stat
 import unittest
 from types import SimpleNamespace
@@ -971,6 +972,44 @@ class DirectionTests(Fixture):
         self.config.door_sides = {}
         tracked, _, _ = self.analyse([], "Passer-by")
         tracked.assert_not_called()
+
+
+class LocalDatabaseTests(Fixture):
+    def make_store(self, local):
+        with patch.dict(os.environ, {"DATABASE_PATH": str(local)}):
+            return recorder.EventStore(self.config)
+
+    def test_migrates_nfs_database_then_backs_up_and_restores(self):
+        legacy = recorder.EventStore(self.config)
+        self.add_event(legacy, "1", recorder.iso_utc(recorder.utc_now()))
+        local = self.config.storage_dir / "local" / "events.db"
+        with patch.dict(os.environ, {"DATABASE_PATH": str(local)}):
+            store = recorder.EventStore(self.config)
+            self.assertIsNotNone(store.get_row("1"))
+            self.assertFalse(self.config.legacy_database_path.exists())
+            self.assertTrue((self.config.storage_dir / "events.db.migrated").exists())
+            self.assertTrue(self.config.database_backup_path.exists())
+            self.add_event(store, "2", recorder.iso_utc(recorder.utc_now()))
+            self.assertTrue(store.backup())
+            store._anchor.close()
+            local.unlink()
+            for suffix in ("-wal", "-shm"):
+                local.with_name(local.name + suffix).unlink(missing_ok=True)
+            restored = recorder.EventStore(self.config)
+            self.assertIsNotNone(restored.get_row("2"))
+
+    def test_restores_from_migrated_file_when_no_backup(self):
+        legacy = recorder.EventStore(self.config)
+        self.add_event(legacy, "1", recorder.iso_utc(recorder.utc_now()))
+        legacy._anchor.close()
+        self.config.legacy_database_path.rename(self.config.storage_dir / "events.db.migrated")
+        local = self.config.storage_dir / "local" / "events.db"
+        with patch.dict(os.environ, {"DATABASE_PATH": str(local)}):
+            self.assertIsNotNone(recorder.EventStore(self.config).get_row("1"))
+
+    def test_no_backup_when_database_is_on_the_volume(self):
+        self.assertFalse(recorder.EventStore(self.config).backup())
+
 
 
 if __name__ == "__main__":

@@ -79,6 +79,8 @@ spec:
               value: "http://homeassistant.external-services.svc.cluster.local:8123"
             - name: STORAGE_DIR
               value: "/data"
+            - name: DATABASE_PATH
+              value: "/db/events.db"
             - name: INDEX_PATH
               value: "/app/index.html"
             - name: CARD_PATH
@@ -152,6 +154,8 @@ spec:
               readOnly: true
             - name: data
               mountPath: /data
+            - name: db
+              mountPath: /db
             - name: tmp
               mountPath: /tmp
             - name: ffmpeg
@@ -169,5 +173,8 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: ring-recorder-data
+        - name: db
+          persistentVolumeClaim:
+            claimName: ring-recorder-db
         - name: tmp
           emptyDir: {}

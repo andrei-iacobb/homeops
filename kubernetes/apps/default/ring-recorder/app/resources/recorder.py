@@ -343,7 +343,18 @@ class Config:
 
     @property
     def database_path(self) -> Path:
+        # SQLite's locking is unreliable and slow over NFS, so the index can live on local
+        # disk (DATABASE_PATH) with an hourly copy on the NFS volume.
+        override = os.environ.get("DATABASE_PATH", "").strip()
+        return Path(override) if override else self.legacy_database_path
+
+    @property
+    def legacy_database_path(self) -> Path:
         return self.storage_dir / "events.db"
+
+    @property
+    def database_backup_path(self) -> Path:
+        return self.storage_dir / "events-backup.db"
 
     @property
     def token_path(self) -> Path:
@@ -439,6 +450,7 @@ class EventStore:
         self.config = config
         config.storage_dir.mkdir(parents=True, exist_ok=True)
         config.clips_dir.mkdir(parents=True, exist_ok=True)
+        self._adopt_existing_database()
         self._initialize()
         # Held open for the life of the process. Closing the last connection makes SQLite
         # checkpoint and delete the WAL, and the next reader then needs an exclusive lock to
@@ -462,6 +474,46 @@ class EventStore:
             raise
         finally:
             connection.close()
+
+    def _adopt_existing_database(self) -> None:
+        """Seed a new local database from the old NFS copy, or from the backup if the disk was lost."""
+        target = self.config.database_path
+        if target.exists():
+            return
+        target.parent.mkdir(parents=True, exist_ok=True)
+        legacy = self.config.legacy_database_path
+        migrated = legacy.with_name("events.db.migrated")
+        for source in (legacy, self.config.database_backup_path, migrated):
+            if source == target or not source.exists():
+                continue
+            self._copy_database(source, target)
+            LOG.info("Seeded %s from %s", target, source)
+            if source == legacy:
+                # Back up first so the NFS volume always holds a restorable copy, then move the
+                # old file aside so it is never mistaken for live data.
+                self._copy_database(legacy, self.config.database_backup_path)
+                legacy.rename(migrated)
+            return
+
+    @staticmethod
+    def _copy_database(source: Path, target: Path) -> None:
+        partial = target.with_name(target.name + ".partial")
+        partial.unlink(missing_ok=True)
+        # VACUUM INTO, not Connection.backup: OpenTelemetry wraps connections in a proxy
+        # that backup() rejects.
+        src = sqlite3.connect(f"file:{source}?mode=ro", uri=True, timeout=30)
+        try:
+            src.execute("VACUUM INTO ?", (str(partial),))
+        finally:
+            src.close()
+        os.replace(partial, target)
+
+    def backup(self) -> bool:
+        """Consistent snapshot of a local database onto the NFS volume."""
+        if self.config.database_path == self.config.legacy_database_path:
+            return False
+        self._copy_database(self.config.database_path, self.config.database_backup_path)
+        return True
 
     def _initialize(self) -> None:
         with self.connect() as connection:
@@ -2052,6 +2104,10 @@ class Recorder:
                     LOG.info("Pruned %d expired Ring events", removed)
             except (OSError, sqlite3.Error) as error:
                 LOG.warning("Retention prune failed: %s", type(error).__name__)
+            try:
+                self.store.backup()
+            except (OSError, sqlite3.Error) as error:
+                LOG.warning("Database backup failed: %s", type(error).__name__)
             stop.wait(3600)
 
 
