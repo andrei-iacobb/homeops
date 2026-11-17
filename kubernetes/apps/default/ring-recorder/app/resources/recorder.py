@@ -439,12 +439,19 @@ class EventStore:
         config.storage_dir.mkdir(parents=True, exist_ok=True)
         config.clips_dir.mkdir(parents=True, exist_ok=True)
         self._initialize()
+        # Held open for the life of the process. Closing the last connection makes SQLite
+        # checkpoint and delete the WAL, and the next reader then needs an exclusive lock to
+        # rebuild it - on NFS that queued every request behind any slow write for up to the
+        # 30 s busy timeout.
+        self._anchor = sqlite3.connect(self.config.database_path, check_same_thread=False)
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
         connection = sqlite3.connect(self.config.database_path, timeout=30)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA busy_timeout = 30000")
+        # WAL makes NORMAL crash-safe; it skips an NFS fsync on every commit.
+        connection.execute("PRAGMA synchronous = NORMAL")
         connection.execute("PRAGMA foreign_keys = ON")
         try:
             yield connection
