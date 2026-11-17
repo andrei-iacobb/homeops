@@ -80,7 +80,7 @@ spec:
           app:
             image:
               repository: registry.k8s.io/kubectl
-              tag: v1.36.6@sha256:0650805141538d13ccbb6bb9e0dd647bc415bc002898357970211c4d47224396
+              tag: v1.37.2@sha256:fe049faa65ae483ac200009a949a68fa4c9985daea12c9cb1195c9c7965301fc
             command: ["kubectl", "rollout", "restart", "deployment/dlna"]
             securityContext:
               allowPrivilegeEscalation: false
