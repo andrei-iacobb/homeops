@@ -35,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: app
-          image: ghcr.io/andrei-iacobb/burthorpe-pooch-parlour:perf-20261116@sha256:f331cc443835b2024681c5ca26d05912fc0f634abefd6822145d0b6809ad742d
+          image: ghcr.io/andrei-iacobb/burthorpe-pooch-parlour:img-20261117@sha256:aee95487c11680d7fedabf7bca93e3e13e1dad7e3be3e98d3e483e014fd3dde7
           ports:
             - name: http
               containerPort: 3000

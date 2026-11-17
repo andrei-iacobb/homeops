@@ -19,3 +19,6 @@ configMapGenerator:
       - img/workshop-640.webp
       - img/workshop-1080.webp
       - img/workshop-1600.webp
+  - name: k4tech-nginx
+    files:
+      - default.conf=nginx.conf
