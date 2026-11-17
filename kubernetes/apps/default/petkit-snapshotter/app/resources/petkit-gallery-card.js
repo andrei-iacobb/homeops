@@ -16,6 +16,8 @@ const DEFAULT_BASE = "https://hass.iacob.uk/petkit-snapshots/snapshots/";
 const DEFAULT_EVENTS = ["eat", "visit", "feed"];
 const DEFAULT_REFRESH = 60;
 const MIN_REFRESH = 10;
+const RETRY_DELAY_MS = 5000;
+const IMAGE_RETRIES = 5;
 const CLOCK_TICK_MS = 30 * 1000;
 const SWIPE_PX = 40;
 const TAP_PX = 10;
@@ -498,6 +500,10 @@ class PetkitGalleryCard extends HTMLElement {
     this._loaded = false;
     this._refreshTimer = null;
     this._clockTimer = null;
+    this._manifestRetryTimer = null;
+    this._imageRetryTimer = null;
+    this._imageBase = null;
+    this._imageAttempts = 0;
     this._fetchSeq = 0;
     this._abort = null;
     this._viewer = null;
@@ -508,7 +514,7 @@ class PetkitGalleryCard extends HTMLElement {
 
     this._card = el("div", "card empty");
     this._media = el("div", "media", { role: "button", tabindex: "0", "aria-label": "Open snapshot history" });
-    this._image = el("img", "", { alt: "", loading: "lazy", decoding: "async" });
+    this._image = el("img", "", { alt: "", loading: "eager", decoding: "async" });
     this._emptyLabel = el("div", "empty");
     this._emptyLabel.textContent = "No snapshots";
     this._media.append(this._image, this._emptyLabel);
@@ -534,9 +540,9 @@ class PetkitGalleryCard extends HTMLElement {
         this._openViewer();
       }
     });
-    this._image.addEventListener("error", () => {
-      // Broken/pruned image: fall back to the empty state rather than a broken icon.
-      this._card.classList.add("empty");
+    this._image.addEventListener("error", () => this._onImageError());
+    this._image.addEventListener("load", () => {
+      if (this._imageBase) this._card.classList.remove("empty");
     });
   }
 
@@ -600,6 +606,7 @@ class PetkitGalleryCard extends HTMLElement {
   disconnectedCallback() {
     document.removeEventListener("visibilitychange", this._onVisibility);
     this._stopTimers();
+    this._clearImageRetry();
     if (this._abort) {
       this._abort.abort();
       this._abort = null;
@@ -617,7 +624,32 @@ class PetkitGalleryCard extends HTMLElement {
     this._clockTimer = window.setInterval(() => this._renderTime(), CLOCK_TICK_MS);
   }
 
+  _onImageError() {
+    // Broken/pruned image: fall back to the empty state rather than a broken
+    // icon, then retry a few times in case it was a transient fetch failure.
+    this._card.classList.add("empty");
+    if (!this._imageBase || this._imageAttempts >= IMAGE_RETRIES || this._imageRetryTimer !== null) return;
+    this._imageAttempts += 1;
+    this._imageRetryTimer = window.setTimeout(() => {
+      this._imageRetryTimer = null;
+      if (!this._imageBase || !this.isConnected) return;
+      const sep = this._imageBase.includes("?") ? "&" : "?";
+      this._image.src = `${this._imageBase}${sep}retry=${this._imageAttempts}`;
+    }, RETRY_DELAY_MS);
+  }
+
+  _clearImageRetry() {
+    if (this._imageRetryTimer !== null) {
+      window.clearTimeout(this._imageRetryTimer);
+      this._imageRetryTimer = null;
+    }
+  }
+
   _stopTimers() {
+    if (this._manifestRetryTimer !== null) {
+      window.clearTimeout(this._manifestRetryTimer);
+      this._manifestRetryTimer = null;
+    }
     if (this._refreshTimer !== null) {
       window.clearInterval(this._refreshTimer);
       this._refreshTimer = null;
@@ -661,7 +693,16 @@ class PetkitGalleryCard extends HTMLElement {
     if (snapshots === null) {
       // Unreachable: keep the last good list if we have one, otherwise show
       // the quiet empty state. Never throw into Lovelace.
-      if (!this._loaded) this._render();
+      if (!this._loaded) {
+        this._render();
+        // First load failed: retry soon instead of waiting a full refresh period.
+        if (this._manifestRetryTimer === null && this._refreshTimer !== null) {
+          this._manifestRetryTimer = window.setTimeout(() => {
+            this._manifestRetryTimer = null;
+            this._fetchManifest();
+          }, RETRY_DELAY_MS);
+        }
+      }
       return;
     }
     this._items = this._filter(snapshots);
@@ -695,6 +736,8 @@ class PetkitGalleryCard extends HTMLElement {
     const item = this._items[0];
     if (!item) {
       this._card.classList.add("empty");
+      this._clearImageRetry();
+      this._imageBase = null;
       this._image.removeAttribute("src");
       this._titleEl.textContent = this._config.title || "";
       this._eventEl.textContent = "";
@@ -702,8 +745,18 @@ class PetkitGalleryCard extends HTMLElement {
       return;
     }
     const url = imageUrl(this._config.base, item.filename);
-    this._card.classList.remove("empty");
-    if (this._image.getAttribute("src") !== url) this._image.src = url;
+    if (this._imageBase !== url) {
+      this._clearImageRetry();
+      this._imageBase = url;
+      this._imageAttempts = 0;
+      this._card.classList.remove("empty");
+      this._image.src = url;
+    } else if (this._card.classList.contains("empty") && this._imageRetryTimer === null) {
+      // Same hero still failing with no retry pending (retries exhausted, or
+      // the card was disconnected mid-backoff): try again on each refresh.
+      this._imageAttempts = Math.min(this._imageAttempts, IMAGE_RETRIES - 1);
+      this._onImageError();
+    }
     this._titleEl.textContent = this._config.title || item.device_label || item.device || "";
     this._eventEl.textContent = item.event_label || item.event || "";
     this._renderTime();
