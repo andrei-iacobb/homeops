@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import faulthandler
 import hashlib
 import hmac
 import ipaddress
@@ -2642,6 +2643,8 @@ def main() -> None:
         stop.set()
         threading.Thread(target=server.shutdown, daemon=True).start()
 
+    # `kill -USR1 1` dumps every thread's stack to the log, for diagnosing stalls.
+    faulthandler.register(signal.SIGUSR1, all_threads=True)
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
     threads = [
