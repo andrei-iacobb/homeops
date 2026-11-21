@@ -1,6 +1,9 @@
 ---
 # Programs Solis inverter charge / discharge slots based on:
-#   - Octopus Agile rates (charge when <= 15p/kWh)
+#   - Octopus import rates (charge when <= MAX_RATE). On Flux since
+#     2026-11-20: only the 02:00-05:00 off-peak band (16.2p) is under the
+#     cap, day is 26.8p and 16:00-19:00 peak 37.4p, so the battery fills
+#     every night without needing the approval flow.
 #   - Octoplus Free Electricity / Power-ups (force-charge during)
 #   - Octoplus Saving Sessions (discharge during)
 #
@@ -49,6 +52,10 @@ spec:
                 - secretRef:
                     name: solis-charge-secret
               env:
+                # Flux off-peak is 16.2p; 20p leaves room for a price-cap
+                # change while staying well under the 26.8p day rate.
+                - name: MAX_RATE
+                  value: "0.20"
                 - name: BATTERY_CAPACITY_KWH
                   value: "10.5" # Felicity FLA48200-P
                 - name: CHARGE_KW
