@@ -8,7 +8,7 @@ metadata:
 spec:
   kubernetes:
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    version: v1.36.6
+    version: v1.37.3
   maintenance:
     windows:
       # Start gate only: a node already upgrading finishes, so leave the following hours as overrun.
