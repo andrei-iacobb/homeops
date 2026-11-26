@@ -147,6 +147,95 @@ data:
           name: Immich
           provider: !KeyOf immich
           meta_launch_url: https://photos.iacob.uk
+      # Proxmox VE OpenID realm "authentik" on dl360 (pveum realm, not GitOps).
+      # PVE sends location.origin as redirect_uri; root@pam stays for break-glass.
+      - model: authentik_providers_oauth2.oauth2provider
+        id: proxmox
+        identifiers:
+          name: proxmox
+        attrs:
+          client_type: confidential
+          client_id: proxmox
+          client_secret: !Env PROXMOX_OIDC_CLIENT_SECRET
+          grant_types:
+            - authorization_code
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          sub_mode: hashed_user_id
+          access_token_validity: minutes=10
+          redirect_uris:
+            - {matching_mode: strict, url: "https://proxmox.iacob.uk"}
+            - {matching_mode: strict, url: "https://192.168.1.100:8006"}
+            - {matching_mode: strict, url: "https://192.168.1.150:8006"}
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      - model: authentik_core.application
+        id: proxmox-app
+        identifiers:
+          slug: proxmox
+        attrs:
+          name: Proxmox
+          provider: !KeyOf proxmox
+          meta_launch_url: https://proxmox.iacob.uk
+      # Only admins may start a Proxmox SSO login (autocreated PVE users get no ACLs anyway).
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf proxmox-app
+          order: 0
+        attrs:
+          group: !Find [authentik_core.group, [name, authentik Admins]]
+      # Vaultwarden SSO (SSO_* env in default/vaultwarden). Adopted from the UI-made
+      # provider. Vaultwarden only links an existing account by email when
+      # email_verified is true; the managed email mapping sends false. Users cannot
+      # change their own email here (tenant default_user_change_email is false),
+      # so the address is admin-set and safe to assert as verified.
+      - model: authentik_providers_oauth2.scopemapping
+        id: vaultwarden-email
+        identifiers:
+          name: "vaultwarden: email (admin-verified)"
+        attrs:
+          scope_name: email
+          description: Email address
+          expression: |
+            return {
+                "email": request.user.email,
+                "email_verified": bool(request.user.email),
+            }
+      - model: authentik_providers_oauth2.oauth2provider
+        id: vaultwarden
+        identifiers:
+          name: vaultwarden
+        attrs:
+          client_type: confidential
+          client_id: vaultwarden
+          client_secret: !Env VAULTWARDEN_OIDC_CLIENT_SECRET
+          grant_types:
+            - authorization_code
+            - refresh_token
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          # Stable subject: Vaultwarden keys the SSO link on issuer + sub, and an
+          # email-based sub would follow whoever holds the address.
+          sub_mode: hashed_user_id
+          access_token_validity: minutes=10
+          redirect_uris:
+            - {matching_mode: strict, url: "https://vault.iacob.co.uk/identity/connect/oidc-signin"}
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !KeyOf vaultwarden-email
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+      - model: authentik_core.application
+        identifiers:
+          slug: vaultwarden
+        attrs:
+          name: Vaultwarden
+          provider: !KeyOf vaultwarden
+          meta_launch_url: https://vault.iacob.co.uk
       # Mealie was removed 2026-11-08; absent deletes the old provider/app.
       - model: authentik_core.application
         state: absent
@@ -196,3 +285,10 @@ data:
           user_fields: [email, username]
           webauthn_stage: !Find [authentik_stages_authenticator_validate.authenticatorvalidatestage, [name, passkey-login]]
           passwordless_flow: !KeyOf passkey-flow
+      # Password + second factor path: a passkey (Touch ID) must prove user
+      # verification too. TOTP and the other enrolled factors stay accepted.
+      - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+        identifiers:
+          name: default-authentication-mfa-validation
+        attrs:
+          webauthn_user_verification: required
