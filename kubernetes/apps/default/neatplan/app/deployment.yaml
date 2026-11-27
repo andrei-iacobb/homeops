@@ -41,14 +41,14 @@ spec:
         # Prisma migrations must land before the Next 16.3 app boots; the
         # migrator image's default CMD is `prisma migrate deploy`.
         - name: migrate
-          image: ghcr.io/andrei-iacobb/neatplan-migrator:1b9b49b-sec1@sha256:2245cabb77140c7b3b151b03e4909808daeccdaaf0282ac59b3d699b1eeaf8d0
+          image: ghcr.io/andrei-iacobb/neatplan-migrator:1b9b49b-sec2@sha256:6ac0ac45f5ce6b1a6846ac064819c2c0b89acb160fe598dc989da53b8f853e28
           imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: neatplan-secret
       containers:
         - name: neatplan
-          image: ghcr.io/andrei-iacobb/neatplan:1b9b49b-sec1@sha256:60dbcb867e92621a85c87943876cbd7c7b5a09c68cf62c59debf116341d96ebe
+          image: ghcr.io/andrei-iacobb/neatplan:1b9b49b-sec2@sha256:e7577b8b745e5bf02ba7476fddfdff2b106d8a8623bc86f8199dd7d27b70aa86
           imagePullPolicy: Always
           envFrom:
             - secretRef:
