@@ -14,6 +14,11 @@ spec:
         name: grafana
         namespace: monitoring
   values:
+    # Chart default v0.94.2 has golang.org/x/net CVE-2026-78661; v0.95.2 scans 0/0
+    # and matches the prometheus-operator in kube-prometheus-stack.
+    configReloader:
+      image:
+        tag: v0.95.2@sha256:cc74ddedad4ab1c49446971f6d51302ad4303d8660a2018af925c7f62c114304
     alloy:
       configMap:
         content: |
