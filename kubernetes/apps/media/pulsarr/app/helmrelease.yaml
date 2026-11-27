@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: docker.io/lakker/pulsarr
-              tag: 1.0.0
+              tag: 1.1.2
             env:
               TZ: Europe/London
             probes:

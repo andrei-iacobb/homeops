@@ -163,15 +163,6 @@
     },
     {
       description: [
-        "Ignore lakker/pulsarr >=1.0 — GitHub releases use 1.x semver but Docker Hub only publishes 0.x tags",
-      ],
-      matchDatasources: ["docker"],
-      matchPackageNames: ["docker.io/lakker/pulsarr", "lakker/pulsarr"],
-      matchCurrentVersion: "!/^0\\./",
-      enabled: false,
-    },
-    {
-      description: [
         "Hold docker dind at 27 (andrei-iacobb/homeops#687). The Talos node reboot on 2026-09-18 23:21 BST is the only one with instrumented evidence: a talosctl dmesg capture ends 21s earlier on docker0 veth churn from the forgejo-runner dind sidecar, which had just been bumped to 29-dind. Not proven, so this is a precaution. Retest on a throwaway node before raising it.",
       ],
       matchDatasources: ["docker"],
