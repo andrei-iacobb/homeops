@@ -19,7 +19,9 @@ machine:
         memory.available: "100Mi"
         nodefs.available: "500Mi"
         nodefs.inodesFree: "5%"
-        imagefs.available: "15%"
+        # imagefs shares the 427G root disk with OpenEBS hostpath PVCs, so 15% held
+        # back 64G and evicted pods with plenty of room left (2026-11-27). 5% = ~21G.
+        imagefs.available: "5%"
         imagefs.inodesFree: "5%"
     nodeIP:
       validSubnets:
