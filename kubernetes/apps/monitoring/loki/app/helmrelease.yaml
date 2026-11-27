@@ -78,6 +78,9 @@ spec:
     resultsCache:
       enabled: false
     gateway:
+      # Single node: the chart's required pod anti-affinity leaves the new
+      # gateway pod Pending on every image change, so a rollout never finishes.
+      affinity: null
       image:
         # Docker Hub nginxinc/nginx-unprivileged stopped updating in Oct 2026;
         # upstream publishes to ghcr.io/nginx now.
