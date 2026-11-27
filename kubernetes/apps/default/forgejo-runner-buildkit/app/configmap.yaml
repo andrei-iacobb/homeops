@@ -8,6 +8,8 @@ data:
   config.yaml: |
     log:
       level: info
+      # Mirror job output into the pod log (kubectl logs -c runner).
+      job_level: info
     runner:
       file: /data/.runner
       capacity: 1
