@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: git.iacob.co.uk/andrei/slate
-              tag: 2c391e27479360e0d27de606ed248fad1826e7fc@sha256:ef994a72b6da3d3f6293bdaa7b4a003b8cd3c71d7a5df02ff2d144f493270449
+              tag: 32fd24e3c52baf1a45d2313d0b598190b2aafef9@sha256:8de382539df6cccd8e404e5d4fb1fec6689fcb692be3c5ee045ea1636dd6dfc9
             env:
               TZ: Europe/London
               NODE_ENV: production
