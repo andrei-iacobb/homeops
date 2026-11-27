@@ -25,7 +25,7 @@ spec:
             image:
               repository: ghcr.io/andrei-iacobb/holden-systems-site
               # Next.js 16.4.6, node 24.22.3 runtime (holden-systems-site #49).
-              tag: 8ad00c7@sha256:4fe43740e4db83aae4d2c6cfdac2a31fb11fc2448254b8764e2e80201865f949
+              tag: 14f004b@sha256:8715ac17070258d598bf3b0f068baf502b564e078fa4a34fd386ce4d2e207914
             probes:
               liveness: &probes
                 enabled: true
