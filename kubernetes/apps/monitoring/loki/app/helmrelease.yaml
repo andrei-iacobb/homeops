@@ -17,7 +17,9 @@ spec:
     loki:
       auth_enabled: false
       image:
-        tag: 3.6.16
+        registry: docker.io
+        repository: grafana/loki
+        tag: 3.6.20
       commonConfig:
         path_prefix: /var/loki
         replication_factor: 1
@@ -77,9 +79,15 @@ spec:
       enabled: false
     gateway:
       image:
-        tag: 1.31.7-alpine
+        # Docker Hub nginxinc/nginx-unprivileged stopped updating in Oct 2026;
+        # upstream publishes to ghcr.io/nginx now.
+        registry: ghcr.io
+        repository: nginx/nginx-unprivileged
+        tag: 1.31.10-alpine
     sidecar:
       image:
-        tag: 2.14.1
+        registry: docker.io
+        repository: kiwigrid/k8s-sidecar
+        tag: 2.14.3
     test:
       enabled: false
