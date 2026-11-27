@@ -8,3 +8,4 @@ resources:
   - ./ocirepository.yaml
   - ./secret.sops.yaml
   - ./init-configmap.yaml
+  - ./pvc.yaml

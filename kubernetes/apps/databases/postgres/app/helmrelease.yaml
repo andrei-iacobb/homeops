@@ -16,7 +16,7 @@ spec:
           app:
             image:
               repository: ghcr.io/immich-app/postgres
-              tag: 17-vectorchord0.4.3
+              tag: 18-vectorchord1.1.1-pgvector0.8.7
             env:
               POSTGRES_PASSWORD:
                 valueFrom:
@@ -25,8 +25,10 @@ spec:
                     key: POSTGRES_PASSWORD
               POSTGRES_USER: postgres
               POSTGRES_DB: postgres
-              # pgdata (PG 16) stays beside it as the rollback for the 2026-11-08 upgrade.
-              PGDATA: /var/lib/postgresql/data/pgdata17
+              # PG 18 lives on its own PVC (postgres-pg18). The immich entrypoint puts
+              # the cluster in $PGDATA/18. The PG 17 (pgdata17) and PG 16 (pgdata)
+              # clusters stay untouched on the old `postgres` PVC as the rollback.
+              PGDATA: /var/lib/postgresql/data/pgdata18
               IMMICH_DB_PASSWORD:
                 valueFrom:
                   secretKeyRef:
@@ -93,17 +95,30 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
+        # Data dirs are already 999-owned; skip the recursive chown/chmod so the
+        # legacy PVC below is not rewritten on every start.
+        fsGroupChangePolicy: OnRootMismatch
     service:
       app:
         ports:
           postgres:
             port: 5432
     persistence:
+      # Pre-2026-11-27 PVC `postgres` (PG 16 + PG 17 clusters). Kept under the same
+      # key so Helm leaves the claim alone; mounted read-only and unused. It is the
+      # rollback for the PG 18 upgrade - drop once PG 18 has proven itself.
       data:
         type: persistentVolumeClaim
+        retain: true
         storageClass: openebs-hostpath
         size: 50Gi
         accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /var/lib/postgresql-legacy
+            readOnly: true
+      pg18:
+        type: persistentVolumeClaim
+        existingClaim: postgres-pg18
         globalMounts:
           - path: /var/lib/postgresql/data
       init:

@@ -9,7 +9,7 @@ spec:
   postBuild:
     substitute:
       APP: postgres
-      APP_PVC: postgres
+      APP_PVC: postgres-pg18
       VOLSYNC_SCHEDULE: "0 2 * * *"
       MOVER_UID: "999"
       MOVER_GID: "999"
