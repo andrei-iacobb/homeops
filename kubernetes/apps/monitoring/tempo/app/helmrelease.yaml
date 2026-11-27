@@ -18,6 +18,11 @@ spec:
         namespace: monitoring
   values:
     tempo:
+      # The single-binary chart is deprecated and its last release (1.24.4)
+      # still ships 2.9.0 (2 critical CVEs); run the current 2.x patch.
+      registry: docker.io
+      repository: grafana/tempo
+      tag: 2.10.10
       reportingEnabled: false
       retention: 168h
       memBallastSizeMbs: 0
