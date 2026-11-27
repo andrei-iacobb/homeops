@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: nginxinc/nginx-unprivileged
-              tag: 1.31.7-alpine
+              repository: ghcr.io/nginx/nginx-unprivileged
+              tag: 1.31.10-alpine
             probes:
               liveness: &probes
                 enabled: true
