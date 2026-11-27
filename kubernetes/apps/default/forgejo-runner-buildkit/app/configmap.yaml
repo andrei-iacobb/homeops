@@ -8,11 +8,11 @@ data:
   config.yaml: |
     log:
       level: info
-      # Mirror job output into the pod log (kubectl logs -c runner).
       job_level: info
     runner:
       file: /data/.runner
-      capacity: 1
+      # Two jobs share one BuildKit daemon (the Go rebuilds and OS patch runs overlap).
+      capacity: 2
       timeout: 3h
       shutdown_timeout: 25m
       fetch_timeout: 30s
