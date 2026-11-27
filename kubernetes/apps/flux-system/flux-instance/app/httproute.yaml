@@ -4,7 +4,7 @@ kind: HTTPRoute
 metadata:
   name: github-webhook
 spec:
-  hostnames: ["flux-webhook.iacob"]
+  hostnames: ["flux-webhook.iacob.uk"]
   parentRefs:
     - name: envoy-internal
       namespace: network
