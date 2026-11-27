@@ -34,7 +34,7 @@ spec:
           app:
             image:
               repository: docker.io/eceasy/cli-proxy-api
-              tag: v8.1.4
+              tag: v8.1.7
             command: ["./CLIProxyAPI", "-config", "/data/config.yaml"]
             env:
               TZ: Europe/London
