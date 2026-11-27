@@ -22,6 +22,10 @@ spec:
     crds: CreateReplace
   values:
     manager:
+      # Chart 0.129.2 still ships operator 0.162.0 (golang.org/x/net CVE-2026-78661);
+      # 0.164.0 scans 0/0. Drop this once the chart's appVersion catches up.
+      image:
+        tag: 0.164.0
       collectorImage:
         repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s
       resources:
