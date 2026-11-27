@@ -169,6 +169,14 @@
       matchPackageNames: ["docker", "docker.io/library/docker"],
       allowedVersions: "<28",
     },
+    {
+      description: [
+        "Patched rebuilds from andrei/patched-images: tags are <upstream-tag>-pYYYYMMDD[.N]. A newer -p date for the same upstream tag is an update; a new upstream tag is a manual pin.",
+      ],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/^git\\.iacob\\.co\\.uk\\/andrei\\/patched\\//"],
+      versioning: "regex:^(?<compatibility>.+)-p(?<major>\\d{8})(\\.(?<minor>\\d+))?$",
+    },
     // =====================
     // Grouping
     // =====================

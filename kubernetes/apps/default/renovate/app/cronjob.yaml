@@ -40,7 +40,8 @@ spec:
                 - name: RENOVATE_ENDPOINT
                   value: https://git.iacob.co.uk/api/v1
                 - name: RENOVATE_REPOSITORIES
-                  value: andrei/homeops
+                  # patched-images: Renovate bumps the upstream FROM tags there.
+                  value: andrei/homeops,andrei/patched-images
                 - name: RENOVATE_AUTODISCOVER
                   value: "false"
                 - name: RENOVATE_GIT_AUTHOR
