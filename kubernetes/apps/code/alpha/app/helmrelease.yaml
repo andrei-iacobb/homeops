@@ -97,7 +97,7 @@ spec:
           desktop:
             image:
               repository: lscr.io/linuxserver/webtop
-              tag: debian-xfce-536c698c-ls219
+              tag: debian-xfce-dab96f7f-ls223
             env:
               TZ: Europe/London
               PUID: "1000"
