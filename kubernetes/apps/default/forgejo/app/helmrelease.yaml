@@ -90,6 +90,10 @@ spec:
                     key: GITEA_DB_PASSWORD
               FORGEJO__actions__ENABLED: "true"
               FORGEJO__actions__DEFAULT_ACTIONS_URL: "github"
+              # Default is "external" only. The Flux receiver is LAN-only
+              # (flux-webhook.iacob.uk resolves to envoy-internal 192.168.1.7),
+              # so allow that one host by name; everything else stays external.
+              FORGEJO__webhook__ALLOWED_HOST_LIST: "external,flux-webhook.iacob.uk"
             probes:
               liveness: &probes
                 enabled: true
