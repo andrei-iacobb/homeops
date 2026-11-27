@@ -1,0 +1,178 @@
+---
+# Image build runner for andrei/patched-images (repo-scoped registration).
+# forgejo-runner in host mode + a rootless BuildKit daemon in the same pod: no
+# dind, no docker0 bridge or veths (homeops#687), nothing privileged. Build cache
+# lives on node /var via openebs-hostpath, not on devbox.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: forgejo-runner-buildkit
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: forgejo-runner-buildkit
+  interval: 1h
+  values:
+    controllers:
+      forgejo-runner-buildkit:
+        strategy: Recreate
+        initContainers:
+          # Static tool binaries copied into /tools for the host-mode job steps.
+          trivy:
+            image:
+              repository: docker.io/aquasec/trivy
+              tag: 0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+            command: ["cp", "/usr/local/bin/trivy", "/tools/trivy"]
+          regctl:
+            image:
+              repository: ghcr.io/regclient/regctl
+              tag: v0.11.7-alpine@sha256:e9e208e2420fbf9fd47ae24ad4dd4ac40089bd4ead05c1ecd763c43e24fd55b5
+            command: ["cp", "/usr/local/bin/regctl", "/tools/regctl"]
+          buildctl:
+            image: &buildkit
+              repository: docker.io/moby/buildkit
+              tag: v0.35.1-rootless@sha256:7d02292556e66feea6d2d89b7ec143503b57e4f59a4efc6b7ece8547e4d3e5be
+            command: ["cp", "/usr/bin/buildctl", "/tools/buildctl"]
+          # Registers once. Only this init container sees the registration token;
+          # host-mode job steps run in the runner container and cannot read it.
+          register:
+            dependsOn: [buildctl, regctl, trivy]
+            image: &runner
+              repository: data.forgejo.org/forgejo/runner
+              tag: 13.2.2
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                mkdir -p /data/tmp /data/trivy-cache /data/workdir
+                if [ ! -s /data/.runner ]; then
+                  echo "registering runner..."
+                  forgejo-runner register \
+                    --no-interactive \
+                    --instance "https://git.iacob.co.uk" \
+                    --token "$(cat /secrets/FORGEJO_RUNNER_TOKEN)" \
+                    --name "k8s-buildkit-$(hostname)" \
+                    --labels "buildkit:host"
+                fi
+            workingDir: /data
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+        containers:
+          runner:
+            image: *runner
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -e
+                # Do not take a job before the BuildKit worker answers.
+                until /tools/buildctl --addr unix:///run/buildkit/buildkitd.sock debug workers >/dev/null 2>&1; do sleep 2; done
+                exec forgejo-runner daemon --config /config/config.yaml
+            workingDir: /data
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                cpu: 2000m
+                memory: 6Gi
+          buildkitd:
+            image: *buildkit
+            # Entrypoint is `rootlesskit buildkitd`. No process sandbox: build steps
+            # share the daemon's (user) namespaces, which is what lets it run
+            # without privileged.
+            args:
+              - --addr=unix:///run/buildkit/buildkitd.sock
+              - --oci-worker-no-process-sandbox
+              - --oci-worker-gc
+              - --oci-worker-gc-keepstorage=40000
+            securityContext:
+              # rootlesskit needs unshare/mount syscalls and setuid newuidmap.
+              seccompProfile:
+                type: Unconfined
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                cpu: 8000m
+                memory: 12Gi
+    defaultPodOptions:
+      # Pushes go straight to the in-cluster gateway, not via Cloudflare (100 MB
+      # request body cap rejects big layers).
+      hostAliases:
+        - ip: "10.41.106.89"
+          hostnames:
+            - git.iacob.co.uk
+      # forgejo-runner waits up to its shutdown_timeout for a running job.
+      terminationGracePeriodSeconds: 1800
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 20Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          forgejo-runner-buildkit:
+            register:
+              - path: /data
+            runner:
+              - path: /data
+      buildkit:
+        type: persistentVolumeClaim
+        storageClass: openebs-hostpath
+        size: 60Gi
+        accessMode: ReadWriteOnce
+        advancedMounts:
+          forgejo-runner-buildkit:
+            buildkitd:
+              - path: /home/user/.local/share/buildkit
+      buildkit-run:
+        type: emptyDir
+        advancedMounts:
+          forgejo-runner-buildkit:
+            buildkitd:
+              - path: /run/buildkit
+            runner:
+              - path: /run/buildkit
+      tools:
+        type: emptyDir
+        advancedMounts:
+          forgejo-runner-buildkit:
+            trivy:
+              - path: /tools
+            regctl:
+              - path: /tools
+            buildctl:
+              - path: /tools
+            runner:
+              - path: /tools
+                readOnly: true
+      config:
+        type: configMap
+        name: forgejo-runner-buildkit-config
+        advancedMounts:
+          forgejo-runner-buildkit:
+            runner:
+              - path: /config/config.yaml
+                subPath: config.yaml
+                readOnly: true
+      secrets:
+        type: secret
+        name: forgejo-runner-buildkit-secret
+        advancedMounts:
+          forgejo-runner-buildkit:
+            register:
+              - path: /secrets
+                readOnly: true
