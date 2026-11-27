@@ -10,6 +10,12 @@ spec:
   interval: 1h
   values:
     fullnameOverride: k8s-gateway
+    # Chart 3.7.2 (latest) still defaults to image 1.7.0 although its
+    # appVersion is 1.8.0; pin the current release explicitly.
+    image:
+      registry: ghcr.io
+      repository: k8s-gateway/k8s_gateway
+      tag: 1.8.2
     domain: "iacob.uk"
     ttl: 1
     service:
