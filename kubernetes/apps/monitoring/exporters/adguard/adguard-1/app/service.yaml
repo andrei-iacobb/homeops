@@ -8,7 +8,7 @@ metadata:
 spec:
   ports:
   - name: metrics
-    port: 9617
+    port: 9618
     targetPort: metrics
   selector:
     app: adguard-exporter-1

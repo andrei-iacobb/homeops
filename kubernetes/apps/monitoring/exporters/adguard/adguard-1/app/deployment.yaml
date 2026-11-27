@@ -15,36 +15,51 @@ spec:
       labels:
         app: adguard-exporter-1
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: exporter
-        image: ebrianne/adguard-exporter:latest@sha256:03b2fda733121eb7de3310362bc1b5bc0a7b2d93aca6946a6b5c31e97f4cd85b
+        # henrywhitaker3/adguard-exporter replaced ebrianne/adguard-exporter
+        # (a dead Go 1.15 build that 404s against AdGuard Home 1.0). Metric
+        # names differ: adguard_queries, adguard_queries_blocked,
+        # adguard_avg_processing_time_seconds, label "server" not "hostname".
+        image: ghcr.io/henrywhitaker3/adguard-exporter:v1.2.3@sha256:27244b698034a190d657417fe1231db02cf2d22931d238495fd1a32bd0957185
         env:
-        - name: ADGUARD_PROTOCOL
-          value: "http"
-        - name: ADGUARD_HOSTNAME
+        - name: ADGUARD_IP
           valueFrom:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_IP
-        - name: ADGUARD_PORT
-          value: "80"
-        - name: ADGUARD_USERNAME
+        - name: ADGUARD_SERVERS
+          value: "http://$(ADGUARD_IP)"
+        - name: ADGUARD_USERNAMES
           valueFrom:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_USER
-        - name: ADGUARD_PASSWORD
+        - name: ADGUARD_PASSWORDS
           valueFrom:
             secretKeyRef:
               name: adguard-1-secret
               key: ADGUARD_PASSWORD
         - name: INTERVAL
-          value: "10s"
-        - name: LOG_LIMIT
-          value: "10000"
+          value: "30s"
         ports:
         - name: metrics
-          containerPort: 9617
+          containerPort: 9618
+        readinessProbe:
+          tcpSocket:
+            port: metrics
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         resources:
           requests:
             cpu: 50m

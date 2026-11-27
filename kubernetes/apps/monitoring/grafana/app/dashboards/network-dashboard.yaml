@@ -211,9 +211,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (hostname) (adguard_running * adguard_protection_enabled)",
+              "expr": "max by (server) (adguard_running * adguard_protection_enabled)",
               "refId": "A",
-              "legendFormat": "{{hostname}}",
+              "legendFormat": "{{server}}",
               "instant": true,
               "range": false
             }
@@ -276,7 +276,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(adguard_num_blocked_filtering) / sum(adguard_num_dns_queries)",
+              "expr": "sum(adguard_queries_blocked) / sum(adguard_queries)",
               "refId": "A",
               "instant": true,
               "range": false
@@ -646,9 +646,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (hostname) (adguard_num_dns_queries)",
+              "expr": "max by (server) (adguard_queries)",
               "refId": "A",
-              "legendFormat": "{{hostname}} queries",
+              "legendFormat": "{{server}} queries",
               "range": true
             },
             {
@@ -656,9 +656,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (hostname) (adguard_num_blocked_filtering)",
+              "expr": "max by (server) (adguard_queries_blocked)",
               "refId": "B",
-              "legendFormat": "{{hostname}} blocked",
+              "legendFormat": "{{server}} blocked",
               "range": true
             }
           ],
@@ -721,9 +721,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (hostname) (adguard_num_blocked_filtering) / max by (hostname) (adguard_num_dns_queries)",
+              "expr": "max by (server) (adguard_queries_blocked) / max by (server) (adguard_queries)",
               "refId": "A",
-              "legendFormat": "{{hostname}}",
+              "legendFormat": "{{server}}",
               "range": true
             }
           ],
@@ -785,9 +785,9 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "max by (hostname) (adguard_avg_processing_time)",
+              "expr": "max by (server) (adguard_avg_processing_time_seconds)",
               "refId": "A",
-              "legendFormat": "{{hostname}}",
+              "legendFormat": "{{server}}",
               "range": true
             }
           ],

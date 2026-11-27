@@ -2156,7 +2156,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(adguard_num_dns_queries[5m]))",
+              "expr": "sum(rate(adguard_queries[5m]))",
               "legendFormat": "queries"
             },
             {
@@ -2165,7 +2165,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(rate(adguard_num_blocked_filtering[5m]))",
+              "expr": "sum(rate(adguard_queries_blocked[5m]))",
               "legendFormat": "blocked"
             }
           ],

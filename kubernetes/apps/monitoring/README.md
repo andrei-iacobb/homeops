@@ -13,7 +13,7 @@ This directory contains the Prometheus and Grafana monitoring stack for the home
 ### Exporters
 
 #### AdGuard Home (2 instances)
-- **Exporter**: `sfragata/adguardhome_exporter`
+- **Exporter**: `ghcr.io/henrywhitaker3/adguard-exporter`
 - **Port**: 9617
 - **Secrets**: `adguard-1-secret`, `adguard-2-secret`
 - **Metrics**: DNS queries, blocked domains, upstream stats
