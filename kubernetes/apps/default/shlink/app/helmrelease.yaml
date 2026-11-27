@@ -63,8 +63,9 @@ spec:
         containers:
           app:
             image:
-              repository: shlinkio/shlink-web-client
-              tag: 4.9.1
+              # Patched rebuild (libxml2 CVE-2026-86144), see andrei/patched-images.
+              repository: git.iacob.co.uk/andrei/patched/shlink-web-client
+              tag: 4.9.1-p20261127@sha256:1009eced00665a7b04d7c9b90519fa21f7c36f4e700cd921aa3c0069a3ff61e7
             env:
               TZ: Europe/London
             probes:
