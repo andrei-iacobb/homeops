@@ -21,7 +21,7 @@ spec:
           app:
             image:
               repository: ghcr.io/andrei-iacobb/baywatch
-              tag: otel-b8b29004@sha256:f26ccb31f5956411145221e663d74ed7fe33dd63002f90a1f4a42f262d1340e5
+              tag: xnet-e139e7b9@sha256:51ca69726255b39ad8a2a55581ea78f7827b09c5117d671f2d7c4c1888767c03
             env:
               BW_BIND: ":8080"
               # Each bw-agent on a bare-metal Proxmox host (LAN, token-auth).
