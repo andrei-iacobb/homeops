@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: app
-          image: git.iacob.co.uk/andrei/spill:0c49a1c@sha256:294104705cca67a4462b13a7afaba4a31ac777060833c890c8feb1b02cf7c97e
+          image: git.iacob.co.uk/andrei/spill:421940a@sha256:e2c4b9aa90a56f16732f028c5c1e4b9d290e4eb8e11545f4e986413f08f154ca
           env:
             - name: PORT
               value: "4747"
