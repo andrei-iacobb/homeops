@@ -89,8 +89,8 @@ spec:
         tag: 1.31.10-alpine
     sidecar:
       image:
-        registry: docker.io
-        repository: kiwigrid/k8s-sidecar
-        tag: 2.14.3
+        registry: ghcr.io
+        repository: andrei-iacobb/patched/k8s-sidecar
+        tag: 2.14.3-p20261128@sha256:ad22df89ab1b27e7eec3ff565d04330018140e7b68a9faf7dec4f2d3f388f286
     test:
       enabled: false

@@ -11,6 +11,18 @@ spec:
   values:
     crds:
       enabled: true
+    # Patched rebuilds (andrei/patched-images, 0 HIGH/CRITICAL); acmesolver/startupapicheck stay upstream.
+    image:
+      repository: ghcr.io/andrei-iacobb/patched/cert-manager-controller
+      tag: v1.21.3-p20261128@sha256:881d1a7b913c902cfc2e562dac5407d21aca84f1575ebbe6a904cce26e970a8d
+    webhook:
+      image:
+        repository: ghcr.io/andrei-iacobb/patched/cert-manager-webhook
+        tag: v1.21.3-p20261128@sha256:e713700389eb3093b4ef20b81f2f1a2c0288db64969b933a54ed1eecedfd53db
+    cainjector:
+      image:
+        repository: ghcr.io/andrei-iacobb/patched/cert-manager-cainjector
+        tag: v1.21.3-p20261128@sha256:6d663e0cd04022e600202f6fb4ded3c1074d323c984280938e76ea077afb43cc
     replicaCount: 1
     dns01RecursiveNameservers: https://1.1.1.1:443/dns-query,https://1.0.0.1:443/dns-query
     dns01RecursiveNameserversOnly: true

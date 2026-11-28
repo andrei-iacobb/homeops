@@ -10,6 +10,9 @@ spec:
   interval: 1h
   values:
     fullnameOverride: *app
+    image:
+      repository: ghcr.io/andrei-iacobb/patched/external-dns
+      tag: v0.24.0-p20261128@sha256:a7e71b950c59e368f873bf56cf25e551124570a539da5794392aa94bab7d0987
     provider: cloudflare
     env:
       - name: CF_API_TOKEN
