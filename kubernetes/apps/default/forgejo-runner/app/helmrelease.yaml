@@ -54,12 +54,14 @@ spec:
                 memory: 4Gi
           dind:
             image:
-              repository: docker
+              # Patched rebuild (andrei/patched-images) of docker:27-dind: same 27.5.1
+              # dockerd, Go 1.27.4, containerd 1.7.36, runc 1.2.9, alpine 3.23, same iptables.
+              repository: ghcr.io/andrei-iacobb/patched/docker-dind
               # Pinned back from 29-dind on 2026-09-19: docker 29 dind hard-rebooted the
               # Talos node four times on 2026-09-18, each within seconds of a CI job
               # creating docker0 veths (kernel log went silent, no panic captured).
               # Do not bump until tested on a non-production node.
-              tag: 27-dind
+              tag: 27-dind-p20261128@sha256:5c4f7afa32883685080778c9da81a78c46235ab511b20befbf30915a48c26d66
             args:
               - dockerd
               - --host=unix:///shared-run/docker.sock
