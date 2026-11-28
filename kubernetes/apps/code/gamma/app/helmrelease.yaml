@@ -97,8 +97,8 @@ spec:
           # and /dev/shm with the app container (same uid 1000).
           desktop:
             image:
-              repository: lscr.io/linuxserver/webtop
-              tag: debian-xfce-dab96f7f-ls223
+              repository: ghcr.io/andrei-iacobb/patched/webtop
+              tag: debian-xfce-dab96f7f-ls223-p20261128@sha256:54201c585b36123c593ffed13c9c3665143f57976ad883fa49d9cf137e17eb4e
             env:
               TZ: Europe/London
               PUID: "1000"
