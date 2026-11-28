@@ -23,8 +23,8 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/itzg/mc-router
-              tag: 1.57.1
+              repository: ghcr.io/andrei-iacobb/patched/mc-router
+              tag: 1.57.1-p20261128@sha256:32260b82485de2da4eeee0d8d112b6a0c0630eabf31c5b082d0505084e74261f
             args:
               - -in-kube-cluster
               - -kube-namespace=default

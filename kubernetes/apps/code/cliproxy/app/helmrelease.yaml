@@ -33,8 +33,8 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/eceasy/cli-proxy-api
-              tag: v8.1.8
+              repository: ghcr.io/andrei-iacobb/patched/cli-proxy-api
+              tag: v8.1.8-p20261128@sha256:9d24a3d44cd1e64ce0c09ddfeec4c29bb9f6f562ae91ab631ab8946b7d724aa2
             command: ["./CLIProxyAPI", "-config", "/data/config.yaml"]
             env:
               TZ: Europe/London

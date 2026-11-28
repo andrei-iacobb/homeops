@@ -7,11 +7,21 @@ spec:
   chart:
     spec:
       chart: nfs-subdir-external-provisioner
+      version: 4.0.18
       sourceRef:
         kind: HelmRepository
         name: nfs-subdir-external-provisioner-data
   interval: 1h
   values:
+    # Patched rebuild (andrei/patched-images). It uses current client-go, whose
+    # leader election needs a Lease the chart does not grant; one replica with
+    # Recreate needs no election.
+    image:
+      repository: ghcr.io/andrei-iacobb/patched/nfs-subdir-external-provisioner
+      tag: v4.0.2-p20261128@sha256:7c63c0948eff6fc33a5df791e95a009a22053b91f451856e1d30d2ff521c984c
+    leaderElection:
+      enabled: false
+    strategyType: Recreate
     nfs:
       server: 192.168.1.67
       path: /mnt/sexy-pool/k8s-data

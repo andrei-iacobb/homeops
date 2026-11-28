@@ -10,7 +10,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: backube
-      version: "0.17.x"
+      version: "0.17.0"
   interval: 1h
   timeout: 10m
   install:
@@ -21,5 +21,14 @@ spec:
     remediation:
       retries: 3
   values:
+    # Patched rebuild (andrei/patched-images) for the operator and every mover.
+    image: &volsync
+      repository: ghcr.io/andrei-iacobb/patched/volsync
+      tag: 0.17.0-p20261128@sha256:ebc36b052e6f7ad5c6a6c606d3dd2f5e5aa736a06f59f5bdc461b37398e73aa4
+    rclone: *volsync
+    restic: *volsync
+    rsync: *volsync
+    rsync-tls: *volsync
+    syncthing: *volsync
     metrics:
       disableAuth: true

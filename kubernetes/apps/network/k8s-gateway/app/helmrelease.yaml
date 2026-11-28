@@ -13,9 +13,10 @@ spec:
     # Chart 3.7.2 (latest) still defaults to image 1.7.0 although its
     # appVersion is 1.8.0; pin the current release explicitly.
     image:
+      # Patched rebuild (andrei/patched-images) of 1.8.2.
       registry: ghcr.io
-      repository: k8s-gateway/k8s_gateway
-      tag: 1.8.2
+      repository: andrei-iacobb/patched/k8s-gateway
+      tag: 1.8.2-p20261128@sha256:bfd2d979447e25af7f2a8eec345b992cd307efa5d529961da357c9458546e534
     domain: "iacob.uk"
     ttl: 1
     service:
