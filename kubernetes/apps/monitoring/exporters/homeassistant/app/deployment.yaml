@@ -37,7 +37,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: bridge
-        image: docker.io/library/python:3.15.2-slim@sha256:08a4c22c92b79ec821a7ad49768480039ee5b7accac3955228e75366e30abc8e
+        image: ghcr.io/andrei-iacobb/patched/python:3.15.2-slim-p20261128@sha256:d9b8f4d6b55bbc774e239eb0d1da2990bf3a0a499e87026581d211e9b0558568
         command: ["python3", "-u", "/app/bridge.py"]
         env:
         - name: PYTHONDONTWRITEBYTECODE
