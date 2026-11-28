@@ -174,7 +174,7 @@
         "Patched rebuilds from andrei/patched-images (built on GitHub Actions, published to ghcr.io/andrei-iacobb/patched): tags are <upstream-tag>-pYYYYMMDD[.N]. A newer -p date for the same upstream tag is an update; a new upstream tag is a manual pin.",
       ],
       matchDatasources: ["docker"],
-      matchPackageNames: ["/^ghcr\\.io\\/andrei-iacobb\\/patched\\//", "/^git\\.iacob\\.co\\.uk\\/andrei\\/patched\\//"],
+      matchPackageNames: ["/^ghcr\\.io\\/andrei-iacobb\\/patched\\//"],
       versioning: "regex:^(?<compatibility>.+)-p(?<major>\\d{8})(\\.(?<minor>\\d+))?$",
     },
     // =====================

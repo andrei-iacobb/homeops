@@ -24,7 +24,7 @@ spec:
             fsGroup: 0
           containers:
             - name: pg-logical-backup
-              image: postgres:19.0-alpine
+              image: ghcr.io/andrei-iacobb/patched/postgres:19.0-alpine-p20261128@sha256:aac5b4069b2d4f27e751acdd59b680c2d4b2392a7b856a2a41a3a7eebdcdf814
               imagePullPolicy: IfNotPresent
               resources:
                 requests:

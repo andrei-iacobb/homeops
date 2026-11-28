@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: vaultwarden/server
-              tag: 1.37.5
+              repository: ghcr.io/andrei-iacobb/patched/vaultwarden
+              tag: 1.37.5-p20261128@sha256:bc53acca687d93c8e715498c465bcd237a2031b3c3348f726062498a52b43152
             env:
               DATABASE_URL:
                 valueFrom:

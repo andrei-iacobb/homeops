@@ -17,8 +17,8 @@ spec:
         containers:
           app:
             image:
-              repository: headscale/headscale
-              tag: v0.29.8
+              repository: ghcr.io/andrei-iacobb/patched/headscale
+              tag: v0.29.8-p20261128@sha256:e6fe37d67bf5c31d598661d80292623e825ddb99428add754537607920a429f5
             args: ["serve"]
             env:
               TZ: Europe/London

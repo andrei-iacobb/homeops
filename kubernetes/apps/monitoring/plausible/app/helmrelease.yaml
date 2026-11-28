@@ -41,8 +41,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/plausible/community-edition
-              tag: v3.2.2
+              repository: ghcr.io/andrei-iacobb/patched/plausible
+              tag: v3.2.2-p20261128@sha256:b64adbb45e9f7ec3405a7f31470172ec83559e4fdeab9000603ae93a5213d1ef
             command:
               - sh
               - -c

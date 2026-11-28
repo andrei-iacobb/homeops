@@ -64,8 +64,8 @@ spec:
           app:
             image:
               # Patched rebuild (libxml2 CVE-2026-86144), see andrei/patched-images.
-              repository: git.iacob.co.uk/andrei/patched/shlink-web-client
-              tag: 4.9.1-p20261127@sha256:1009eced00665a7b04d7c9b90519fa21f7c36f4e700cd921aa3c0069a3ff61e7
+              repository: ghcr.io/andrei-iacobb/patched/shlink-web-client
+              tag: 4.9.1-p20261128@sha256:70976d50efa72d9b8d3b32da1c22056f8a33c056a784cba833b5d7c99fec38b5
             env:
               TZ: Europe/London
             probes:

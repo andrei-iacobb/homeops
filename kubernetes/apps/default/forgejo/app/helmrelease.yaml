@@ -125,8 +125,8 @@ spec:
             # repo names) to a static JSON the public profile card fetches. Refreshed
             # hourly so the graph stays live even though every repo is private.
             image:
-              repository: postgres
-              tag: "19.0-alpine"
+              repository: ghcr.io/andrei-iacobb/patched/postgres
+              tag: 19.0-alpine-p20261128@sha256:aac5b4069b2d4f27e751acdd59b680c2d4b2392a7b856a2a41a3a7eebdcdf814
             env:
               PGHOST: postgres.databases.svc.cluster.local
               PGUSER: gitea

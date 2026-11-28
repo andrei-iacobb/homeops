@@ -1,6 +1,6 @@
 ---
 # beta - T3 Code workspace (one environment server per pod, driven from the
-# T3 Code desktop / web / mobile clients). Image is dizys/t3code-docker: the
+# T3 Code desktop / web / mobile clients). Image is a patched rebuild of dizys/t3code-docker: the
 # t3 server plus the claude, codex, cursor, opencode and grok CLIs, language
 # toolchains and a headless chromium MCP, with a pairing console on :3774.
 # Internal only: https://beta.iacob.uk (pairing console at /__setup). Off-LAN
@@ -25,10 +25,11 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/dizys/t3code-docker
-              # Plain X.Y.Z is the browser variant. Upstream retired -full/-slim after
-              # 0.18.0, and a suffixed tag hides every newer release from Renovate.
-              tag: 0.28.10
+              repository: ghcr.io/andrei-iacobb/patched/t3code-docker
+              # Patched rebuild of ghcr.io/dizys/t3code-docker (plain X.Y.Z = browser
+              # variant). Renovate tracks newer -p dates; a new upstream X.Y.Z is a
+              # manual pin after andrei/patched-images builds it.
+              tag: 0.28.10-p20261128@sha256:6405f1145364aef53c306e370e358e41efde308124653ade1605fb56cf627d0b
             env:
               TZ: Europe/London
               PUID: "1000"
