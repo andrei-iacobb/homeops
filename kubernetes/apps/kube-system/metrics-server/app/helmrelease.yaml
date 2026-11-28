@@ -9,6 +9,10 @@ spec:
     name: metrics-server
   interval: 1h
   values:
+    # Patched rebuild (andrei/patched-images).
+    image:
+      repository: ghcr.io/andrei-iacobb/patched/metrics-server
+      tag: v0.9.1-p20261128@sha256:4da212847e4a3ed6958ab4aec6d7ad56d0d504d0677c385de311d3af531ed3ee
     args:
       - --kubelet-insecure-tls
       - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname

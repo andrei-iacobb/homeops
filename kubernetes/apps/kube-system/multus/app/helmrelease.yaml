@@ -9,6 +9,14 @@ spec:
     name: multus
   interval: 1h
   values:
+    # Patched rebuilds (andrei/patched-images).
+    image:
+      repository: ghcr.io/andrei-iacobb/patched/multus-cni
+      tag: v4.3.2-p20261128@sha256:38093c18d5eb97beef88e95e01136c636c73ad5194a11fe653a2a4c055c93727
+    cniPlugins:
+      image:
+        repository: ghcr.io/andrei-iacobb/patched/cni-plugins
+        tag: 1.10.0-p20261128@sha256:9bc85e024d20e2c952aedfd0b0acf2df2ba2ae128ad5eb813fe5d6ae97b8414e
     resources:
       requests:
         cpu: 10m
