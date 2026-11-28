@@ -27,6 +27,8 @@ spec:
     - name: OTEL_SEMCONV_STABILITY_OPT_IN
       value: http
   nodejs:
+    # Patched rebuild (andrei/patched-images) instead of the operator default.
+    image: ghcr.io/andrei-iacobb/patched/otel-autoinstrumentation-nodejs:0.83.1-p20261128@sha256:7e1d6c93d3c0843a69bf035024dbeb9f9678872e4fc52afeebe6b6d9a871fdf6
     env:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: http/protobuf

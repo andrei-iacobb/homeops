@@ -18,6 +18,13 @@ spec:
     prometheus:
       enabled: true
       prometheusSpec:
+        # Patched rebuild (andrei/patched-images); bump with the chart's appVersion.
+        # version is explicit because the chart copies the tag (with @sha256) into it.
+        version: v3.16.0
+        image:
+          registry: ghcr.io
+          repository: andrei-iacobb/patched/prometheus
+          tag: v3.16.0-distroless-p20261128@sha256:4662d3793c5b73abf9eb9aba8c7d25672865ae13e101d3f8ac60c510e5c2d49c
         # Disable age-based expiry (Prometheus >= 3.11 config-based retention).
         # Do not add size/percentage retention: preserve history as storage grows.
         retention: 0s
@@ -95,6 +102,11 @@ spec:
               - severity="warning"
             equal: ["alertname", "namespace"]
       alertmanagerSpec:
+        version: v0.35.1
+        image:
+          registry: ghcr.io
+          repository: andrei-iacobb/patched/alertmanager
+          tag: v0.35.1-p20261128@sha256:e991875abe8749305bb50d0703b178bf5073f08a93623d1563a95d6ed3dcb28f
         # Mounted at /etc/alertmanager/secrets/alertmanager-hermes-webhook/token
         # and read by the hermes-triage receiver's X-Gitlab-Token header.
         secrets:
@@ -125,10 +137,19 @@ spec:
       enabled: true
     kubeStateMetrics:
       enabled: true
+    kube-state-metrics:
+      image:
+        registry: ghcr.io
+        repository: andrei-iacobb/patched/kube-state-metrics
+        tag: v2.20.0-p20261128@sha256:0a1e58386f0ed4a8434358a8bbecc4afd1e9575b5ca0e3ac251e36d739ec782a
     nodeExporter:
       enabled: true
     grafana:
       enabled: true
+      image:
+        registry: ghcr.io
+        repository: andrei-iacobb/patched/grafana
+        tag: 13.3.2-distroless-p20261128@sha256:32067acb1e40232135f99da1871934dec43a15e1661355a275f84b14d3e79973
       defaultDashboardsEnabled: false
       admin:
         existingSecret: grafana-admin
@@ -207,6 +228,10 @@ spec:
         runAsGroup: 472
         fsGroup: 472
       sidecar:
+        image:
+          registry: ghcr.io
+          repository: andrei-iacobb/patched/k8s-sidecar
+          tag: 2.14.3-p20261128@sha256:ad22df89ab1b27e7eec3ff565d04330018140e7b68a9faf7dec4f2d3f388f286
         dashboards:
           enabled: true
           searchNamespace: monitoring
