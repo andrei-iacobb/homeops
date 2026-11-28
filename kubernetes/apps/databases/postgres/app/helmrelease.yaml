@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/immich-app/postgres
-              tag: 18-vectorchord1.1.1-pgvector0.8.7
+              repository: ghcr.io/andrei-iacobb/patched/immich-postgres
+              tag: 18-vectorchord1.1.1-pgvector0.8.7-p20261128@sha256:ed76c7946da226d01613544d5848b5ca759d464343467cda982ead677abf4431
             env:
               POSTGRES_PASSWORD:
                 valueFrom:
