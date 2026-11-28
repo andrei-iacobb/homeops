@@ -14,6 +14,11 @@ spec:
         name: authentik
         namespace: default
   values:
+    global:
+      # Patched rebuild (andrei/patched-images): pip/setuptools findings removed.
+      image:
+        repository: ghcr.io/andrei-iacobb/patched/authentik
+        tag: 2026.8.7-p20261128@sha256:c2d3128bf4171f324263a4ee0d858bd515d39021c89d2b8b8f3e7deecee6aa67
     authentik:
       existingSecret:
         secretName: authentik-secret

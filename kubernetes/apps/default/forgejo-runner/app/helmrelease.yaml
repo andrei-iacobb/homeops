@@ -16,8 +16,8 @@ spec:
         containers:
           runner:
             image:
-              repository: data.forgejo.org/forgejo/runner
-              tag: 13.2.2
+              repository: ghcr.io/andrei-iacobb/patched/forgejo-runner
+              tag: 13.2.2-p20261128@sha256:efa64f7e49cde1311430f297a77297c37d0b3b6ada9dd2230a27db696cf7283f
             command: ["/bin/sh", "-c"]
             args:
               - |

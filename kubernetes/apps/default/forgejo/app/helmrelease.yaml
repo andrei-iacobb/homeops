@@ -66,8 +66,8 @@ spec:
               runAsGroup: 0
           app:
             image:
-              repository: codeberg.org/forgejo/forgejo
-              tag: 17.0.2
+              repository: ghcr.io/andrei-iacobb/patched/forgejo
+              tag: 17.0.2-p20261128@sha256:19f4e0a440f82ccf378f108f319a4b0f260fc7c8140728c446457dc994ed681e
             env:
               USER_UID:
                 valueFrom:
