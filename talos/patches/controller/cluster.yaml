@@ -1,6 +1,9 @@
 cluster:
   allowSchedulingOnControlPlanes: true
+  # Patched rebuilds (andrei/patched-images) of the v1.37.3 control plane.
+  # `talosctl upgrade-k8s` rewrites these; rebuild the new version first.
   apiServer:
+    image: ghcr.io/andrei-iacobb/patched/kube-apiserver:v1.37.3-p20261128@sha256:a8496fb25648517813309d35a4ef2cb0f7a8fe42bcd2a68acd23e7b2ef66428a
     admissionControl:
       $$patch: delete
     extraArgs:
@@ -14,6 +17,7 @@ cluster:
         cpu: "4"
         memory: 4Gi
   controllerManager:
+    image: ghcr.io/andrei-iacobb/patched/kube-controller-manager:v1.37.3-p20261128@sha256:d6be152b9edc8a053add3e4541453ab8fcc798d5b7996a03acb9f7b0e58e66d6
     extraArgs:
       bind-address: 0.0.0.0
     resources:
@@ -33,6 +37,7 @@ cluster:
   proxy:
     disabled: true
   scheduler:
+    image: ghcr.io/andrei-iacobb/patched/kube-scheduler:v1.37.3-p20261128@sha256:7b2ed6d543ac43c6cee08c8b46db6d55c8630b69bae593acde8e2612686a92ef
     extraArgs:
       bind-address: 0.0.0.0
     resources:
