@@ -32,6 +32,31 @@ spec:
           app.kubernetes.io/name: flux
       kustomize:
         patches:
+          - # Patched rebuild (andrei/patched-images). When the distribution
+            # artifact moves, rebuild and move these pins in the same commit.
+            patch: |
+              - op: replace
+                path: /spec/template/spec/containers/0/image
+                value: ghcr.io/andrei-iacobb/patched/flux-helm-controller:v1.7.2-p20261128@sha256:0c3598361fb531e8675280f900df86af04db323122248b454449651e765754df
+            target:
+              kind: Deployment
+              name: helm-controller
+          - # Patched rebuild (andrei/patched-images), see above.
+            patch: |
+              - op: replace
+                path: /spec/template/spec/containers/0/image
+                value: ghcr.io/andrei-iacobb/patched/flux-kustomize-controller:v1.10.2-p20261128@sha256:7b344c4f8cb43fe51118368d699011e4fa2316dfbe58532adf092d10664de87d
+            target:
+              kind: Deployment
+              name: kustomize-controller
+          - # Patched rebuild (andrei/patched-images), see above.
+            patch: |
+              - op: replace
+                path: /spec/template/spec/containers/0/image
+                value: ghcr.io/andrei-iacobb/patched/flux-notification-controller:v1.10.1-p20261128@sha256:7a0674573d9682b9adacebb588c900ec50af014e2a3b22d1946d9b6de3dcbd37
+            target:
+              kind: Deployment
+              name: notification-controller
           - # Increase the number of workers
             patch: |
               - op: add

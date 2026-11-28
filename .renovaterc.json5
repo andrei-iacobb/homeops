@@ -188,6 +188,9 @@
       group: {
         commitMessageTopic: "{{{groupName}}} group",
       },
+      // flux-instance patches the controller images to patched ghcr rebuilds;
+      // a distribution bump must move those pins in the same change.
+      automerge: false,
     },
     // =====================
     // Commit Messages
