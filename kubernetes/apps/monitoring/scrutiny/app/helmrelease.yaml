@@ -16,8 +16,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/analogj/scrutiny
-              tag: v0.10.0-omnibus
+              repository: ghcr.io/andrei-iacobb/patched/scrutiny
+              tag: v0.10.0-omnibus-p20261128@sha256:ceb04e60bfb3e559875d144fa9ccae23d3f71c2d3a530c8d998fe1051370c2e8
             env:
               TZ: Europe/London
             probes:

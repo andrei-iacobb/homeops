@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/recyclarr/recyclarr
-              tag: 8.8.1
+              repository: ghcr.io/andrei-iacobb/patched/recyclarr
+              tag: 8.8.1-p20261128@sha256:41ef275afb2ecb4b9f0cf546f34215d59b831544a8ceb755ccd0dd81b2d2f9e7
             env:
               PUID:
                 valueFrom:

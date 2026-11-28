@@ -16,8 +16,8 @@ spec:
         containers:
           app:
             image:
-              repository: shlinkio/shlink
-              tag: 5.1.9
+              repository: ghcr.io/andrei-iacobb/patched/shlink
+              tag: 5.1.9-p20261128@sha256:7567c5de6d6b27390d08ff6d7343778535c7944d911dbae720f8c6cab535da11
             env:
               TZ: Europe/London
               DEFAULT_DOMAIN: s.iacobapp.dev

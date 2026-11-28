@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/qbittorrent
-              tag: 5.3.1@sha256:fcdbc4ac4a66d8c205ac67e4fe1b578158aaee0a50369c3d04918977f4f359c4
+              repository: ghcr.io/andrei-iacobb/patched/qbittorrent
+              tag: 5.3.1-p20261128@sha256:484fbeebd80134856e569d64007be7f7b9fd359cbd1aa064ff8d74381f2082ef
             env:
               TZ: Europe/London
               QBT_WEBUI_PORT: &port 8080

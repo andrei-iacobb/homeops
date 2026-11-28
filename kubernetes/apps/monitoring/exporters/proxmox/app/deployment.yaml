@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: prompve/prometheus-pve-exporter:3.12.0@sha256:e49466559449074596e762dd09c9a76c9be9b6a1ffacf7bc8ceb827169cb180e
+        image: ghcr.io/andrei-iacobb/patched/prometheus-pve-exporter:3.12.0-p20261128@sha256:e35c8ec46e5ac37680ce815fac757339b8e857c9d4dae921d97a4b1ab2cb2b8e
         env:
         - name: PROXMOX_HOST
           valueFrom:

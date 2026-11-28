@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/tautulli
-              tag: 2.19.1
+              repository: ghcr.io/andrei-iacobb/patched/tautulli
+              tag: 2.19.1-p20261128@sha256:8abc50dd16acf22a2fc7349159723463a7e00227eb3f55f3cc27217d86fbb96a
             env:
               TZ: Europe/London
               TAUTULLI_HTTP_BASE_URL: https://tautulli.iacob.uk

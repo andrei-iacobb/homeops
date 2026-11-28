@@ -17,8 +17,8 @@ spec:
         containers:
           app:
             image:
-              repository: docker.io/itzg/minecraft-bedrock-server
-              tag: 2026.11.1
+              repository: ghcr.io/andrei-iacobb/patched/minecraft-bedrock-server
+              tag: 2026.11.1-p20261128@sha256:9290eff916eea7fbe309cab124a23b42f20bb43e75fad637094ce11c239d591a
             env:
               EULA: "TRUE"
               TZ: Europe/London
