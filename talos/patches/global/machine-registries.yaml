@@ -1,0 +1,10 @@
+# containerd pulls the private ghcr.io/andrei-iacobb/patched/* images with this credential,
+# so no imagePullSecrets are needed (static pods included). Token: talenv.sops.yaml
+# GHCR_PULL_TOKEN, also in Vaultwarden "ghcr pull - talos registry auth".
+machine:
+  registries:
+    config:
+      ghcr.io:
+        auth:
+          username: andrei-iacobb
+          password: ${GHCR_PULL_TOKEN}
