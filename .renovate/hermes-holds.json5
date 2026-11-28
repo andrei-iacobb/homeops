@@ -18,5 +18,12 @@
 //   },
 {
   packageRules: [
+    {
+      description: ["2026-11-28 media/recyclarr: 9.0.0 starts an HTTP server that requires RECYCLARR_API_KEY, crash looping on startup. Reverted f7055e2a."],
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/recyclarr/recyclarr"],
+      matchNewValue: "9.0.0",
+      enabled: false,
+    },
   ],
 }
