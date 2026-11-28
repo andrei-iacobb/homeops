@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/pennydreadful/bookshelf
-              tag: hardcover-v0.4.21.182
+              repository: ghcr.io/andrei-iacobb/patched/bookshelf
+              tag: hardcover-v0.4.21.182-p20261128@sha256:f12ac66c0c7335fe8b3c471b603ae67ff78d95363da7e1fd18880efb3a40f700
             env:
               TZ: Europe/London
               READARR__PORT: &port 8787

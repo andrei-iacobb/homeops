@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/radarr
-              tag: 7.1.0.10948@sha256:d259bde2be6b1997c1832cf981d50017f919b305ed3dc9ce445c4661956553f3
+              repository: ghcr.io/andrei-iacobb/patched/radarr
+              tag: 7.1.0.10948-p20261128@sha256:abd452a1251f2d35e788ebf429281117d47a9f3c4fe3a6d8ef5b198d0e19f60b
             env:
               TZ: Europe/London
               RADARR__PORT: &port 7878

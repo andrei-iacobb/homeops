@@ -18,8 +18,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/nginx/nginx-unprivileged
-              tag: 1.31.10-alpine
+              repository: ghcr.io/andrei-iacobb/patched/nginx-unprivileged
+              tag: 1.31.10-alpine-p20261128@sha256:783208e1a6b3b07eea02c98eb5e122e78992cb29a8d4b6592ee229f0639ad34f
             probes:
               liveness: &probes
                 enabled: true

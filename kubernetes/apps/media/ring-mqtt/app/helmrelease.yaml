@@ -48,8 +48,8 @@ spec:
         containers:
           app:
             image:
-              repository: tsightler/ring-mqtt
-              tag: "5.9.3"
+              repository: ghcr.io/andrei-iacobb/patched/ring-mqtt
+              tag: 5.9.3-p20261128@sha256:3c67122955ffc163e52f053691e93aa9db69815ea4ae2aabc3ac914f24d165ef
             env:
               TZ: Europe/London
               MQTTHOST: mosquitto.databases.svc.cluster.local

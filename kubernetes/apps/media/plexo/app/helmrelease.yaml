@@ -17,8 +17,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/davidilie/plexo
-              tag: master-9445135d-1793815240
+              repository: ghcr.io/andrei-iacobb/patched/plexo
+              tag: master-9445135d-1793815240-p20261128@sha256:5a380d43ca5734da0ebce278b60d3fef9d13290d7e22a7fe08235e4fa4af425d
             env:
               TZ: Europe/London
               SHOW_MUSIC: "true"

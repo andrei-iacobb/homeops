@@ -15,8 +15,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/immich-app/immich-machine-learning
-              tag: v3.4.2
+              repository: ghcr.io/andrei-iacobb/patched/immich-machine-learning
+              tag: v3.4.2-p20261128@sha256:fc925e5bf907d017255e18e2d3549e0aa1aa074b19b3baed2cdf30bfc8aeef5d
             env:
               HOME: /cache
             probes:

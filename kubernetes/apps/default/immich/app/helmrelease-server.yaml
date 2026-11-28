@@ -17,8 +17,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/immich-app/immich-server
-              tag: v3.4.2
+              repository: ghcr.io/andrei-iacobb/patched/immich-server
+              tag: v3.4.2-p20261128@sha256:4e951eda2d8013f6c118966f392bce6e5bf4413576c271e0d282f0af5d8f8dd6
             env:
               DB_HOSTNAME: postgres.databases.svc.cluster.local
               DB_USERNAME: immich
@@ -65,8 +65,8 @@ spec:
                 memory: 8Gi
           guest-proxy:
             image:
-              repository: docker.io/nginx
-              tag: 1.31-alpine
+              repository: ghcr.io/andrei-iacobb/patched/nginx
+              tag: 1.31.10-alpine-p20261128@sha256:d295bc35a2ac0ddb18da3bfda8ce2bcc5b67aac1aa3195faf9ec828223a854af
             command: ["/usr/sbin/nginx"]
             args: ["-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]
             probes:

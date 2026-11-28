@@ -25,8 +25,8 @@ spec:
         containers:
           app:
             image:
-              repository: ghcr.io/home-operations/sonarr
-              tag: 5.0.0.3041@sha256:ec7797f30e65cc411fba6768ed575337a5787de7d06c382173df610f2d23a317
+              repository: ghcr.io/andrei-iacobb/patched/sonarr
+              tag: 5.0.0.3041-p20261128@sha256:9fb15c9a92c598b2f6aeee74a20991e2a29ea238544a6711ca0a8bfe0c6e23ec
             env:
               TZ: Europe/London
               SONARR__PORT: &port 8989
