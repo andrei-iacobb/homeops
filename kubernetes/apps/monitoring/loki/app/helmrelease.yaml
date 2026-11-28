@@ -19,7 +19,7 @@ spec:
       image:
         registry: docker.io
         repository: grafana/loki
-        tag: 3.6.20
+        tag: 3.6.23
       commonConfig:
         path_prefix: /var/loki
         replication_factor: 1
