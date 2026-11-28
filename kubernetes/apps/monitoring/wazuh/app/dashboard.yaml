@@ -59,7 +59,7 @@ spec:
             defaultMode: 0440
       containers:
         - name: wazuh-dashboard
-          image: wazuh/wazuh-dashboard:4.14.11@sha256:38ad3289540e4c5d42a4e434c82299f092ae8aeb1e10bc28a472fdc268ffb752
+          image: ghcr.io/andrei-iacobb/patched/wazuh-dashboard:4.14.11-p20261128@sha256:ed26fe6ce80a5d3a034c42150dc9c305f350ebd8b649857ef3530ed2eedd4935
           resources:
             requests:
               cpu: 250m

@@ -76,7 +76,7 @@ spec:
                 path: internal_users.yml
       containers:
         - name: wazuh-indexer
-          image: wazuh/wazuh-indexer:4.14.11@sha256:6855bea0a883fda201cba1b9969a744d01559bb4ee05aa4703b937edee0c11e5
+          image: ghcr.io/andrei-iacobb/patched/wazuh-indexer:4.14.11-p20261128.2@sha256:bc4a350efd04d1ac23bdfc6713bb82a0b8548c561dcf740bd784a7786d6ee06d
           resources:
             requests:
               cpu: 500m
